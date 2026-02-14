@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter } from '@nestjs/platform-fastify';
 import { AppModule } from './app.module';
@@ -5,21 +6,23 @@ import { WinstonModule } from 'nest-winston';
 import { winstonConfig } from './common/logger/logger.config';
 import helmet from '@fastify/helmet';
 
+const logger = new Logger('UnhandledRejection');
+
 async function bootstrap() {
   const fastifyAdapter = new FastifyAdapter({
     logger: false, // Disable default Fastify logger to use Winston
     ajv: {
       customOptions: {
-        removeAdditional: true,  // Remove properties not in schema
-        coerceTypes: true,       // Auto-convert types (e.g., "123" -> 123)
-        useDefaults: true,       // Use default values from schema
-        allErrors: false,        // Stop at first error for better performance
+        removeAdditional: true, // Remove properties not in schema
+        coerceTypes: true, // Auto-convert types (e.g., "123" -> 123)
+        useDefaults: true, // Use default values from schema
+        allErrors: false, // Stop at first error for better performance
       },
     },
   });
-  
+
   // Register helmet for security headers
-  await fastifyAdapter.register(helmet, {
+  await fastifyAdapter.register(helmet as any, {
     contentSecurityPolicy: {
       directives: {
         defaultSrc: [`'self'`],
@@ -30,14 +33,10 @@ async function bootstrap() {
     },
   });
 
-  const app = await NestFactory.create(
-    AppModule,
-    fastifyAdapter as any,
-    {
-      logger: WinstonModule.createLogger(winstonConfig),
-    },
-  );
-  
+  const app = await NestFactory.create(AppModule, fastifyAdapter as any, {
+    logger: WinstonModule.createLogger(winstonConfig),
+  });
+
   app.enableCors({
     origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
     credentials: true,
@@ -45,4 +44,11 @@ async function bootstrap() {
 
   await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
 }
+// Prevent process exit on unhandled promise rejections (e.g. lazy Mongo connection failure).
+// Exception filters only run for errors during HTTP requests; they cannot catch these.
+process.on('unhandledRejection', (reason: unknown) => {
+  const message = reason instanceof Error ? reason.message : String(reason);
+  const stack = reason instanceof Error ? reason.stack : undefined;
+  logger.error(message, stack);
+});
 bootstrap();

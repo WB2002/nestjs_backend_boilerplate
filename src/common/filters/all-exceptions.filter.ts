@@ -1,4 +1,3 @@
-
 import {
   ExceptionFilter,
   Catch,
@@ -9,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
 import { v4 as uuidv4 } from 'uuid';
-import { isString, get } from 'lodash';
+import { get, has, isPlainObject, isString } from 'lodash';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -23,7 +22,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const { httpAdapter } = this.httpAdapterHost;
     const ctx = host.switchToHttp();
 
-    const status =
+    let status =
       exception instanceof HttpException
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR;
@@ -33,24 +32,51 @@ export class AllExceptionsFilter implements ExceptionFilter {
         ? exception.getResponse()
         : 'Internal server error';
 
-    const message = isString(res)
+    let message = isString(res)
       ? res
       : get(res, 'message', JSON.stringify(res));
 
     const stack = exception instanceof Error ? exception.stack : '';
-    this.logger.error(
-      `Exception ${status} - ${message}`,
-      stack,
-    );
 
-    const errorResponse = {
-      statusCode: status,
-      timestamp: new Date().toISOString(),
-      path: httpAdapter.getRequestUrl(ctx.getRequest()),
-      requestId: get(ctx.getRequest(), 'headers.x-request-id') || uuidv4(),
-      message,
-    };
-    
+    // Handle Database Connection Errors (type-safe: no assertion to any)
+    const exceptionObj = isPlainObject(exception) ? exception : {};
+    const exceptionName = get(exceptionObj, 'name');
+    const rawMessage = get(exceptionObj, 'message');
+    const exceptionMessage = isString(rawMessage) ? rawMessage : '';
+    const isDbConnectionError =
+      exceptionName === 'MongooseServerSelectionError' ||
+      exceptionName === 'MongoNetworkError' ||
+      exceptionMessage.includes('buffering timed out');
+
+    if (isDbConnectionError) {
+      status = HttpStatus.SERVICE_UNAVAILABLE;
+      message = 'Service temporarily unavailable';
+    }
+
+    this.logger.error(`Exception ${status} - ${message}`, stack);
+
+    // Terminus 503: response is { status, info, error, details }. Return it as proper JSON, not stringified in message.
+    const isTerminusHealthResult =
+      status === HttpStatus.SERVICE_UNAVAILABLE &&
+      isPlainObject(res) &&
+      has(res, 'details');
+
+    const errorResponse = isTerminusHealthResult
+      ? {
+          statusCode: status,
+          timestamp: new Date().toISOString(),
+          path: httpAdapter.getRequestUrl(ctx.getRequest()),
+          requestId: get(ctx.getRequest(), 'headers.x-request-id') || uuidv4(),
+          ...(res as object),
+        }
+      : {
+          statusCode: status,
+          timestamp: new Date().toISOString(),
+          path: httpAdapter.getRequestUrl(ctx.getRequest()),
+          requestId: get(ctx.getRequest(), 'headers.x-request-id') || uuidv4(),
+          message,
+        };
+
     httpAdapter.reply(ctx.getResponse(), errorResponse, status);
   }
 }

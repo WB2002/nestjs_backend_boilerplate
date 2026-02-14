@@ -3,4 +3,3 @@ export interface ILoggerContext {
   userId?: string;
   [key: string]: any;
 }
-
