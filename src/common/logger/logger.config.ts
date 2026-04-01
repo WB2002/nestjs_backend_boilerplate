@@ -1,5 +1,5 @@
 import * as winston from 'winston';
-import {isString, isObject, get} from 'lodash';
+import { isString, isObject, get } from 'lodash';
 import { LoggerContext } from './logger.context';
 import { LOG_COLOR_MAPPER } from '@/constants';
 
@@ -26,7 +26,6 @@ const devFormat = combine(
       className = get(context, 'context', '');
       methodName = methodName || get(context, 'method', '');
     }
-    
 
     const label = [className, methodName].filter(Boolean).join('::');
     const formattedContext = label
@@ -35,22 +34,26 @@ const devFormat = combine(
 
     const { requestId, userId, ...remainingMeta } = meta as any;
     const tracingInfo = [
-      requestId ? `${LOG_COLOR_MAPPER.requestId}requestId: ${LOG_COLOR_MAPPER.reset}${requestId}` : '',
-      userId ? `${LOG_COLOR_MAPPER.userId}userId: ${LOG_COLOR_MAPPER.reset}${userId}` : '',
-    ].filter(Boolean).join(' ');
+      requestId
+        ? `${LOG_COLOR_MAPPER.requestId}requestId: ${LOG_COLOR_MAPPER.reset}${requestId}`
+        : '',
+      userId
+        ? `${LOG_COLOR_MAPPER.userId}userId: ${LOG_COLOR_MAPPER.reset}${userId}`
+        : '',
+    ]
+      .filter(Boolean)
+      .join(' ');
 
-    const formattedMetadata = Object.keys(remainingMeta).length ? ` ${JSON.stringify(remainingMeta)}` : '';
+    const formattedMetadata = Object.keys(remainingMeta).length
+      ? ` ${JSON.stringify(remainingMeta)}`
+      : '';
     const formattedTracing = tracingInfo ? ` (${tracingInfo})` : '';
 
     return `${LOG_COLOR_MAPPER.timestamp}${timestamp}${LOG_COLOR_MAPPER.reset}${formattedContext} ${level}: ${message}${formattedTracing}${formattedMetadata}${stack ? `\n${stack}` : ''}`;
   }),
 );
 
-const prodFormat = combine(
-  timestamp(),
-  contextFormatter(),
-  json(),
-);
+const prodFormat = combine(timestamp(), contextFormatter(), json());
 
 export const winstonConfig = {
   transports: [

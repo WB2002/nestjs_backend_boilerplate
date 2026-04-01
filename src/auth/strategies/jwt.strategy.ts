@@ -20,7 +20,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         ExtractJwt.fromAuthHeaderAsBearerToken(),
       ]),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('JWT_PUBLIC_KEY').replace(/\\n/g, '\n'),
+      secretOrKey: configService
+        .get<string>('JWT_PUBLIC_KEY')
+        .replace(/\\n/g, '\n'),
       algorithms: ['RS256'],
     });
   }

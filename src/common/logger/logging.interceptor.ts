@@ -28,10 +28,8 @@ export class LoggingInterceptor implements NestInterceptor {
       tap(() => {
         const statusCode = res.statusCode;
         const delay = Date.now() - now;
-        
-        this.logger.log(
-          `${method} ${url} ${statusCode} - ${delay}ms`,
-        );
+
+        this.logger.log(`${method} ${url} ${statusCode} - ${delay}ms`);
       }),
     );
   }

@@ -11,7 +11,6 @@ export class AppController {
   @Throttle({ default: { limit: 3, ttl: 60000 } }) // Limit to 3 requests per minute for this specific route
   @Get()
   getHello(): string {
-
     return this.appService.getHello();
   }
 }

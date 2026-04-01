@@ -3,7 +3,9 @@ import { CookieSerializeOptions } from '@fastify/cookie';
 export const ACCESS_TOKEN_COOKIE = 'access_token';
 export const SESSION_ID_COOKIE = 'session_id';
 
-export const getAccessTokenCookieOptions = (ttl: number): CookieSerializeOptions => ({
+export const getAccessTokenCookieOptions = (
+  ttl: number,
+): CookieSerializeOptions => ({
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
   sameSite: 'strict',
@@ -11,7 +13,9 @@ export const getAccessTokenCookieOptions = (ttl: number): CookieSerializeOptions
   maxAge: ttl,
 });
 
-export const getSessionIdCookieOptions = (ttl: number): CookieSerializeOptions => ({
+export const getSessionIdCookieOptions = (
+  ttl: number,
+): CookieSerializeOptions => ({
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
   sameSite: 'strict',

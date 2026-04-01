@@ -19,14 +19,14 @@
     "@fastify/cors": "^11.2.0",
     "@fastify/helmet": "^13.0.2",
     "@nestjs/axios": "^4.0.1",
-    "@nestjs/common": "11.1.12",
+    "@nestjs/common": "11.1.17",
     "@nestjs/config": "^4.0.3",
-    "@nestjs/core": "11.1.12",
+    "@nestjs/core": "11.1.17",
     "@nestjs/jwt": "^11.0.2",
-    "@nestjs/microservices": "^11.1.13",
+    "@nestjs/microservices": "11.1.17",
     "@nestjs/mongoose": "^11.0.4",
     "@nestjs/passport": "^11.0.5",
-    "@nestjs/platform-fastify": "11.1.12",
+    "@nestjs/platform-fastify": "11.1.17",
     "@nestjs/terminus": "^11.0.0",
     "@nestjs/throttler": "^6.5.0",
     "ajv-formats": "^3.0.1",
@@ -64,6 +64,8 @@
     "@types/uuid": "^11.0.0",
     "eslint": "9.39.2",
     "eslint-plugin-prettier": "5.5.5",
+    "eslint-plugin-security": "^4.0.0",
+    "eslint-plugin-sonarjs": "^4.0.2",
     "globals": "17.1.0",
     "jest": "30.2.0",
     "prettier": "3.8.1",
@@ -74,5 +76,21 @@
     "tsconfig-paths": "4.2.0",
     "typescript": "5.9.3",
     "typescript-eslint": "8.53.1"
+  },
+  "packageManager": "pnpm@10.13.1+sha512.37ebf1a5c7a30d5fabe0c5df44ee8da4c965ca0c5af3dbab28c3a1681b70a256218d05c81c9c0dcf767ef6b8551eb5b960042b9ed4300c59242336377e01cfad",
+  "pnpm": {
+    "overrides": {
+      "fastify": ">=5.8.3",
+      "serialize-javascript": ">=7.0.5",
+      "qs": ">=6.14.2",
+      "handlebars": ">=4.7.9",
+      "path-to-regexp": ">=8.4.0",
+      "picomatch": ">=4.0.4",
+      "brace-expansion": ">=2.0.3",
+      "minimatch": ">=10.2.3",
+      "@isaacs/brace-expansion": ">=5.0.1",
+      "flatted": ">=3.4.2",
+      "file-type": ">=21.3.2"
+    }
   }
 }

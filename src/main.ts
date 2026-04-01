@@ -24,6 +24,7 @@ async function bootstrap() {
 
   // Register helmet for security headers
   await fastifyAdapter.register(helmet as any, {
+    hidePoweredBy: true,
     contentSecurityPolicy: {
       directives: {
         defaultSrc: [`'self'`],

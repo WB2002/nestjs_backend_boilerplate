@@ -79,7 +79,11 @@ export class AuthService {
 
     await session.save();
 
-    const accessToken = await this.signAccessToken(userId, (await this.userModel.findById(userId)).email, token);
+    const accessToken = await this.signAccessToken(
+      userId,
+      (await this.userModel.findById(userId)).email,
+      token,
+    );
 
     return {
       accessToken,
@@ -106,7 +110,11 @@ export class AuthService {
     }
 
     const user = await this.userModel.findById(session.userId).exec();
-    const accessToken = await this.signAccessToken(user.id, user.email, newToken);
+    const accessToken = await this.signAccessToken(
+      user.id,
+      user.email,
+      newToken,
+    );
 
     return {
       accessToken,
@@ -120,9 +128,16 @@ export class AuthService {
       .exec();
 
     if (session) {
-      const accessTokenTtl = this.configService.get<number>('ACCESS_TOKEN_TTL', 900);
+      const accessTokenTtl = this.configService.get<number>(
+        'ACCESS_TOKEN_TTL',
+        900,
+      );
       // Revoke the JTI in Redis for the remaining lifetime of the access token
-      await this.redis.setex(`revoked_jti:${sessionId}`, accessTokenTtl, 'true');
+      await this.redis.setex(
+        `revoked_jti:${sessionId}`,
+        accessTokenTtl,
+        'true',
+      );
     }
   }
 
@@ -131,7 +146,11 @@ export class AuthService {
     return !!result;
   }
 
-  private async signAccessToken(userId: string, email: string, jti: string): Promise<string> {
+  private async signAccessToken(
+    userId: string,
+    email: string,
+    jti: string,
+  ): Promise<string> {
     const payload = { sub: userId, email, jti };
     return this.jwtService.signAsync(payload);
   }

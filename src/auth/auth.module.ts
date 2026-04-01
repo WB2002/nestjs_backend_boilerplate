@@ -19,8 +19,13 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     ]),
     JwtModule.registerAsync({
       useFactory: (configService: ConfigService) => ({
-        privateKey: configService.get<string>('JWT_PRIVATE_KEY').replace(/\\n/g, '\n'),
-        publicKey: configService.get<string>('JWT_PUBLIC_KEY').replace(/\\n/g, '\n'),
+        privateKey: (
+          configService.get<string>('JWT_PRIVATE_KEY') || ''
+        ).replace(/\\n/g, '\n'),
+        publicKey: (configService.get<string>('JWT_PUBLIC_KEY') || '').replace(
+          /\\n/g,
+          '\n',
+        ),
         signOptions: {
           expiresIn: configService.get<number>('ACCESS_TOKEN_TTL', 900),
           algorithm: 'RS256',

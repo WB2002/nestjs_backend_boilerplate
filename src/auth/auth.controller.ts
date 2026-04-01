@@ -47,7 +47,10 @@ export class AuthController {
       req.ip,
     );
 
-    const accessTokenTtl = this.configService.get<number>('ACCESS_TOKEN_TTL', 900);
+    const accessTokenTtl = this.configService.get<number>(
+      'ACCESS_TOKEN_TTL',
+      900,
+    );
     const sessionTtl = this.configService.get<number>('SESSION_TTL', 604800);
 
     res.setCookie(
@@ -76,11 +79,13 @@ export class AuthController {
     @Res({ passthrough: true }) res: FastifyReply,
   ) {
     const incomingSessionId = req.cookies[SESSION_ID_COOKIE] || sessionIdBody;
-    const { accessToken, sessionId } = await this.authService.refreshSession(
-      incomingSessionId,
-    );
+    const { accessToken, sessionId } =
+      await this.authService.refreshSession(incomingSessionId);
 
-    const accessTokenTtl = this.configService.get<number>('ACCESS_TOKEN_TTL', 900);
+    const accessTokenTtl = this.configService.get<number>(
+      'ACCESS_TOKEN_TTL',
+      900,
+    );
     const sessionTtl = this.configService.get<number>('SESSION_TTL', 604800);
 
     res.setCookie(
@@ -107,7 +112,8 @@ export class AuthController {
     @Body('sessionId') sessionIdBody: string,
     @Res({ passthrough: true }) res: FastifyReply,
   ) {
-    const sessionId = req.cookies[SESSION_ID_COOKIE] || sessionIdBody || req.user.jti;
+    const sessionId =
+      req.cookies[SESSION_ID_COOKIE] || sessionIdBody || req.user.jti;
     await this.authService.logout(sessionId);
 
     res.clearCookie(ACCESS_TOKEN_COOKIE, { path: '/' });
