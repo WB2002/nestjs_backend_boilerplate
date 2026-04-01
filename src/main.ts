@@ -5,6 +5,7 @@ import { AppModule } from './app.module';
 import { WinstonModule } from 'nest-winston';
 import { winstonConfig } from './common/logger/logger.config';
 import helmet from '@fastify/helmet';
+import fastifyCookie from '@fastify/cookie';
 
 const logger = new Logger('UnhandledRejection');
 
@@ -31,6 +32,11 @@ async function bootstrap() {
         scriptSrc: [`'self'`, `https: 'unsafe-inline'`],
       },
     },
+  });
+
+  // Register fastify-cookie
+  await fastifyAdapter.register(fastifyCookie as any, {
+    secret: process.env.COOKIE_SECRET,
   });
 
   const app = await NestFactory.create(AppModule, fastifyAdapter as any, {

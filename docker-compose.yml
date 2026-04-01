@@ -39,14 +39,14 @@ services:
   #   networks:
   #     - backend-network
 
-  # redis:
-  #   image: redis:7
-  #   ports:
-  #     - "${REDIS_PORT}:6379"
-  #   volumes:
-  #     - redis_data:/data
-  #   networks:
-  #     - backend-network
+  redis:
+    image: redis:7
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - backend-network
 
 networks:
   backend-network:
@@ -55,4 +55,4 @@ networks:
 volumes:
   mongo_data:
   # postgres_data:
-  # redis_data:
+  redis_data:

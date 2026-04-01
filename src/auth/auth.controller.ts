@@ -1,0 +1,118 @@
+import {
+  Body,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
+import { FastifyReply, FastifyRequest } from 'fastify';
+import { AuthService } from './auth.service';
+import { RegisterDto } from './dto/register.dto';
+import { LocalAuthGuard } from './guards/local-auth.guard';
+import { Public } from '../common/decorators/public.decorator';
+import {
+  ACCESS_TOKEN_COOKIE,
+  SESSION_ID_COOKIE,
+  getAccessTokenCookieOptions,
+  getSessionIdCookieOptions,
+} from './constants/cookie.constants';
+import { ConfigService } from '@nestjs/config';
+import { AuthRequest } from './types/auth-request.interface';
+
+@Controller('auth')
+export class AuthController {
+  constructor(
+    private authService: AuthService,
+    private configService: ConfigService,
+  ) {}
+
+  @Public()
+  @Post('register')
+  async register(@Body() registerDto: RegisterDto) {
+    await this.authService.register(registerDto);
+    return { message: 'User registered successfully' };
+  }
+
+  @Public()
+  @UseGuards(LocalAuthGuard)
+  @Post('login')
+  @HttpCode(HttpStatus.OK)
+  async login(@Req() req: any, @Res({ passthrough: true }) res: FastifyReply) {
+    const { accessToken, sessionId } = await this.authService.createSession(
+      req.user.id,
+      req.headers['user-agent'],
+      req.ip,
+    );
+
+    const accessTokenTtl = this.configService.get<number>('ACCESS_TOKEN_TTL', 900);
+    const sessionTtl = this.configService.get<number>('SESSION_TTL', 604800);
+
+    res.setCookie(
+      ACCESS_TOKEN_COOKIE,
+      accessToken,
+      getAccessTokenCookieOptions(accessTokenTtl),
+    );
+    res.setCookie(
+      SESSION_ID_COOKIE,
+      sessionId,
+      getSessionIdCookieOptions(sessionTtl),
+    );
+
+    return {
+      accessToken,
+      sessionId,
+    };
+  }
+
+  @Public()
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  async refresh(
+    @Req() req: FastifyRequest,
+    @Body('sessionId') sessionIdBody: string,
+    @Res({ passthrough: true }) res: FastifyReply,
+  ) {
+    const incomingSessionId = req.cookies[SESSION_ID_COOKIE] || sessionIdBody;
+    const { accessToken, sessionId } = await this.authService.refreshSession(
+      incomingSessionId,
+    );
+
+    const accessTokenTtl = this.configService.get<number>('ACCESS_TOKEN_TTL', 900);
+    const sessionTtl = this.configService.get<number>('SESSION_TTL', 604800);
+
+    res.setCookie(
+      ACCESS_TOKEN_COOKIE,
+      accessToken,
+      getAccessTokenCookieOptions(accessTokenTtl),
+    );
+    res.setCookie(
+      SESSION_ID_COOKIE,
+      sessionId,
+      getSessionIdCookieOptions(sessionTtl),
+    );
+
+    return {
+      accessToken,
+      sessionId,
+    };
+  }
+
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  async logout(
+    @Req() req: AuthRequest,
+    @Body('sessionId') sessionIdBody: string,
+    @Res({ passthrough: true }) res: FastifyReply,
+  ) {
+    const sessionId = req.cookies[SESSION_ID_COOKIE] || sessionIdBody || req.user.jti;
+    await this.authService.logout(sessionId);
+
+    res.clearCookie(ACCESS_TOKEN_COOKIE, { path: '/' });
+    res.clearCookie(SESSION_ID_COOKIE, { path: '/auth/refresh' });
+
+    return { message: 'Logged out successfully' };
+  }
+}

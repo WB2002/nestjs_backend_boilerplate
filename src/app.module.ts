@@ -12,6 +12,8 @@ import { LoggerMiddleware } from './common/logger/logger.middleware';
 import { TracingInterceptor } from './common/logger/tracing.interceptor';
 import { LoggingInterceptor } from './common/logger/logging.interceptor';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { AuthModule } from './auth/auth.module';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 
 @Module({
   imports: [
@@ -27,6 +29,7 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
       inject: [ConfigService],
     }),
     HealthModule,
+    AuthModule,
     WinstonModule.forRoot(winstonConfig),
     ThrottlerModule.forRoot([
       {
@@ -41,6 +44,10 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
     },
     {
       provide: APP_INTERCEPTOR,
