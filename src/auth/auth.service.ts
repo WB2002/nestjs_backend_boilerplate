@@ -10,9 +10,8 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { v4 as uuidv4 } from 'uuid';
 import Redis from 'ioredis';
-import { User } from './schemas/user.schema';
-import { Session } from './schemas/session.schema';
-import { RegisterDto } from './dto/register.dto';
+import { User, Session } from './schemas';
+import { RegisterDto } from './dto';
 
 @Injectable()
 export class AuthService {

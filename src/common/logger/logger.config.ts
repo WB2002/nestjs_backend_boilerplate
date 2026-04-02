@@ -1,7 +1,7 @@
 import * as winston from 'winston';
 import { isString, isObject, get } from 'lodash';
 import { LoggerContext } from './logger.context';
-import { LOG_COLOR_MAPPER } from '@/common/constant';
+import { LOG_COLOR_MAPPER } from '@/common/constants';
 
 const { combine, timestamp, printf, json, colorize } = winston.format;
 

@@ -49,6 +49,9 @@ async function bootstrap() {
     credentials: true,
   });
 
+  // Enable graceful shutdown
+  app.enableShutdownHooks();
+
   await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
 }
 // Prevent process exit on unhandled promise rejections (e.g. lazy Mongo connection failure).

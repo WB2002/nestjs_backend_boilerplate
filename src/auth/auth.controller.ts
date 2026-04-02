@@ -12,8 +12,8 @@ import { FastifyReply, FastifyRequest } from 'fastify';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto';
 import { LocalAuthGuard } from './guards/local-auth.guard';
-import { Public } from '../common/decorator/public.decorator';
-import { ACCESS_TOKEN_COOKIE, SESSION_ID_COOKIE } from '@/common/constant';
+import { Public } from '@/common/decorators';
+import { ACCESS_TOKEN_COOKIE, SESSION_ID_COOKIE } from '@/common/constants';
 import {
   getAccessTokenCookieOptions,
   getSessionIdCookieOptions,
