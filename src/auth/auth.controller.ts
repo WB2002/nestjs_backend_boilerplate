@@ -10,17 +10,16 @@ import {
 } from '@nestjs/common';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { AuthService } from './auth.service';
-import { RegisterDto } from './dto/register.dto';
+import { RegisterDto } from './dto';
 import { LocalAuthGuard } from './guards/local-auth.guard';
-import { Public } from '../common/decorators/public.decorator';
+import { Public } from '../common/decorator/public.decorator';
+import { ACCESS_TOKEN_COOKIE, SESSION_ID_COOKIE } from '@/common/constant';
 import {
-  ACCESS_TOKEN_COOKIE,
-  SESSION_ID_COOKIE,
   getAccessTokenCookieOptions,
   getSessionIdCookieOptions,
-} from './constants/cookie.constants';
+} from '@/common/util';
 import { ConfigService } from '@nestjs/config';
-import { AuthRequest } from './types/auth-request.interface';
+import { AuthRequest } from './types/auth.types';
 
 @Controller('auth')
 export class AuthController {

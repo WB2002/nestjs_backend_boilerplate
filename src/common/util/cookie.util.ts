@@ -1,7 +1,4 @@
-import { CookieSerializeOptions } from '@fastify/cookie';
-
-export const ACCESS_TOKEN_COOKIE = 'access_token';
-export const SESSION_ID_COOKIE = 'session_id';
+import { CookieSerializeOptions } from "@fastify/cookie";
 
 export const getAccessTokenCookieOptions = (
   ttl: number,
