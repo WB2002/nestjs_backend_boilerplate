@@ -1,10 +1,3 @@
----
-title: Project Structure Convention
-directory: docs/project_structure
-task_type: structure
-created: 2026-04-02
----
-
 # Project Structure Convention
 
 This file documents the canonical directory and file structure of the `nestjs_backend_boilerplate` project. It is the authoritative reference for where files live, what each directory owns, and how new modules must be structured. All contributors and AI agents must follow these conventions when adding or modifying code.
@@ -29,6 +22,7 @@ nestjs_backend_boilerplate/
 ```
 
 **Rules:**
+
 - All application code lives under `src/` — nothing outside it is part of the runtime.
 - All documentation lives under `docs/` — no `.md` files inside `src/`.
 - Use `pnpm` exclusively — do not use `npm` or `yarn`. Never edit `pnpm-lock.yaml` by hand.
@@ -89,6 +83,7 @@ Add the following only when the feature requires them:
 ```
 
 **Rules:**
+
 - Controllers handle HTTP only — no business logic.
 - Services contain all business logic — no HTTP primitives (`Request`, `Response`, etc.).
 - Guards, strategies, and decorators that are reusable across features belong in `src/common/`, not inside the feature directory.
@@ -123,6 +118,7 @@ src/auth/
 ```
 
 **Conventions carried into new modules:**
+
 - Guards live inside the module that owns them (`auth/guards/`) — only move to `common/` if used by other modules.
 - Multiple schemas per module are allowed when entities are tightly coupled (e.g. `user` and `session`).
 - `JwtAuthGuard` is registered globally — all routes are protected by default. Apply `@Public()` at the controller or route handler level to opt out of authentication.
@@ -159,6 +155,7 @@ src/common/
 ```
 
 **Rules:**
+
 - Never import a feature module from `common/` — `common/` is a leaf in the dependency graph.
 - All exports must go through the directory's `index.ts`.
 - Adding a new shared utility, decorator, filter, or constant always goes here.
@@ -176,6 +173,7 @@ src/types/
 ```
 
 **Rules:**
+
 - Only truly global types live here — types used by a single module belong in that module's `types/` directory.
 - Do not import from feature modules here — this directory must have zero feature dependencies.
 
@@ -210,13 +208,14 @@ docs/
     └── create_markdown.md
 ```
 
-| Directory        | Contains                                                        |
-|------------------|-----------------------------------------------------------------|
-| `docs/code/`     | Coding standards, conventions, dependency notes                 |
-| `docs/features/` | One file per feature describing endpoints, logic, and usage     |
-| `docs/prompts/`  | Agent instruction files — how to create CRUDs, markdowns, etc.  |
+| Directory        | Contains                                                       |
+| ---------------- | -------------------------------------------------------------- |
+| `docs/code/`     | Coding standards, conventions, dependency notes                |
+| `docs/features/` | One file per feature describing endpoints, logic, and usage    |
+| `docs/prompts/`  | Agent instruction files — how to create CRUDs, markdowns, etc. |
 
 **Rules:**
+
 - Every new feature module gets a corresponding `docs/features/<resource>_feature.md`.
 - Every new AI agent instruction gets a file in `docs/prompts/`.
 - File names use lowercase with underscores — no spaces, no camelCase.
@@ -225,24 +224,24 @@ docs/
 
 ## File Naming Reference
 
-| File type            | Convention        | Example                    |
-|----------------------|-------------------|----------------------------|
-| Module               | `<resource>.module.ts`     | `product.module.ts`   |
-| Controller           | `<resource>.controller.ts` | `product.controller.ts` |
-| Service              | `<resource>.service.ts`    | `product.service.ts`  |
-| Schema               | `<resource>.schema.ts`     | `product.schema.ts`   |
-| DTO                  | `<resource>.dto.ts`        | `product.dto.ts`      |
-| Types                | `<resource>.types.ts`      | `product.types.ts`    |
-| Guard                | `<name>.guard.ts`          | `jwt-auth.guard.ts`   |
-| Strategy             | `<name>.strategy.ts`       | `jwt.strategy.ts`     |
-| Decorator            | `<name>.decorator.ts`      | `public.decorator.ts` |
-| Middleware           | `<name>.middleware.ts`     | `logger.middleware.ts`|
-| Interceptor          | `<name>.interceptor.ts`    | `logging.interceptor.ts` |
-| Filter               | `<name>.filter.ts`         | `all-exceptions.filter.ts` |
-| Constant             | `<name>.constant.ts`       | `app.constant.ts`     |
-| Utility              | `<name>.util.ts`           | `cookie.util.ts`      |
-| Index re-export      | `index.ts`                 | `index.ts`            |
-| Markdown doc         | `<name>.md`                | `auth.feature.md`     |
+| File type       | Convention                 | Example                    |
+| --------------- | -------------------------- | -------------------------- |
+| Module          | `<resource>.module.ts`     | `product.module.ts`        |
+| Controller      | `<resource>.controller.ts` | `product.controller.ts`    |
+| Service         | `<resource>.service.ts`    | `product.service.ts`       |
+| Schema          | `<resource>.schema.ts`     | `product.schema.ts`        |
+| DTO             | `<resource>.dto.ts`        | `product.dto.ts`           |
+| Types           | `<resource>.types.ts`      | `product.types.ts`         |
+| Guard           | `<name>.guard.ts`          | `jwt-auth.guard.ts`        |
+| Strategy        | `<name>.strategy.ts`       | `jwt.strategy.ts`          |
+| Decorator       | `<name>.decorator.ts`      | `public.decorator.ts`      |
+| Middleware      | `<name>.middleware.ts`     | `logger.middleware.ts`     |
+| Interceptor     | `<name>.interceptor.ts`    | `logging.interceptor.ts`   |
+| Filter          | `<name>.filter.ts`         | `all-exceptions.filter.ts` |
+| Constant        | `<name>.constant.ts`       | `app.constant.ts`          |
+| Utility         | `<name>.util.ts`           | `cookie.util.ts`           |
+| Index re-export | `index.ts`                 | `index.ts`                 |
+| Markdown doc    | `<name>.md`                | `auth.feature.md`          |
 
 ---
 
