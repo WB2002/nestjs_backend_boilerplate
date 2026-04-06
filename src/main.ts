@@ -27,10 +27,25 @@ async function bootstrap() {
     hidePoweredBy: true,
     contentSecurityPolicy: {
       directives: {
-        defaultSrc: [`'self'`],
-        styleSrc: [`'self'`, `'unsafe-inline'`],
-        imgSrc: [`'self'`, 'data:', 'validator.swagger.io'],
-        scriptSrc: [`'self'`, `https: 'unsafe-inline'`],
+        defaultSrc: [`'self'`, 'https://sandbox.embed.apollographql.com'],
+        styleSrc: [
+          `'self'`,
+          `'unsafe-inline'`,
+          'https://fonts.googleapis.com',
+          'https://sandbox.embed.apollographql.com',
+        ],
+        imgSrc: [
+          `'self'`,
+          'data:',
+          'validator.swagger.io',
+          'https://sandbox.embed.apollographql.com',
+          'https://apollo-server-landing-page.cdn.apollographql.com',
+        ],
+        scriptSrc: [
+          `'self'`,
+          `https: 'unsafe-inline'`,
+          'https://sandbox.embed.apollographql.com',
+        ],
       },
     },
   });

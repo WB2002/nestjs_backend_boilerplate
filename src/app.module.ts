@@ -9,7 +9,12 @@ import { APP_GUARD, APP_INTERCEPTOR, APP_FILTER } from '@nestjs/core';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { WinstonModule } from 'nest-winston';
+import { GraphQLModule } from '@nestjs/graphql';
+import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
+import { join } from 'path';
+import * as depthLimit from 'graphql-depth-limit';
 import { HealthModule } from './health/health.module';
+import { RedisModule } from './common/redis/redis.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { winstonConfig } from './common/logger/logger.config';
@@ -17,8 +22,11 @@ import { LoggerMiddleware } from './common/logger/logger.middleware';
 import { TracingInterceptor } from './common/logger/tracing.interceptor';
 import { LoggingInterceptor } from './common/logger/logging.interceptor';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { GqlThrottlerGuard } from './common/guards/throttler.guard';
 import { AuthModule } from './auth/auth.module';
+import { CategoriesModule } from './categories/categories.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { ComplexityPlugin } from './common/plugins/complexity.plugin';
 
 @Module({
   imports: [
@@ -34,7 +42,9 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
       inject: [ConfigService],
     }),
     HealthModule,
+    RedisModule,
     AuthModule,
+    CategoriesModule,
     WinstonModule.forRoot(winstonConfig),
     ThrottlerModule.forRoot([
       {
@@ -42,13 +52,24 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
         limit: 10,
       },
     ]),
+    GraphQLModule.forRoot<ApolloDriverConfig>({
+      driver: ApolloDriver,
+      typePaths: ['./**/*.graphql'],
+      context: ({ request, reply }) => ({ req: request, res: reply }),
+      definitions: {
+        path: join(process.cwd(), 'src/graphql.ts'),
+        outputAs: 'class',
+      },
+      playground: true,
+      validationRules: [depthLimit(10)],
+    }),
   ],
   controllers: [AppController],
   providers: [
     AppService,
     {
       provide: APP_GUARD,
-      useClass: ThrottlerGuard,
+      useClass: GqlThrottlerGuard,
     },
     {
       provide: APP_GUARD,
@@ -66,6 +87,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
       provide: APP_FILTER,
       useClass: AllExceptionsFilter,
     },
+    ComplexityPlugin,
   ],
 })
 export class AppModule implements NestModule {

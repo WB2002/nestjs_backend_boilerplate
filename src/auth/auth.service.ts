@@ -9,24 +9,22 @@ import * as argon2 from 'argon2';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { v4 as uuidv4 } from 'uuid';
-import Redis from 'ioredis';
 import { User, Session } from './schemas';
 import { RegisterDto } from './dto';
+import { RedisService } from '@/common/redis/redis.service';
 
 @Injectable()
 export class AuthService {
-  private readonly redis: Redis;
-
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
     @InjectModel(Session.name) private sessionModel: Model<Session>,
     private jwtService: JwtService,
     private configService: ConfigService,
-  ) {
-    this.redis = new Redis({
-      host: this.configService.get<string>('REDIS_HOST', 'localhost'),
-      port: this.configService.get<number>('REDIS_PORT', 6379),
-    });
+    private redisService: RedisService,
+  ) {}
+
+  private get redis() {
+    return this.redisService.getClient();
   }
 
   async register(registerDto: RegisterDto): Promise<void> {
