@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Trace } from './common/logger/trace.decorator';
 
 
 @Injectable()
