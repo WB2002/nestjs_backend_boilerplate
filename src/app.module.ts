@@ -30,6 +30,14 @@ import {
   RateLimitIdentifier,
   GuestIdMiddleware,
 } from './core/rate-limiter';
+import {
+  RequestDeadlineModule,
+  RequestDeadlineMiddleware,
+  RequestDeadlineInterceptor,
+  parsePositiveTimeoutMs,
+  DEFAULT_REQUEST_TIMEOUT_MS,
+  DEFAULT_REQUEST_TIMEOUT_MAX_MS,
+} from './core/request-deadline';
 import { ComplexityPlugin } from './common/plugins/complexity.plugin';
 
 @Module({
@@ -73,6 +81,23 @@ import { ComplexityPlugin } from './common/plugins/complexity.plugin';
         },
       ],
     }),
+    RequestDeadlineModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => {
+        const defaultTimeoutMs = parsePositiveTimeoutMs(
+          configService.get('REQUEST_TIMEOUT_MS'),
+          DEFAULT_REQUEST_TIMEOUT_MS,
+        );
+        const maxTimeoutMs = Math.max(
+          defaultTimeoutMs,
+          parsePositiveTimeoutMs(
+            configService.get('REQUEST_TIMEOUT_MAX_MS'),
+            DEFAULT_REQUEST_TIMEOUT_MAX_MS,
+          ),
+        );
+        return { defaultTimeoutMs, maxTimeoutMs };
+      },
+    }),
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       typePaths: ['./**/*.graphql'],
@@ -99,6 +124,10 @@ import { ComplexityPlugin } from './common/plugins/complexity.plugin';
     },
     {
       provide: APP_INTERCEPTOR,
+      useClass: RequestDeadlineInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
       useClass: TracingInterceptor,
     },
     {
@@ -115,7 +144,7 @@ import { ComplexityPlugin } from './common/plugins/complexity.plugin';
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
-      .apply(LoggerMiddleware, GuestIdMiddleware)
+      .apply(LoggerMiddleware, GuestIdMiddleware, RequestDeadlineMiddleware)
       .forRoutes({ path: '*', method: RequestMethod.ALL });
   }
 }
