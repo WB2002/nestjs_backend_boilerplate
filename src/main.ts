@@ -3,15 +3,21 @@ import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter } from '@nestjs/platform-fastify';
 import { AppModule } from './app.module';
 import { WinstonModule } from 'nest-winston';
-import { winstonConfig } from './common/logger/logger.config';
+import { winstonConfig } from './core/logger/logger.config';
 import helmet from '@fastify/helmet';
 import fastifyCookie from '@fastify/cookie';
 
 const logger = new Logger('UnhandledRejection');
 
 async function bootstrap() {
+  // TRUST_PROXY:
+  // - Production (Client → ALB → EC2): set TRUST_PROXY=true so req.ip is the client IP.
+  // - Local/dev (direct to Nest, no ALB): leave unset/false so clients cannot spoof X-Forwarded-For.
+  const trustProxy = process.env.TRUST_PROXY === 'true';
+
   const fastifyAdapter = new FastifyAdapter({
     logger: false, // Disable default Fastify logger to use Winston
+    trustProxy,
     ajv: {
       customOptions: {
         removeAdditional: true, // Remove properties not in schema
@@ -24,12 +30,28 @@ async function bootstrap() {
 
   // Register helmet for security headers
   await fastifyAdapter.register(helmet as any, {
+    hidePoweredBy: true,
     contentSecurityPolicy: {
       directives: {
-        defaultSrc: [`'self'`],
-        styleSrc: [`'self'`, `'unsafe-inline'`],
-        imgSrc: [`'self'`, 'data:', 'validator.swagger.io'],
-        scriptSrc: [`'self'`, `https: 'unsafe-inline'`],
+        defaultSrc: [`'self'`, 'https://sandbox.embed.apollographql.com'],
+        styleSrc: [
+          `'self'`,
+          `'unsafe-inline'`,
+          'https://fonts.googleapis.com',
+          'https://sandbox.embed.apollographql.com',
+        ],
+        imgSrc: [
+          `'self'`,
+          'data:',
+          'validator.swagger.io',
+          'https://sandbox.embed.apollographql.com',
+          'https://apollo-server-landing-page.cdn.apollographql.com',
+        ],
+        scriptSrc: [
+          `'self'`,
+          `https: 'unsafe-inline'`,
+          'https://sandbox.embed.apollographql.com',
+        ],
       },
     },
   });
@@ -47,6 +69,9 @@ async function bootstrap() {
     origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
     credentials: true,
   });
+
+  // Enable graceful shutdown
+  app.enableShutdownHooks();
 
   await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
 }

@@ -7,6 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
+import { GqlContextType } from '@nestjs/graphql';
 import { v4 as uuidv4 } from 'uuid';
 import { get, has, isPlainObject, isString } from 'lodash';
 
@@ -17,8 +18,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
   constructor(private readonly httpAdapterHost: HttpAdapterHost) {}
 
   catch(exception: unknown, host: ArgumentsHost) {
-    // In certain situations `httpAdapter` might not be available in the constructor during instantiation,
-    // so we should resolve it here.
+    const isGql = host.getType<GqlContextType>() === 'graphql';
     const { httpAdapter } = this.httpAdapterHost;
     const ctx = host.switchToHttp();
 
@@ -54,6 +54,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
     }
 
     this.logger.error(`Exception ${status} - ${message}`, stack);
+
+    if (isGql) {
+      return exception;
+    }
 
     // Terminus 503: response is { status, info, error, details }. Return it as proper JSON, not stringified in message.
     const isTerminusHealthResult =
