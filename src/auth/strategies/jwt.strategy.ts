@@ -4,7 +4,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { FastifyRequest } from 'fastify';
 import { AuthService } from '../auth.service';
-import { ACCESS_TOKEN_COOKIE } from '../constants/cookie.constants';
+import { ACCESS_TOKEN_COOKIE } from '@/common/constants';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -20,7 +20,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         ExtractJwt.fromAuthHeaderAsBearerToken(),
       ]),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('JWT_PUBLIC_KEY').replace(/\\n/g, '\n'),
+      secretOrKey: (configService.get<string>('JWT_PUBLIC_KEY') || '').replace(
+        /\\n/g,
+        '\n',
+      ),
       algorithms: ['RS256'],
     });
   }

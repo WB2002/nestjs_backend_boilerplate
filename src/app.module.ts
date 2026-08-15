@@ -3,7 +3,12 @@ import { APP_GUARD, APP_INTERCEPTOR, APP_FILTER } from '@nestjs/core';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { WinstonModule } from 'nest-winston';
+import { GraphQLModule } from '@nestjs/graphql';
+import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
+import { join } from 'path';
+import * as depthLimit from 'graphql-depth-limit';
 import { HealthModule } from './health/health.module';
+import { RedisModule } from './common/redis/redis.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { winstonConfig } from './core/logger/logger.config';
@@ -11,7 +16,9 @@ import { LoggerMiddleware } from './core/logger/logger.middleware';
 import { TracingInterceptor } from './core/logger/tracing.interceptor';
 import { LoggingInterceptor } from './core/logger/logging.interceptor';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { GqlThrottlerGuard } from './common/guards/throttler.guard';
 import { AuthModule } from './auth/auth.module';
+import { CategoriesModule } from './categories/categories.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import {
   RateLimiterModule,
@@ -21,6 +28,7 @@ import {
   RateLimitIdentifier,
   GuestIdMiddleware,
 } from './core/rate-limiter';
+import { ComplexityPlugin } from './common/plugins/complexity.plugin';
 
 @Module({
   imports: [
@@ -36,7 +44,9 @@ import {
       inject: [ConfigService],
     }),
     HealthModule,
+    RedisModule,
     AuthModule,
+    CategoriesModule,
     WinstonModule.forRoot(winstonConfig),
     RateLimiterModule.forRoot({
       storage: RateLimitStorage.Memory,
@@ -56,13 +66,24 @@ import {
         },
       ],
     }),
+    GraphQLModule.forRoot<ApolloDriverConfig>({
+      driver: ApolloDriver,
+      typePaths: ['./**/*.graphql'],
+      context: ({ request, reply }) => ({ req: request, res: reply }),
+      definitions: {
+        path: join(process.cwd(), 'src/graphql.ts'),
+        outputAs: 'class',
+      },
+      playground: true,
+      validationRules: [depthLimit(10)],
+    }),
   ],
   controllers: [AppController],
   providers: [
     AppService,
     {
       provide: APP_GUARD,
-      useClass: JwtAuthGuard,
+      useClass: GqlJwtAuthGuard,
     },
     {
       // Runs after JWT so UserId policies can read req.user on authenticated routes.
@@ -81,6 +102,7 @@ import {
       provide: APP_FILTER,
       useClass: AllExceptionsFilter,
     },
+    ComplexityPlugin,
   ],
 })
 export class AppModule implements NestModule {

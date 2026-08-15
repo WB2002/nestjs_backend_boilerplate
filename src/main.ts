@@ -30,12 +30,28 @@ async function bootstrap() {
 
   // Register helmet for security headers
   await fastifyAdapter.register(helmet as any, {
+    hidePoweredBy: true,
     contentSecurityPolicy: {
       directives: {
-        defaultSrc: [`'self'`],
-        styleSrc: [`'self'`, `'unsafe-inline'`],
-        imgSrc: [`'self'`, 'data:', 'validator.swagger.io'],
-        scriptSrc: [`'self'`, `https: 'unsafe-inline'`],
+        defaultSrc: [`'self'`, 'https://sandbox.embed.apollographql.com'],
+        styleSrc: [
+          `'self'`,
+          `'unsafe-inline'`,
+          'https://fonts.googleapis.com',
+          'https://sandbox.embed.apollographql.com',
+        ],
+        imgSrc: [
+          `'self'`,
+          'data:',
+          'validator.swagger.io',
+          'https://sandbox.embed.apollographql.com',
+          'https://apollo-server-landing-page.cdn.apollographql.com',
+        ],
+        scriptSrc: [
+          `'self'`,
+          `https: 'unsafe-inline'`,
+          'https://sandbox.embed.apollographql.com',
+        ],
       },
     },
   });
@@ -53,6 +69,9 @@ async function bootstrap() {
     origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
     credentials: true,
   });
+
+  // Enable graceful shutdown
+  app.enableShutdownHooks();
 
   await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
 }

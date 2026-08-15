@@ -9,25 +9,22 @@ import * as argon2 from 'argon2';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { v4 as uuidv4 } from 'uuid';
-import Redis from 'ioredis';
-import { User } from './schemas/user.schema';
-import { Session } from './schemas/session.schema';
-import { RegisterDto } from './dto/register.dto';
+import { User, Session } from './schemas';
+import { RegisterDto } from './dto';
+import { RedisService } from '@/common/redis/redis.service';
 
 @Injectable()
 export class AuthService {
-  private readonly redis: Redis;
-
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
     @InjectModel(Session.name) private sessionModel: Model<Session>,
     private jwtService: JwtService,
     private configService: ConfigService,
-  ) {
-    this.redis = new Redis({
-      host: this.configService.get<string>('REDIS_HOST', 'localhost'),
-      port: this.configService.get<number>('REDIS_PORT', 6379),
-    });
+    private redisService: RedisService,
+  ) {}
+
+  private get redis() {
+    return this.redisService.getClient();
   }
 
   async register(registerDto: RegisterDto): Promise<void> {
@@ -79,7 +76,11 @@ export class AuthService {
 
     await session.save();
 
-    const accessToken = await this.signAccessToken(userId, (await this.userModel.findById(userId)).email, token);
+    const accessToken = await this.signAccessToken(
+      userId,
+      (await this.userModel.findById(userId)).email,
+      token,
+    );
 
     return {
       accessToken,
@@ -106,7 +107,11 @@ export class AuthService {
     }
 
     const user = await this.userModel.findById(session.userId).exec();
-    const accessToken = await this.signAccessToken(user.id, user.email, newToken);
+    const accessToken = await this.signAccessToken(
+      user.id,
+      user.email,
+      newToken,
+    );
 
     return {
       accessToken,
@@ -120,9 +125,16 @@ export class AuthService {
       .exec();
 
     if (session) {
-      const accessTokenTtl = this.configService.get<number>('ACCESS_TOKEN_TTL', 900);
+      const accessTokenTtl = this.configService.get<number>(
+        'ACCESS_TOKEN_TTL',
+        900,
+      );
       // Revoke the JTI in Redis for the remaining lifetime of the access token
-      await this.redis.setex(`revoked_jti:${sessionId}`, accessTokenTtl, 'true');
+      await this.redis.setex(
+        `revoked_jti:${sessionId}`,
+        accessTokenTtl,
+        'true',
+      );
     }
   }
 
@@ -131,7 +143,11 @@ export class AuthService {
     return !!result;
   }
 
-  private async signAccessToken(userId: string, email: string, jti: string): Promise<string> {
+  private async signAccessToken(
+    userId: string,
+    email: string,
+    jti: string,
+  ): Promise<string> {
     const payload = { sub: userId, email, jti };
     return this.jwtService.signAsync(payload);
   }
