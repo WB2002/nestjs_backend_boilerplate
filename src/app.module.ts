@@ -21,6 +21,7 @@ import { AuthModule } from './auth/auth.module';
 import { CategoriesModule } from './categories/categories.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { CacheModule, CacheStorage } from './core/cache';
+import { ShutdownModule } from './core/shutdown';
 import {
   RateLimiterModule,
   RateLimitGuard,
@@ -37,10 +38,14 @@ import { ComplexityPlugin } from './common/plugins/complexity.plugin';
       isGlobal: true,
       envFilePath: '.env',
     }),
+    ShutdownModule,
     MongooseModule.forRootAsync({
       useFactory: (configService: ConfigService) => ({
         uri: configService.get<string>('MONGO_URI'),
         lazyConnection: true, // Do not block startup if MongoDB is down; /health returns 503
+        // Fail fast on connect/selection so health checks and shutdown never hang.
+        serverSelectionTimeoutMS: 2_000,
+        connectTimeoutMS: 2_000,
       }),
       inject: [ConfigService],
     }),
@@ -85,7 +90,7 @@ import { ComplexityPlugin } from './common/plugins/complexity.plugin';
     AppService,
     {
       provide: APP_GUARD,
-      useClass: GqlJwtAuthGuard,
+      useClass: JwtAuthGuard,
     },
     {
       // Runs after JWT so UserId policies can read req.user on authenticated routes.
