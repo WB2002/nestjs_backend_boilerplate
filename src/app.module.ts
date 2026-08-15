@@ -14,6 +14,7 @@ import { LoggingInterceptor } from './common/logger/logging.interceptor';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { CacheModule, CacheStorage } from './core/cache';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     HealthModule,
     AuthModule,
     WinstonModule.forRoot(winstonConfig),
+    CacheModule.forRoot({ storage: CacheStorage.Memory }),
     ThrottlerModule.forRoot([
       {
         ttl: 60000,
