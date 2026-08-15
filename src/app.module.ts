@@ -20,6 +20,7 @@ import { GqlThrottlerGuard } from './common/guards/throttler.guard';
 import { AuthModule } from './auth/auth.module';
 import { CategoriesModule } from './categories/categories.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { CacheModule, CacheStorage } from './core/cache';
 import {
   RateLimiterModule,
   RateLimitGuard,
@@ -48,6 +49,7 @@ import { ComplexityPlugin } from './common/plugins/complexity.plugin';
     AuthModule,
     CategoriesModule,
     WinstonModule.forRoot(winstonConfig),
+    CacheModule.forRoot({ storage: CacheStorage.Memory }),
     RateLimiterModule.forRoot({
       storage: RateLimitStorage.Memory,
       algorithm: RateLimitAlgorithm.FixedWindowCounter,
