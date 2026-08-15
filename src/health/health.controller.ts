@@ -11,7 +11,22 @@ import { Transport, RedisOptions } from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
 import { Client } from 'pg';
 import type { HealthIndicatorResult } from '@nestjs/terminus';
+import {
+  RateLimit,
+  RateLimitIdentifier,
+} from '../core/rate-limiter';
 
+@RateLimit({
+  methods: [
+    {
+      name: 'health-ip',
+      identifier: RateLimitIdentifier.Ip,
+      duration: 60_000,
+      limit: 60,
+      keyScope: 'global',
+    },
+  ],
+})
 @Controller('health')
 export class HealthController {
   constructor(

@@ -3,15 +3,21 @@ import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter } from '@nestjs/platform-fastify';
 import { AppModule } from './app.module';
 import { WinstonModule } from 'nest-winston';
-import { winstonConfig } from './common/logger/logger.config';
+import { winstonConfig } from './core/logger/logger.config';
 import helmet from '@fastify/helmet';
 import fastifyCookie from '@fastify/cookie';
 
 const logger = new Logger('UnhandledRejection');
 
 async function bootstrap() {
+  // TRUST_PROXY:
+  // - Production (Client → ALB → EC2): set TRUST_PROXY=true so req.ip is the client IP.
+  // - Local/dev (direct to Nest, no ALB): leave unset/false so clients cannot spoof X-Forwarded-For.
+  const trustProxy = process.env.TRUST_PROXY === 'true';
+
   const fastifyAdapter = new FastifyAdapter({
     logger: false, // Disable default Fastify logger to use Winston
+    trustProxy,
     ajv: {
       customOptions: {
         removeAdditional: true, // Remove properties not in schema
