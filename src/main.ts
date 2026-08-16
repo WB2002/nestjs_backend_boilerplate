@@ -11,6 +11,7 @@ import {
 } from './core/shutdown';
 import helmet from '@fastify/helmet';
 import fastifyCookie from '@fastify/cookie';
+import multipart from '@fastify/multipart';
 import mongoose from 'mongoose';
 
 const logger = new Logger('UnhandledRejection');
@@ -32,9 +33,24 @@ async function bootstrap() {
   // - Local/dev (direct to Nest, no ALB): leave unset/false so clients cannot spoof X-Forwarded-For.
   const trustProxy = process.env.TRUST_PROXY === 'true';
 
+  const uploadMaxFiles =
+    Number.parseInt(process.env.UPLOAD_MAX_FILES ?? '5', 10) || 5;
+  const uploadMaxFileSize =
+    Number.parseInt(process.env.UPLOAD_MAX_FILE_SIZE ?? '5000000', 10) ||
+    5_000_000;
+  const uploadMaxTotalSize =
+    Number.parseInt(process.env.UPLOAD_MAX_TOTAL_SIZE ?? '20000000', 10) ||
+    20_000_000;
+  // Cap per-file so files * fileSize cannot exceed total before app checks run.
+  const multipartFileSize = Math.min(
+    uploadMaxFileSize,
+    uploadMaxTotalSize,
+  );
+
   const fastifyAdapter = new FastifyAdapter({
     logger: false, // Disable default Fastify logger to use Winston
     trustProxy,
+    bodyLimit: uploadMaxTotalSize,
     // Allow app.close() to finish promptly during SIGTERM (drop keep-alive sockets).
     forceCloseConnections: true,
     ajv: {
@@ -78,6 +94,17 @@ async function bootstrap() {
   // Register fastify-cookie
   await fastifyAdapter.register(fastifyCookie as any, {
     secret: process.env.COOKIE_SECRET,
+  });
+
+  // Multi-file uploads (see UploadsModule). Limits enforced in validateUploadFiles
+  // and again here so the parser cannot buffer more than max total size.
+  await fastifyAdapter.register(multipart as any, {
+    limits: {
+      files: uploadMaxFiles,
+      fileSize: multipartFileSize,
+      fields: 10,
+      parts: uploadMaxFiles + 10,
+    },
   });
 
   const app = await NestFactory.create<NestFastifyApplication>(

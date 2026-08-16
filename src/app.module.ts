@@ -1,5 +1,11 @@
-import { Module, MiddlewareConsumer, NestModule, RequestMethod } from '@nestjs/common';
-import { APP_GUARD, APP_INTERCEPTOR, APP_FILTER } from '@nestjs/core';
+import {
+  Module,
+  MiddlewareConsumer,
+  NestModule,
+  RequestMethod,
+  ValidationPipe,
+} from '@nestjs/common';
+import { APP_GUARD, APP_INTERCEPTOR, APP_FILTER, APP_PIPE } from '@nestjs/core';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { WinstonModule } from 'nest-winston';
@@ -18,7 +24,6 @@ import { LoggerMiddleware } from './core/logger/logger.middleware';
 import { TracingInterceptor } from './core/logger/tracing.interceptor';
 import { LoggingInterceptor } from './core/logger/logging.interceptor';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
-import { GqlThrottlerGuard } from './common/guards/throttler.guard';
 import { AuthModule } from './auth/auth.module';
 import { CategoriesModule } from './categories/categories.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
@@ -41,6 +46,8 @@ import {
   DEFAULT_REQUEST_TIMEOUT_MAX_MS,
 } from './core/request-deadline';
 import { ComplexityPlugin } from './common/plugins/complexity.plugin';
+import { SanitizationPipe } from './common/sanitization';
+import { UploadsModule } from './uploads/uploads.module';
 
 @Module({
   imports: [
@@ -64,6 +71,7 @@ import { ComplexityPlugin } from './common/plugins/complexity.plugin';
     HttpClientModule,
     AuthModule,
     CategoriesModule,
+    UploadsModule,
     WinstonModule.forRoot(winstonConfig),
     CacheModule.forRoot({ storage: CacheStorage.Memory }),
     RateLimiterModule.forRoot({
@@ -122,6 +130,19 @@ import { ComplexityPlugin } from './common/plugins/complexity.plugin';
   controllers: [AppController],
   providers: [
     AppService,
+    {
+      provide: APP_PIPE,
+      useValue: new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+        transformOptions: { enableImplicitConversion: true },
+      }),
+    },
+    {
+      provide: APP_PIPE,
+      useClass: SanitizationPipe,
+    },
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,

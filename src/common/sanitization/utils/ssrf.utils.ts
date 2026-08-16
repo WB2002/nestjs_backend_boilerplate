@@ -1,0 +1,180 @@
+import { isIP } from 'node:net';
+import { promises as dns } from 'node:dns';
+
+const METADATA_HOSTNAMES = new Set([
+  'metadata.google.internal',
+  'metadata.goog',
+  'kubernetes.default',
+  'kubernetes.default.svc',
+]);
+
+export class UnsafeUrlError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'UnsafeUrlError';
+  }
+}
+
+/**
+ * Assert a user-controlled URL is safe for outbound fetch (SSRF hardening).
+ * Blocks non-http(s), credentials-in-URL, localhost, private/link-local IPs,
+ * IPv4-mapped IPv6 forms, and common cloud metadata endpoints.
+ *
+ * Sync check only — hostname literals / IPs. For user-controlled URLs prefer
+ * {@link assertPublicHttpUrlAsync} which also resolves DNS and re-checks IPs.
+ */
+export function assertPublicHttpUrl(raw: string): URL {
+  const url = parseAndAssertShape(raw);
+  assertHostnameNotPrivate(url.hostname);
+  return url;
+}
+
+/**
+ * Like {@link assertPublicHttpUrl}, then resolves DNS and rejects if any A/AAAA
+ * record is private/reserved (mitigates basic DNS rebinding for @SafeUrl).
+ */
+export async function assertPublicHttpUrlAsync(raw: string): Promise<URL> {
+  const url = assertPublicHttpUrl(raw);
+  const hostname = url.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  if (isIP(hostname)) {
+    return url;
+  }
+
+  let records: string[];
+  try {
+    const result = await dns.lookup(hostname, { all: true, verbatim: true });
+    records = result.map((r) => r.address);
+  } catch {
+    throw new UnsafeUrlError('URL hostname could not be resolved');
+  }
+
+  if (records.length === 0) {
+    throw new UnsafeUrlError('URL hostname could not be resolved');
+  }
+
+  for (const address of records) {
+    if (isPrivateOrReservedAddress(address)) {
+      throw new UnsafeUrlError(
+        'URL resolves to a private or reserved address',
+      );
+    }
+  }
+
+  return url;
+}
+
+function parseAndAssertShape(raw: string): URL {
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    throw new UnsafeUrlError('Invalid URL');
+  }
+
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    throw new UnsafeUrlError('URL must use http or https');
+  }
+
+  if (url.username || url.password) {
+    throw new UnsafeUrlError('URL must not contain credentials');
+  }
+
+  return url;
+}
+
+function assertHostnameNotPrivate(rawHostname: string): void {
+  const hostname = rawHostname.toLowerCase().replace(/^\[|\]$/g, '');
+
+  if (
+    hostname === 'localhost' ||
+    hostname.endsWith('.localhost') ||
+    hostname === '0.0.0.0' ||
+    hostname === '::' ||
+    hostname === '::1'
+  ) {
+    throw new UnsafeUrlError('URL hostname is not allowed');
+  }
+
+  if (METADATA_HOSTNAMES.has(hostname) || hostname === '169.254.169.254') {
+    throw new UnsafeUrlError('URL hostname is not allowed');
+  }
+
+  if (isPrivateOrReservedAddress(hostname)) {
+    throw new UnsafeUrlError('URL resolves to a private or reserved address');
+  }
+}
+
+export function isPrivateOrReservedAddress(hostnameOrIp: string): boolean {
+  const normalized = hostnameOrIp.toLowerCase().replace(/^\[|\]$/g, '');
+  const ipVersion = isIP(normalized);
+  if (ipVersion === 4) {
+    return isPrivateOrReservedIpv4(normalized);
+  }
+  if (ipVersion === 6) {
+    return isPrivateOrReservedIpv6(normalized);
+  }
+  return false;
+}
+
+function isPrivateOrReservedIpv4(ip: string): boolean {
+  const parts = ip.split('.').map((p) => Number.parseInt(p, 10));
+  if (parts.length !== 4 || parts.some((n) => !Number.isFinite(n))) {
+    return true;
+  }
+  const [a, b] = parts as [number, number, number, number];
+
+  if (a === 10) return true;
+  if (a === 127) return true;
+  if (a === 0) return true;
+  if (a === 169 && b === 254) return true;
+  if (a === 172 && b >= 16 && b <= 31) return true;
+  if (a === 192 && b === 168) return true;
+  if (a === 100 && b >= 64 && b <= 127) return true; // CGNAT
+  if (a >= 224) return true; // multicast / reserved
+  return false;
+}
+
+function isPrivateOrReservedIpv6(ip: string): boolean {
+  const normalized = ip.toLowerCase();
+  if (normalized === '::1' || normalized === '::') return true;
+  // Unique local fc00::/7, link-local fe80::/10
+  if (normalized.startsWith('fc') || normalized.startsWith('fd')) return true;
+  if (normalized.startsWith('fe8') || normalized.startsWith('fe9')) return true;
+  if (normalized.startsWith('fea') || normalized.startsWith('feb')) return true;
+
+  // IPv4-mapped: ::ffff:dotted OR ::ffff:HHHH:LLLL (Node often uses the latter)
+  const embedded = extractIpv4Mapped(normalized);
+  if (embedded) {
+    return isPrivateOrReservedIpv4(embedded);
+  }
+
+  return false;
+}
+
+/**
+ * Extract dotted-quad from IPv4-mapped IPv6 forms:
+ * - ::ffff:127.0.0.1
+ * - ::ffff:7f00:1
+ */
+function extractIpv4Mapped(ipv6: string): string | undefined {
+  if (!ipv6.startsWith('::ffff:')) {
+    return undefined;
+  }
+  const rest = ipv6.slice('::ffff:'.length);
+  if (isIP(rest) === 4) {
+    return rest;
+  }
+
+  // Hex form: HHHH:LLLL → a.b.c.d
+  const hexParts = rest.split(':');
+  if (hexParts.length !== 2) {
+    // Treat unknown ::ffff:* forms as reserved/unsafe
+    return '0.0.0.0';
+  }
+  const hi = Number.parseInt(hexParts[0] ?? '', 16);
+  const lo = Number.parseInt(hexParts[1] ?? '', 16);
+  if (!Number.isFinite(hi) || !Number.isFinite(lo)) {
+    return '0.0.0.0';
+  }
+  return `${(hi >> 8) & 0xff}.${hi & 0xff}.${(lo >> 8) & 0xff}.${lo & 0xff}`;
+}

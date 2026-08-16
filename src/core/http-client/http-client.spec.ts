@@ -28,6 +28,10 @@ jest.mock('aws-embedded-metrics', () => ({
     flush: jest.fn(async () => undefined),
   }),
 }));
+
+// Local test servers bind to loopback; allow private/loopback outbound URLs in this suite.
+process.env.HTTP_CLIENT_ALLOW_PRIVATE_URLS = 'true';
+
 import {
   HttpClient,
   HttpClientModule,

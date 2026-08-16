@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { AuthService } from './auth.service';
-import { RegisterDto } from './dto';
+import { LoginDto, RegisterDto } from './dto';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { Public } from '@/common/decorators';
 import { ACCESS_TOKEN_COOKIE, SESSION_ID_COOKIE } from '@/common/constants';
@@ -39,7 +39,11 @@ export class AuthController {
   @UseGuards(LocalAuthGuard)
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async login(@Req() req: any, @Res({ passthrough: true }) res: FastifyReply) {
+  async login(
+    @Body() _loginDto: LoginDto,
+    @Req() req: any,
+    @Res({ passthrough: true }) res: FastifyReply,
+  ) {
     const { accessToken, sessionId } = await this.authService.createSession(
       req.user.id,
       req.headers['user-agent'],

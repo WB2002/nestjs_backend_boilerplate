@@ -1,5 +1,9 @@
 import FormData from 'form-data';
 import type { HttpRequest, QueryParamValue } from '../types';
+import {
+  assertPublicHttpUrl,
+  UnsafeUrlError,
+} from '@/common/sanitization';
 
 export function buildUrl(options: {
   baseUrl?: string;
@@ -28,6 +32,7 @@ function resolveAbsoluteUrl(pathOrUrl: string, baseUrl?: string): URL {
       );
     }
     assertWithinBasePath(absolute, base);
+    assertSafeOutboundUrl(absolute);
     return absolute;
   }
   if (baseUrl) {
@@ -39,6 +44,7 @@ function resolveAbsoluteUrl(pathOrUrl: string, baseUrl?: string): URL {
       );
     }
     assertWithinBasePath(absolute, base);
+    assertSafeOutboundUrl(absolute);
     return absolute;
   }
   throw new Error('Absolute URL or base URL is required');
@@ -49,7 +55,32 @@ function parseHttpBaseUrl(baseUrl: string): URL {
   if (base.protocol !== 'http:' && base.protocol !== 'https:') {
     throw new Error('baseUrl must use http or https');
   }
+  assertSafeOutboundUrl(base);
   return base;
+}
+
+/**
+ * Shared SSRF checks. Private/loopback bases are allowed when
+ * HTTP_CLIENT_ALLOW_PRIVATE_URLS=true (internal mesh / local tests).
+ */
+function assertSafeOutboundUrl(url: URL): void {
+  if (process.env.HTTP_CLIENT_ALLOW_PRIVATE_URLS === 'true') {
+    if (url.username || url.password) {
+      throw new Error('URL must not contain credentials');
+    }
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      throw new Error('baseUrl must use http or https');
+    }
+    return;
+  }
+  try {
+    assertPublicHttpUrl(url.toString());
+  } catch (err) {
+    if (err instanceof UnsafeUrlError) {
+      throw new Error(err.message);
+    }
+    throw err;
+  }
 }
 
 /** Reject same-origin path escape from a path-scoped baseUrl (e.g. ../, ..%2f). */
