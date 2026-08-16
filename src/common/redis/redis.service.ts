@@ -7,7 +7,7 @@ const QUIT_TIMEOUT_MS = 1_000;
 
 @Injectable()
 export class RedisService implements OnModuleInit, OnModuleDestroy {
-  private client: Redis;
+  private client?: Redis;
 
   constructor(private configService: ConfigService) {}
 
@@ -43,6 +43,9 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   }
 
   getClient(): Redis {
+    if (!this.client) {
+      throw new Error('Redis client is not initialized');
+    }
     return this.client;
   }
 }

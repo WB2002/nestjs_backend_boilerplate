@@ -1,4 +1,5 @@
-import { Controller, Get, Logger } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { AppService } from './app.service';
 import {
   RateLimit,
@@ -8,8 +9,6 @@ import {
 
 @Controller()
 export class AppController {
-  private readonly logger = new Logger(AppController.name);
-
   constructor(private readonly appService: AppService) {}
 
   @RateLimit({

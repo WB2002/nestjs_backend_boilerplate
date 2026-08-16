@@ -8,10 +8,12 @@ const config: Config = {
     '^.+\\.(t|j)s$': [
       'ts-jest',
       {
-        tsconfig: '<rootDir>/tsconfig.spec.json',
+        tsconfig: 'tsconfig.spec.json',
       },
     ],
   },
+  collectCoverageFrom: ['src/core/http-client/**/*.(t|j)s'],
+  coverageDirectory: './coverage',
   testEnvironment: 'node',
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',

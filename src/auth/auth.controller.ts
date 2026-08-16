@@ -17,7 +17,7 @@ import { ACCESS_TOKEN_COOKIE, SESSION_ID_COOKIE } from '@/common/constants';
 import {
   getAccessTokenCookieOptions,
   getSessionIdCookieOptions,
-} from '@/common/util';
+} from '@/common/utils';
 import { ConfigService } from '@nestjs/config';
 import { AuthRequest } from './types/auth.types';
 

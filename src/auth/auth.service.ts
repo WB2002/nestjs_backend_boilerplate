@@ -49,12 +49,15 @@ export class AuthService {
     await newUser.save();
   }
 
-  async validateUser(email: string, pass: string): Promise<any> {
+  async validateUser(
+    email: string,
+    pass: string,
+  ): Promise<Record<string, unknown> | null> {
     const user = await this.userModel.findOne({ email }).exec();
     if (user && user.isActive) {
       const isValid = await argon2.verify(user.passwordHash, pass);
       if (isValid) {
-        const { passwordHash, ...result } = user.toObject();
+        const { passwordHash: _passwordHash, ...result } = user.toObject();
         return result;
       }
     }
@@ -76,9 +79,14 @@ export class AuthService {
 
     await session.save();
 
+    const userForToken = await this.userModel.findById(userId).exec();
+    if (!userForToken) {
+      throw new UnauthorizedException('User not found');
+    }
+
     const accessToken = await this.signAccessToken(
       userId,
-      (await this.userModel.findById(userId)).email,
+      userForToken.email,
       token,
     );
 
@@ -107,6 +115,10 @@ export class AuthService {
     }
 
     const user = await this.userModel.findById(session.userId).exec();
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
     const accessToken = await this.signAccessToken(
       user.id,
       user.email,

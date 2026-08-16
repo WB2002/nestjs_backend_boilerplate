@@ -9,13 +9,13 @@ export class User extends Document {
     lowercase: true,
     trim: true,
   })
-  email: string;
+  declare email: string;
 
   @Prop({ required: true })
-  passwordHash: string;
+  declare passwordHash: string;
 
   @Prop({ default: true })
-  isActive: boolean;
+  declare isActive: boolean;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
