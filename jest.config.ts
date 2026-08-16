@@ -12,6 +12,9 @@ const config: Config = {
       },
     ],
   },
+  transformIgnorePatterns: [
+    String.raw`/node_modules/(?!.*(?:sanitize-html|htmlparser2|entities|domelementtype|domhandler|domutils|dom-serializer|escape-string-regexp|is-plain-object)(?:/|$))`,
+  ],
   collectCoverageFrom: ['src/core/http-client/**/*.(t|j)s'],
   coverageDirectory: './coverage',
   testEnvironment: 'node',

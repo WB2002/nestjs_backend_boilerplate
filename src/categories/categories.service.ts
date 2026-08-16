@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import type { CategoryFilterInput } from './dto/category-filter.input';
 
 @Injectable()
 export class CategoriesService {
@@ -14,5 +15,12 @@ export class CategoriesService {
 
   findOneById(id: string) {
     return this.categories.find((category) => category.id === id);
+  }
+
+  search(filter: CategoryFilterInput) {
+    const needle = filter.name.trim().toLowerCase();
+    return this.categories.filter((category) =>
+      category.name.toLowerCase().includes(needle),
+    );
   }
 }

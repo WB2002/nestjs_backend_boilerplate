@@ -51,6 +51,23 @@ services:
     networks:
       - backend-network
 
+  # Optional virus scanner for uploads (enable with UPLOAD_VIRUS_SCAN=true).
+  # Reachable only on backend-network as clamav:3310 (no host port published).
+  # First start can take several minutes while virus definitions download.
+  clamav:
+    image: clamav/clamav:1.4
+    container_name: clamav
+    volumes:
+      - clamav_data:/var/lib/clamav
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 3310 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 10
+      start_period: 120s
+
 networks:
   backend-network:
     driver: bridge
@@ -59,3 +76,4 @@ volumes:
   mongo_data:
   # postgres_data:
   redis_data:
+  clamav_data:
