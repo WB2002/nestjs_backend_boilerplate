@@ -31,7 +31,9 @@ const SENSITIVE_QUERY_PATTERN =
 
 export function isSensitiveHeaderName(name: string): boolean {
   const lower = name.toLowerCase();
-  return SENSITIVE_HEADER_NAMES.has(lower) || SENSITIVE_HEADER_PATTERN.test(lower);
+  return (
+    SENSITIVE_HEADER_NAMES.has(lower) || SENSITIVE_HEADER_PATTERN.test(lower)
+  );
 }
 
 export function isSensitiveQueryKey(name: string): boolean {

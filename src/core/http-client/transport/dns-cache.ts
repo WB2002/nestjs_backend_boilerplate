@@ -60,4 +60,3 @@ export class DnsCache {
     this.cache.clear();
   }
 }
-

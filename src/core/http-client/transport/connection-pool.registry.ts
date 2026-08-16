@@ -12,8 +12,6 @@ import { withoutUndefined } from '../utils/without-undefined';
 import { hashCa, hashMaterial } from '../utils/fingerprint';
 import { AgentBundle, SharedPoolEntry } from '../types/connection-pool.types';
 
-
-
 export function poolKey(options: {
   mode: string;
   keepAlive?: boolean;
@@ -223,4 +221,3 @@ export class ConnectionPoolRegistry {
   }
 }
 export { AgentBundle };
-

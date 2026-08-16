@@ -191,15 +191,14 @@ export class ClientRuntime {
             const isCircuitOpenError =
               error instanceof CircuitOpenError ||
               (error instanceof Error && error.name === 'CircuitOpenError');
-            const isFailure =
-              isCircuitOpenError
-                ? false
-                : halfOpen
-                  ? true
-                  : isBreakerFailure(
-                      error,
-                      this.policy.retry?.isTransient ?? defaultIsTransient,
-                    );
+            const isFailure = isCircuitOpenError
+              ? false
+              : halfOpen
+                ? true
+                : isBreakerFailure(
+                    error,
+                    this.policy.retry?.isTransient ?? defaultIsTransient,
+                  );
             if (isFailure) {
               this.breaker.recordFailure();
             }

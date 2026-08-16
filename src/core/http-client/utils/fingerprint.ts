@@ -7,7 +7,9 @@ export function sha256Hex(value: string): string {
   return createHash('sha256').update(value, 'utf8').digest('hex');
 }
 
-export function hashMaterial(value: string | Buffer | undefined): string | undefined {
+export function hashMaterial(
+  value: string | Buffer | undefined,
+): string | undefined {
   if (!value) {
     return undefined;
   }

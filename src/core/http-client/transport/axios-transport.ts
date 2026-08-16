@@ -4,7 +4,12 @@ import axios, {
   AxiosResponse,
   ResponseType as AxiosResponseType,
 } from 'axios';
-import type { HttpRequest, HttpResponse, ResponseType, TransportRequestOptions } from '../types';
+import type {
+  HttpRequest,
+  HttpResponse,
+  ResponseType,
+  TransportRequestOptions,
+} from '../types';
 import { normalizeError } from '../errors';
 import type { AgentBundle } from './connection-pool.registry';
 import {
@@ -13,8 +18,6 @@ import {
   normalizeResponseHeaders,
 } from './request-builder';
 import { withoutUndefined } from '../utils/without-undefined';
-
-
 
 export class AxiosTransport {
   private readonly instance: AxiosInstance;

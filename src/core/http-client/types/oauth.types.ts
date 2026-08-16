@@ -1,4 +1,4 @@
 export interface CachedToken {
-    accessToken: string;
-    expiresAt: number;
-  }
+  accessToken: string;
+  expiresAt: number;
+}

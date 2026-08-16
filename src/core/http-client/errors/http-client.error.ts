@@ -1,4 +1,4 @@
-import { HttpClientErrorMetadata } from "../types/http-client-error-metadata.types";
+import { HttpClientErrorMetadata } from '../types/http-client-error-metadata.types';
 
 export type { HttpClientErrorMetadata };
 

@@ -77,10 +77,7 @@ export function startAttemptTrace(
   return createTraceHandles(span, false);
 }
 
-function createTraceHandles(
-  span: Span,
-  injectEnabled: boolean,
-): TraceHandles {
+function createTraceHandles(span: Span, injectEnabled: boolean): TraceHandles {
   return {
     span,
     endSuccess(response: HttpResponse) {

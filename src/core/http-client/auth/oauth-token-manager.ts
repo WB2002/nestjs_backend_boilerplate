@@ -7,8 +7,6 @@ import type {
 import { HttpError, NetworkError } from '../errors';
 import type { AxiosTransport } from '../transport/axios-transport';
 
-
-
 export class OAuthTokenManager {
   private cached?: CachedToken;
   private inflight?: Promise<CachedToken>;

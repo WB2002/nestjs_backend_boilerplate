@@ -427,8 +427,12 @@ describe('HttpClient', () => {
           resetTimeout: 60_000,
         });
 
-      await expect(client.get('/a')).rejects.toBeInstanceOf(RetryExhaustedError);
-      await expect(client.get('/a')).rejects.toBeInstanceOf(RetryExhaustedError);
+      await expect(client.get('/a')).rejects.toBeInstanceOf(
+        RetryExhaustedError,
+      );
+      await expect(client.get('/a')).rejects.toBeInstanceOf(
+        RetryExhaustedError,
+      );
       await expect(client.get('/a')).rejects.toBeInstanceOf(CircuitOpenError);
     } finally {
       server.close();
@@ -510,8 +514,7 @@ describe('HttpClient', () => {
       ]);
       const successes = results.filter((r) => r.status === 'fulfilled').length;
       const openErrors = results.filter(
-        (r) =>
-          r.status === 'rejected' && r.reason instanceof CircuitOpenError,
+        (r) => r.status === 'rejected' && r.reason instanceof CircuitOpenError,
       ).length;
       expect(successes + openErrors).toBe(3);
       expect(successes).toBeGreaterThanOrEqual(1);
@@ -572,7 +575,10 @@ describe('HttpClient', () => {
     const second = coalescer.run('k', execute);
     await new Promise((resolve) => setTimeout(resolve, 10));
     expect(starts).toBe(1);
-    await expect(second).resolves.toMatchObject({ status: 200, body: { starts: 1 } });
+    await expect(second).resolves.toMatchObject({
+      status: 200,
+      body: { starts: 1 },
+    });
   });
 
   it('limits peak concurrency', async () => {
@@ -726,7 +732,8 @@ describe('HttpClient', () => {
 
     try {
       const allowPostRetry = (req: { method: string }) =>
-        req.method === 'POST' || defaultCanRetry(req as Parameters<typeof defaultCanRetry>[0]);
+        req.method === 'POST' ||
+        defaultCanRetry(req as Parameters<typeof defaultCanRetry>[0]);
       const denyPostRetry = defaultCanRetry;
 
       const withPostRetry = httpClient
@@ -746,9 +753,9 @@ describe('HttpClient', () => {
           canRetry: denyPostRetry,
         });
 
-      await expect(
-        withPostRetry.post('/x', { a: 1 }),
-      ).rejects.toBeInstanceOf(RetryExhaustedError);
+      await expect(withPostRetry.post('/x', { a: 1 })).rejects.toBeInstanceOf(
+        RetryExhaustedError,
+      );
       expect(hits).toBe(2);
 
       hits = 0;
@@ -898,9 +905,7 @@ describe('HttpClient', () => {
     let interceptorSaw: string | undefined;
     const { server, baseUrl } = await listen((req, res) => {
       res.setHeader('content-type', 'application/json');
-      res.end(
-        JSON.stringify({ key: req.headers['idempotency-key'] ?? null }),
-      );
+      res.end(JSON.stringify({ key: req.headers['idempotency-key'] ?? null }));
     });
 
     try {

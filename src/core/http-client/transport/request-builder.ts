@@ -59,10 +59,7 @@ function assertWithinBasePath(absolute: URL, base: URL): void {
   if (basePath === '/') {
     return;
   }
-  if (
-    resolvedPath !== basePath &&
-    !resolvedPath.startsWith(`${basePath}/`)
-  ) {
+  if (resolvedPath !== basePath && !resolvedPath.startsWith(`${basePath}/`)) {
     throw new Error('Request URL path must stay under configured baseUrl path');
   }
 }

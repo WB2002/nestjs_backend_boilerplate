@@ -25,8 +25,6 @@ import type {
 } from './types';
 import type { RuntimeRegistry } from './runtime/runtime-registry';
 
-
-
 export class ConfiguredHttpClient {
   constructor(
     private readonly policy: ClientPolicySnapshot,
