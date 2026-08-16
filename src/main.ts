@@ -1,17 +1,42 @@
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { FastifyAdapter } from '@nestjs/platform-fastify';
 import { AppModule } from './app.module';
 import { WinstonModule } from 'nest-winston';
-import { winstonConfig } from './common/logger/logger.config';
+import { winstonConfig } from './core/logger/logger.config';
+import {
+  registerGracefulShutdown,
+  ShutdownState,
+} from './core/shutdown';
 import helmet from '@fastify/helmet';
 import fastifyCookie from '@fastify/cookie';
+import mongoose from 'mongoose';
 
 const logger = new Logger('UnhandledRejection');
 
+const DEFAULT_SHUTDOWN_DRAIN_MS = 10_000;
+const DEFAULT_SHUTDOWN_FORCE_MS = 5_000;
+
+function parseNonNegativeInt(
+  value: string | undefined,
+  fallback: number,
+): number {
+  const parsed = Number.parseInt(value ?? '', 10);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+}
+
 async function bootstrap() {
+  // TRUST_PROXY:
+  // - Production (Client → ALB → EC2): set TRUST_PROXY=true so req.ip is the client IP.
+  // - Local/dev (direct to Nest, no ALB): leave unset/false so clients cannot spoof X-Forwarded-For.
+  const trustProxy = process.env.TRUST_PROXY === 'true';
+
   const fastifyAdapter = new FastifyAdapter({
     logger: false, // Disable default Fastify logger to use Winston
+    trustProxy,
+    // Allow app.close() to finish promptly during SIGTERM (drop keep-alive sockets).
+    forceCloseConnections: true,
     ajv: {
       customOptions: {
         removeAdditional: true, // Remove properties not in schema
@@ -55,19 +80,41 @@ async function bootstrap() {
     secret: process.env.COOKIE_SECRET,
   });
 
-  const app = await NestFactory.create(AppModule, fastifyAdapter as any, {
-    logger: WinstonModule.createLogger(winstonConfig),
-  });
+  const app = await NestFactory.create<NestFastifyApplication>(
+    AppModule,
+    fastifyAdapter as any,
+    {
+      logger: WinstonModule.createLogger(winstonConfig),
+    },
+  );
 
   app.enableCors({
     origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
     credentials: true,
   });
 
-  // Enable graceful shutdown
-  app.enableShutdownHooks();
-
+  // Manual SIGTERM/SIGINT handlers (not enableShutdownHooks): mark readiness
+  // 503 first, wait for ALB drain, then close so Nest lifecycle runs.
   await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
+
+  registerGracefulShutdown(app, app.get(ShutdownState), {
+    drainMs: parseNonNegativeInt(
+      process.env.SHUTDOWN_DRAIN_MS,
+      DEFAULT_SHUTDOWN_DRAIN_MS,
+    ),
+    forceMs: parseNonNegativeInt(
+      process.env.SHUTDOWN_FORCE_MS,
+      DEFAULT_SHUTDOWN_FORCE_MS,
+    ),
+    beforeClose: async () => {
+      // Abort pending Mongo connect attempts so Nest mongoose teardown cannot hang.
+      try {
+        await mongoose.connection.destroy();
+      } catch {
+        // already closed / never opened
+      }
+    },
+  });
 }
 // Prevent process exit on unhandled promise rejections (e.g. lazy Mongo connection failure).
 // Exception filters only run for errors during HTTP requests; they cannot catch these.

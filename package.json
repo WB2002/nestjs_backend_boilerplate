@@ -13,9 +13,9 @@
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs}/**/*.ts\" --fix",
-    "test": "jest",
+    "test": "jest --watchman=false",
     "test:watch": "jest --watch",
-    "test:cov": "jest --coverage"
+    "smoke:shutdown": "./scripts/smoke-graceful-shutdown.sh"
   },
   "dependencies": {
     "@apollo/server": "^5.5.0",
@@ -72,6 +72,7 @@
     "@nestjs/testing": "11.1.12",
     "@opentelemetry/sdk-trace-base": "^2.10.0",
     "@types/form-data": "^2.5.2",
+    "@types/jest": "^30.0.0",
     "@types/graphql-depth-limit": "^1.1.6",
     "@types/jest": "^30.0.0",
     "@types/lodash": "^4.17.23",

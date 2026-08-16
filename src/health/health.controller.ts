@@ -11,7 +11,17 @@ import { Transport, RedisOptions } from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
 import { Client } from 'pg';
 import type { HealthIndicatorResult } from '@nestjs/terminus';
+import { Public } from '../common/decorators/public.decorator';
+import { ShutdownState } from '../core/shutdown';
+import { SkipRateLimit } from '../core/rate-limiter';
+import { SkipRequestDeadline } from '../core/request-deadline';
 
+// Probes must never be throttled: load balancers share source IPs, and a 429
+// during a rolling deploy looks like an unhealthy instance.
+// SkipRequestDeadline: LB probes must not be 504'd by client/default timeouts.
+@Public()
+@SkipRateLimit()
+@SkipRequestDeadline()
 @Controller('health')
 export class HealthController {
   constructor(
@@ -21,11 +31,33 @@ export class HealthController {
     private disk: DiskHealthIndicator,
     private microservice: MicroserviceHealthIndicator,
     private configService: ConfigService,
+    private shutdownState: ShutdownState,
   ) {}
 
   @Get()
   @HealthCheck()
   check() {
+    return this.health.check(this.buildChecks());
+  }
+
+  @Get('ready')
+  @HealthCheck()
+  ready() {
+    if (this.shutdownState.isShuttingDown) {
+      return this.health.check([
+        () =>
+          Promise.resolve({
+            shuttingDown: {
+              status: 'down' as const,
+              message: 'Application is shutting down',
+            },
+          }),
+      ]);
+    }
+    return this.health.check(this.buildChecks());
+  }
+
+  private buildChecks(): Array<() => Promise<HealthIndicatorResult>> {
     const checks: Array<() => Promise<HealthIndicatorResult>> = [
       // MongoDB check (wrapped so connection failures never crash the process)
       () =>
@@ -65,7 +97,7 @@ export class HealthController {
       checks.push(() => this.pingPostgres());
     }
 
-    return this.health.check(checks);
+    return checks;
   }
 
   private async pingPostgres(): Promise<HealthIndicatorResult<'postgres'>> {
