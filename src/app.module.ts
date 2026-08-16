@@ -4,7 +4,7 @@ import {
   NestModule,
   RequestMethod,
 } from '@nestjs/common';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD, APP_INTERCEPTOR, APP_FILTER } from '@nestjs/core';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -12,9 +12,11 @@ import { WinstonModule } from 'nest-winston';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { join } from 'path';
-import * as depthLimit from 'graphql-depth-limit';
+import depthLimit = require('graphql-depth-limit');
+import type { FastifyReply, FastifyRequest } from 'fastify';
 import { HealthModule } from './health/health.module';
 import { RedisModule } from './common/redis/redis.module';
+import { HttpClientModule } from './core/http-client';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { winstonConfig } from './common/logger/logger.config';
@@ -35,14 +37,18 @@ import { ComplexityPlugin } from './common/plugins/complexity.plugin';
       envFilePath: '.env',
     }),
     MongooseModule.forRootAsync({
-      useFactory: (configService: ConfigService) => ({
-        uri: configService.get<string>('MONGO_URI'),
-        lazyConnection: true, // Do not block startup if MongoDB is down; /health returns 503
-      }),
+      useFactory: (configService: ConfigService) => {
+        const uri = configService.getOrThrow<string>('MONGO_URI');
+        return {
+          uri,
+          lazyConnection: true, // Do not block startup if MongoDB is down; /health returns 503
+        };
+      },
       inject: [ConfigService],
     }),
     HealthModule,
     RedisModule,
+    HttpClientModule,
     AuthModule,
     CategoriesModule,
     WinstonModule.forRoot(winstonConfig),
@@ -55,7 +61,13 @@ import { ComplexityPlugin } from './common/plugins/complexity.plugin';
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       typePaths: ['./**/*.graphql'],
-      context: ({ request, reply }) => ({ req: request, res: reply }),
+      context: ({
+        request,
+        reply,
+      }: {
+        request: FastifyRequest;
+        reply: FastifyReply;
+      }) => ({ req: request, res: reply }),
       definitions: {
         path: join(process.cwd(), 'src/graphql.ts'),
         outputAs: 'class',

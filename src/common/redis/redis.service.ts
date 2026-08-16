@@ -4,7 +4,7 @@ import Redis from 'ioredis';
 
 @Injectable()
 export class RedisService implements OnModuleInit, OnModuleDestroy {
-  private client: Redis;
+  private client?: Redis;
 
   constructor(private configService: ConfigService) {}
 
@@ -16,10 +16,14 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   }
 
   onModuleDestroy() {
-    this.client.disconnect();
+    this.client?.disconnect();
+    delete this.client;
   }
 
   getClient(): Redis {
+    if (!this.client) {
+      throw new Error('Redis client is not initialized');
+    }
     return this.client;
   }
 }

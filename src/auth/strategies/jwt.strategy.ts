@@ -5,17 +5,19 @@ import { ConfigService } from '@nestjs/config';
 import { FastifyRequest } from 'fastify';
 import { AuthService } from '../auth.service';
 import { ACCESS_TOKEN_COOKIE } from '@/common/constants';
+import { JwtPayload } from '@/types';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
-    private configService: ConfigService,
+    configService: ConfigService,
     private authService: AuthService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
-        (request: FastifyRequest) => {
-          return request?.cookies?.[ACCESS_TOKEN_COOKIE];
+        (request: FastifyRequest): string | null => {
+          const token = request?.cookies?.[ACCESS_TOKEN_COOKIE];
+          return typeof token === 'string' ? token : null;
         },
         ExtractJwt.fromAuthHeaderAsBearerToken(),
       ]),
@@ -28,7 +30,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: any) {
+  async validate(payload: JwtPayload) {
     const isRevoked = await this.authService.isRevoked(payload.jti);
     if (isRevoked) {
       throw new UnauthorizedException('Session has been revoked');

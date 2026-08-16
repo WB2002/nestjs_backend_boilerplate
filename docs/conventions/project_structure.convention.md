@@ -39,6 +39,7 @@ src/
 ├── app.service.ts              # Root-level service only if no feature module fits
 ├── auth/                       # Authentication feature module
 ├── health/                     # Health check module
+├── core/                       # Core platform providers (e.g. HTTP client)
 ├── common/                     # Shared infrastructure — no business logic
 └── types/                      # Global type definitions
 ```
@@ -48,6 +49,7 @@ src/
 - `main.ts` — bootstrap only: `NestFactory.create`, global pipes, filters, middleware, and `app.listen`. No business logic.
 - `app.module.ts` — imports feature modules and global providers (e.g. `MongooseModule.forRoot`, `ConfigModule`). No route handlers.
 - `app.controller.ts` / `app.service.ts` — use only for application-level concerns that do not belong to any feature module. Keep minimal.
+- `core/` — cross-cutting platform clients and providers that are not feature business logic (e.g. `http-client`). Prefer `common/` for filters/guards/logger utilities.
 - New features always get their own module directory — never add feature routes to `app.controller.ts`.
 
 ---

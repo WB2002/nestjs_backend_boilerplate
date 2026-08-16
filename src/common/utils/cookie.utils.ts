@@ -1,4 +1,4 @@
-import { CookieSerializeOptions } from "@fastify/cookie";
+import { CookieSerializeOptions } from '@fastify/cookie';
 
 export const getAccessTokenCookieOptions = (
   ttl: number,

@@ -17,7 +17,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
   constructor(private readonly httpAdapterHost: HttpAdapterHost) {}
 
-  catch(exception: unknown, host: ArgumentsHost) {
+  catch(exception: unknown, host: ArgumentsHost): unknown {
     const isGql = host.getType<GqlContextType>() === 'graphql';
     const { httpAdapter } = this.httpAdapterHost;
     const ctx = host.switchToHttp();
@@ -82,5 +82,6 @@ export class AllExceptionsFilter implements ExceptionFilter {
         };
 
     httpAdapter.reply(ctx.getResponse(), errorResponse, status);
+    return undefined;
   }
 }

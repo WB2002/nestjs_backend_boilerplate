@@ -9,8 +9,8 @@
 /* eslint-disable */
 
 export class Category {
-    id: string;
-    name: string;
+    declare id: string;
+    declare name: string;
     description?: Nullable<string>;
 }
 
