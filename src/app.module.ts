@@ -12,7 +12,7 @@ import { WinstonModule } from 'nest-winston';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { join } from 'path';
-import depthLimit = require('graphql-depth-limit');
+import depthLimit = require('graphql-depth-limit'); // eslint-disable-line @typescript-eslint/no-require-imports
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { HealthModule } from './health/health.module';
 import { RedisModule } from './common/redis/redis.module';
@@ -49,6 +49,7 @@ import { ComplexityPlugin } from './common/plugins/complexity.plugin';
 import { SanitizationPipe } from './common/sanitization';
 import { validateEnv } from './common/config';
 import { UploadsModule } from './uploads/uploads.module';
+import { CountryAccessModule, CountryAccessGuard } from './country-access';
 import { CaptchaModule } from './core/captcha';
 import { NotificationModule } from './core/notification';
 import { ExampleModule } from './example/example.module';
@@ -80,6 +81,7 @@ import { FeatureFlagModule } from './feature-flag';
     AuthModule,
     CategoriesModule,
     UploadsModule,
+    CountryAccessModule,
     ExampleModule,
     FeatureFlagModule,
     WinstonModule.forRoot(winstonConfig),
@@ -157,6 +159,11 @@ import { FeatureFlagModule } from './feature-flag';
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      // Coarse country filter after auth, before rate limiting.
+      provide: APP_GUARD,
+      useClass: CountryAccessGuard,
     },
     {
       // Runs after JWT so UserId policies can read req.user on authenticated routes.

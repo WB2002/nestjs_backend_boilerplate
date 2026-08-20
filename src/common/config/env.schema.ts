@@ -38,6 +38,12 @@ export const envSchema = {
   // Rate limiting / client IP
   TRUST_PROXY: { required: false },
 
+  // Country access / GeoIP
+  GEOIP_DATABASE_PATH: { required: true },
+  COUNTRY_ACCESS_REFRESH_INTERVAL_MS: { required: false },
+  COUNTRY_ACCESS_UNKNOWN_COUNTRY_POLICY: { required: false },
+  COUNTRY_ACCESS_BYPASS_PATHS: { required: false },
+
   // Uploads / ClamAV
   UPLOAD_MAX_FILES: { required: false },
   UPLOAD_MAX_FILE_SIZE: { required: false },

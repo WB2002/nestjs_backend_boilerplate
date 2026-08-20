@@ -10,6 +10,7 @@ const requiredKeys = [
   'REDIS_HOST',
   'REDIS_PORT',
   'HCAPTCHA_SECRET',
+  'GEOIP_DATABASE_PATH',
 ] as const;
 
 function validConfig(
@@ -25,6 +26,7 @@ function validConfig(
     REDIS_HOST: 'localhost',
     REDIS_PORT: '6379',
     HCAPTCHA_SECRET: 'test-hcaptcha-secret',
+    GEOIP_DATABASE_PATH: '/data/GeoLite2-Country.mmdb',
   };
   return { ...base, ...overrides };
 }

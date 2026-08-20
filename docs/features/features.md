@@ -6,14 +6,15 @@ This file provides a brief overview of all features currently supported by the `
 
 ## Feature Index
 
-| Feature        | Route prefix         | Detail doc                                 |
-| -------------- | -------------------- | ------------------------------------------ |
-| Authentication | `/auth`              | `docs/features/auth.feature.md`            |
-| Health Check   | `/health`            | —                                          |
-| HTTP Client    | —                    | `docs/features/http_client.feature.md`     |
-| Captcha        | `/example/captcha`   | `docs/features/captcha.feature.md`         |
-| Notifications  | `/example`           | `docs/features/notification.feature.md`    |
-| Feature Flags  | `/feature-flags`     | `docs/features/feature_flag.feature.md`    |
+| Feature        | Route prefix       | Detail doc                                |
+| -------------- | ------------------ | ----------------------------------------- |
+| Authentication | `/auth`            | `docs/features/auth.feature.md`           |
+| Health Check   | `/health`          | —                                         |
+| HTTP Client    | —                  | `docs/features/http_client.feature.md`    |
+| Captcha        | `/example/captcha` | `docs/features/captcha.feature.md`        |
+| Notifications  | `/example`         | `docs/features/notification.feature.md`   |
+| Feature Flags  | `/feature-flags`   | `docs/features/feature_flag.feature.md`   |
+| Country Access | —                  | `docs/features/country_access.feature.md` |
 
 ---
 
@@ -60,6 +61,14 @@ For full details see `docs/features/notification.feature.md`.
 Redis-backed feature flags with local in-memory evaluation, Pub/Sub updates, and periodic reconciliation. Management API is admin-only (`flag:*` permissions). Request evaluation never calls Redis.
 
 For full details see `docs/features/feature_flag.feature.md`.
+
+---
+
+## Country Access
+
+Database-agnostic country allowlisting with local MaxMind GeoLite2 Country lookups, an in-memory snapshot, and a global Nest guard. Default persistence is PostgreSQL; MongoDB is a one-line repository swap. Request path never hits the database or a remote GeoIP API.
+
+For full details see `docs/features/country_access.feature.md`.
 
 ---
 
