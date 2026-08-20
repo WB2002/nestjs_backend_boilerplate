@@ -17,8 +17,9 @@ export class UnsafeUrlError extends Error {
 
 /**
  * Assert a user-controlled URL is safe for outbound fetch (SSRF hardening).
- * Blocks non-http(s), credentials-in-URL, localhost, private/link-local IPs,
- * IPv4-mapped IPv6 forms, and common cloud metadata endpoints.
+ * Blocks non-http(s), credentials-in-URL, localhost (incl. trailing-dot FQDN),
+ * private/link-local IPs, IPv4-mapped / IPv4-compatible IPv6, 6to4, multicast,
+ * and common cloud metadata endpoints.
  *
  * Sync check only — hostname literals / IPs. For user-controlled URLs prefer
  * {@link assertPublicHttpUrlAsync} which also resolves DNS and re-checks IPs.
@@ -35,7 +36,9 @@ export function assertPublicHttpUrl(raw: string): URL {
  */
 export async function assertPublicHttpUrlAsync(raw: string): Promise<URL> {
   const url = assertPublicHttpUrl(raw);
-  const hostname = url.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  const hostname = stripTrailingDots(
+    url.hostname.toLowerCase().replace(/^\[|\]$/g, ''),
+  );
   if (isIP(hostname)) {
     return url;
   }
@@ -82,8 +85,14 @@ function parseAndAssertShape(raw: string): URL {
   return url;
 }
 
+function stripTrailingDots(hostname: string): string {
+  return hostname.replace(/\.+$/, '');
+}
+
 function assertHostnameNotPrivate(rawHostname: string): void {
-  const hostname = rawHostname.toLowerCase().replace(/^\[|\]$/g, '');
+  const hostname = stripTrailingDots(
+    rawHostname.toLowerCase().replace(/^\[|\]$/g, ''),
+  );
 
   if (
     hostname === 'localhost' ||
@@ -105,7 +114,9 @@ function assertHostnameNotPrivate(rawHostname: string): void {
 }
 
 export function isPrivateOrReservedAddress(hostnameOrIp: string): boolean {
-  const normalized = hostnameOrIp.toLowerCase().replace(/^\[|\]$/g, '');
+  const normalized = stripTrailingDots(
+    hostnameOrIp.toLowerCase().replace(/^\[|\]$/g, ''),
+  );
   const ipVersion = isIP(normalized);
   if (ipVersion === 4) {
     return isPrivateOrReservedIpv4(normalized);
@@ -137,15 +148,37 @@ function isPrivateOrReservedIpv4(ip: string): boolean {
 function isPrivateOrReservedIpv6(ip: string): boolean {
   const normalized = ip.toLowerCase();
   if (normalized === '::1' || normalized === '::') return true;
+
+  // Multicast ff00::/8
+  if (/^ff[0-9a-f]{2}:/i.test(normalized) || normalized.startsWith('ff')) {
+    // Only treat as multicast when the first hextet is ffxx
+    const firstHextet = normalized.split(':', 1)[0] ?? '';
+    if (/^ff[0-9a-f]{0,2}$/i.test(firstHextet)) {
+      return true;
+    }
+  }
+
   // Unique local fc00::/7, link-local fe80::/10
   if (normalized.startsWith('fc') || normalized.startsWith('fd')) return true;
   if (normalized.startsWith('fe8') || normalized.startsWith('fe9')) return true;
   if (normalized.startsWith('fea') || normalized.startsWith('feb')) return true;
 
-  // IPv4-mapped: ::ffff:dotted OR ::ffff:HHHH:LLLL (Node often uses the latter)
-  const embedded = extractIpv4Mapped(normalized);
-  if (embedded) {
-    return isPrivateOrReservedIpv4(embedded);
+  // IPv4-mapped: ::ffff:dotted OR ::ffff:HHHH:LLLL
+  const mapped = extractIpv4Mapped(normalized);
+  if (mapped) {
+    return isPrivateOrReservedIpv4(mapped);
+  }
+
+  // IPv4-compatible (deprecated): ::127.0.0.1 or ::7f00:1
+  const compatible = extractIpv4Compatible(normalized);
+  if (compatible) {
+    return isPrivateOrReservedIpv4(compatible);
+  }
+
+  // 6to4 2002:XXXX:XXXX::/48 embeds IPv4 in the next 32 bits
+  const sixToFour = extractSixToFourIpv4(normalized);
+  if (sixToFour) {
+    return isPrivateOrReservedIpv4(sixToFour);
   }
 
   return false;
@@ -175,6 +208,55 @@ function extractIpv4Mapped(ipv6: string): string | undefined {
   const lo = Number.parseInt(hexParts[1] ?? '', 16);
   if (!Number.isFinite(hi) || !Number.isFinite(lo)) {
     return '0.0.0.0';
+  }
+  return `${(hi >> 8) & 0xff}.${hi & 0xff}.${(lo >> 8) & 0xff}.${lo & 0xff}`;
+}
+
+/**
+ * Deprecated IPv4-compatible IPv6: ::a.b.c.d or ::HHHH:LLLL (not ::ffff:).
+ */
+function extractIpv4Compatible(ipv6: string): string | undefined {
+  if (!ipv6.startsWith('::') || ipv6.startsWith('::ffff:')) {
+    return undefined;
+  }
+  const rest = ipv6.slice(2);
+  if (!rest || rest.includes('::')) {
+    return undefined;
+  }
+  if (isIP(rest) === 4) {
+    return rest;
+  }
+  const hexParts = rest.split(':');
+  if (hexParts.length !== 2) {
+    return undefined;
+  }
+  const hi = Number.parseInt(hexParts[0] ?? '', 16);
+  const lo = Number.parseInt(hexParts[1] ?? '', 16);
+  if (!Number.isFinite(hi) || !Number.isFinite(lo)) {
+    return undefined;
+  }
+  // ::1 is loopback (already handled); ::0 is unspecified
+  if (hi === 0 && lo <= 1) {
+    return undefined;
+  }
+  return `${(hi >> 8) & 0xff}.${hi & 0xff}.${(lo >> 8) & 0xff}.${lo & 0xff}`;
+}
+
+/**
+ * 6to4: 2002:XXXX:XXXX::/48 — XXXX:XXXX is the embedded IPv4.
+ */
+function extractSixToFourIpv4(ipv6: string): string | undefined {
+  if (!ipv6.startsWith('2002:')) {
+    return undefined;
+  }
+  const parts = ipv6.split(':');
+  if (parts.length < 3) {
+    return undefined;
+  }
+  const hi = Number.parseInt(parts[1] ?? '', 16);
+  const lo = Number.parseInt(parts[2] ?? '', 16);
+  if (!Number.isFinite(hi) || !Number.isFinite(lo)) {
+    return undefined;
   }
   return `${(hi >> 8) & 0xff}.${hi & 0xff}.${(lo >> 8) & 0xff}.${lo & 0xff}`;
 }

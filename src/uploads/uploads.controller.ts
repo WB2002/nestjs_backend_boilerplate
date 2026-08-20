@@ -65,6 +65,8 @@ async function readMultipartFiles(
 
   for await (const part of req.parts()) {
     if (part.type !== 'file') {
+      // Drain non-file fields so the multipart parser cannot stall.
+      await part.value;
       continue;
     }
     if (part.fieldname !== fieldName) {

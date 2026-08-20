@@ -131,6 +131,11 @@ import { UploadsModule } from './uploads/uploads.module';
   providers: [
     AppService,
     {
+      // Sanitize before class-validator so @MinLength/@MaxLength see cleaned values.
+      provide: APP_PIPE,
+      useClass: SanitizationPipe,
+    },
+    {
       provide: APP_PIPE,
       useValue: new ValidationPipe({
         whitelist: true,
@@ -138,10 +143,6 @@ import { UploadsModule } from './uploads/uploads.module';
         transform: true,
         transformOptions: { enableImplicitConversion: true },
       }),
-    },
-    {
-      provide: APP_PIPE,
-      useClass: SanitizationPipe,
     },
     {
       provide: APP_GUARD,

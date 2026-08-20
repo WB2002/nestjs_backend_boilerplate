@@ -27,4 +27,19 @@ describe('SanitizationPipe', () => {
       pipe.transform({ q: "' OR 1=1 --" }, { type: 'query', metatype: Object }),
     ).rejects.toBeInstanceOf(BadRequestException);
   });
+
+  it('returns custom args (e.g. @Req) unchanged without walking them', async () => {
+    const cyclic: { self?: unknown; name: string } = {
+      name: '<b>req</b>',
+    };
+    cyclic.self = cyclic;
+
+    const result = await pipe.transform(cyclic, {
+      type: 'custom',
+      metatype: Object,
+    });
+
+    expect(result).toBe(cyclic);
+    expect((result as { name: string }).name).toBe('<b>req</b>');
+  });
 });
