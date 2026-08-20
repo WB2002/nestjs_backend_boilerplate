@@ -48,6 +48,7 @@ import {
 import { ComplexityPlugin } from './common/plugins/complexity.plugin';
 import { SanitizationPipe } from './common/sanitization';
 import { UploadsModule } from './uploads/uploads.module';
+import { CountryAccessModule, CountryAccessGuard } from './country-access';
 
 @Module({
   imports: [
@@ -72,6 +73,7 @@ import { UploadsModule } from './uploads/uploads.module';
     AuthModule,
     CategoriesModule,
     UploadsModule,
+    CountryAccessModule,
     WinstonModule.forRoot(winstonConfig),
     CacheModule.forRoot({ storage: CacheStorage.Memory }),
     RateLimiterModule.forRoot({
@@ -147,6 +149,11 @@ import { UploadsModule } from './uploads/uploads.module';
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      // Coarse country filter after auth, before rate limiting.
+      provide: APP_GUARD,
+      useClass: CountryAccessGuard,
     },
     {
       // Runs after JWT so UserId policies can read req.user on authenticated routes.

@@ -9,6 +9,7 @@ import {
   registerGracefulShutdown,
   ShutdownState,
 } from './core/shutdown';
+import { parseTrustProxy } from './country-access';
 import helmet from '@fastify/helmet';
 import fastifyCookie from '@fastify/cookie';
 import multipart from '@fastify/multipart';
@@ -30,8 +31,9 @@ function parseNonNegativeInt(
 async function bootstrap() {
   // TRUST_PROXY:
   // - Production (Client → ALB → EC2): set TRUST_PROXY=true so req.ip is the client IP.
+  // - Explicit proxies: comma-separated IPs/CIDRs (e.g. 10.0.0.0/8,172.16.0.0/12).
   // - Local/dev (direct to Nest, no ALB): leave unset/false so clients cannot spoof X-Forwarded-For.
-  const trustProxy = process.env.TRUST_PROXY === 'true';
+  const trustProxy = parseTrustProxy(process.env.TRUST_PROXY);
 
   const uploadMaxFiles =
     Number.parseInt(process.env.UPLOAD_MAX_FILES ?? '5', 10) || 5;

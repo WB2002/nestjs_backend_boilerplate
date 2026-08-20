@@ -49,8 +49,8 @@ lerna-debug.log*
 # Git worktrees (local isolated checkouts)
 .worktrees/
 
-# Git worktrees (local isolated checkouts)
-.worktrees/
+# MaxMind GeoIP databases (do not commit licensed/binary MMDB files)
+*.mmdb
 
 # temp directory
 .temp
