@@ -6,12 +6,13 @@ This file provides a brief overview of all features currently supported by the `
 
 ## Feature Index
 
-| Feature        | Route prefix       | Detail doc                              |
-| -------------- | ------------------ | --------------------------------------- |
-| Authentication | `/auth`            | `docs/features/auth.feature.md`         |
-| Health Check   | `/health`          | —                                       |
-| HTTP Client    | —                  | `docs/features/http_client.feature.md`  |
-| Captcha        | `/example/captcha` | `docs/features/captcha.feature.md`      |
+| Feature        | Route prefix         | Detail doc                                 |
+| -------------- | -------------------- | ------------------------------------------ |
+| Authentication | `/auth`              | `docs/features/auth.feature.md`            |
+| Health Check   | `/health`            | —                                          |
+| HTTP Client    | —                    | `docs/features/http_client.feature.md`     |
+| Captcha        | `/example/captcha`   | `docs/features/captcha.feature.md`         |
+| Notifications  | `/example`           | `docs/features/notification.feature.md`    |
 
 ---
 
@@ -42,6 +43,14 @@ For full details see `docs/features/http_client.feature.md`.
 Reusable `CaptchaService` abstraction with an hCaptcha implementation for server-side token verification. Includes a public demo endpoint `POST /example/captcha`. Not wired into auth or other business APIs.
 
 For full details see `docs/features/captcha.feature.md`.
+
+---
+
+## Notifications
+
+Generic `INotificationService` with Slack Incoming Webhooks as the first provider. Example demo endpoint: `POST /example/notification`. Notification failures do not fail the business operation.
+
+For full details see `docs/features/notification.feature.md`.
 
 ---
 

@@ -47,8 +47,10 @@ import {
 } from './core/request-deadline';
 import { ComplexityPlugin } from './common/plugins/complexity.plugin';
 import { SanitizationPipe } from './common/sanitization';
+import { validateEnv } from './common/config';
 import { UploadsModule } from './uploads/uploads.module';
 import { CaptchaModule } from './core/captcha';
+import { NotificationModule } from './core/notification';
 import { ExampleModule } from './example/example.module';
 
 @Module({
@@ -56,6 +58,7 @@ import { ExampleModule } from './example/example.module';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
+      validate: validateEnv,
     }),
     ShutdownModule,
     MongooseModule.forRootAsync({
@@ -72,6 +75,7 @@ import { ExampleModule } from './example/example.module';
     RedisModule,
     HttpClientModule,
     CaptchaModule,
+    NotificationModule,
     AuthModule,
     CategoriesModule,
     UploadsModule,
