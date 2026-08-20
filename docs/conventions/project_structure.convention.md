@@ -10,6 +10,10 @@ This file documents the canonical directory and file structure of the `nestjs_ba
 nestjs_backend_boilerplate/
 ├── src/                        # All application source code
 ├── docs/                       # Project documentation and AI agent prompts
+├── scripts/                    # Local DX / smoke scripts (e.g. Gitleaks wrapper)
+├── .husky/                     # Git hooks (Husky) — pre-commit lint + secrets scan
+├── .gitleaks.toml              # Gitleaks allowlists for fixtures/placeholders
+├── .lintstagedrc.json          # Staged-file ESLint + Prettier commands
 ├── docker-compose.yml          # Local development container setup
 ├── Dockerfile                  # Production container definition
 ├── nest-cli.json               # NestJS CLI configuration
@@ -26,6 +30,8 @@ nestjs_backend_boilerplate/
 - All application code lives under `src/` — nothing outside it is part of the runtime.
 - All documentation lives under `docs/` — no `.md` files inside `src/`.
 - Use `pnpm` exclusively — do not use `npm` or `yarn`. Never edit `pnpm-lock.yaml` by hand.
+- Git hooks under `.husky/` are installed by `pnpm install` (`prepare`). Secrets scanning requires Gitleaks or Docker; see `docs/security/git_hooks.md`.
+- Local git worktrees live under `.worktrees/` (gitignored) — do not commit worktree contents.
 
 ---
 
