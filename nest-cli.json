@@ -8,6 +8,10 @@
       {
         "include": "core/rate-limiter/backends/redis/lua/**/*.lua",
         "watchAssets": true
+      },
+      {
+        "include": "feature-flag/lua/**/*.lua",
+        "watchAssets": true
       }
     ]
   }

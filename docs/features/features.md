@@ -13,6 +13,7 @@ This file provides a brief overview of all features currently supported by the `
 | HTTP Client    | —                    | `docs/features/http_client.feature.md`     |
 | Captcha        | `/example/captcha`   | `docs/features/captcha.feature.md`         |
 | Notifications  | `/example`           | `docs/features/notification.feature.md`    |
+| Feature Flags  | `/feature-flags`     | `docs/features/feature_flag.feature.md`    |
 
 ---
 
@@ -51,6 +52,14 @@ For full details see `docs/features/captcha.feature.md`.
 Generic `INotificationService` with Slack Incoming Webhooks as the first provider. Example demo endpoint: `POST /example/notification`. Notification failures do not fail the business operation.
 
 For full details see `docs/features/notification.feature.md`.
+
+---
+
+## Feature Flags
+
+Redis-backed feature flags with local in-memory evaluation, Pub/Sub updates, and periodic reconciliation. Management API is admin-only (`flag:*` permissions). Request evaluation never calls Redis.
+
+For full details see `docs/features/feature_flag.feature.md`.
 
 ---
 

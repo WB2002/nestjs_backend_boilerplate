@@ -68,6 +68,12 @@ export const envSchema = {
   GQL_MAX_COMPLEXITY: { required: false },
   GQL_USER_BUDGET: { required: false },
   GQL_MAX_CONCURRENCY: { required: false },
+
+  // Feature flags (optional; defaults applied in FeatureFlagService)
+  FEATURE_FLAG_ENV: { required: false },
+  FEATURE_FLAG_RECONCILE_MS: { required: false },
+  FEATURE_FLAG_ADMIN_EMAILS: { required: false },
+  FEATURE_FLAG_METRICS: { required: false },
 } as const satisfies Record<string, EnvField>;
 
 export type EnvSchema = typeof envSchema;

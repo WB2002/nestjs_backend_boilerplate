@@ -52,6 +52,7 @@ import { UploadsModule } from './uploads/uploads.module';
 import { CaptchaModule } from './core/captcha';
 import { NotificationModule } from './core/notification';
 import { ExampleModule } from './example/example.module';
+import { FeatureFlagModule } from './feature-flag';
 
 @Module({
   imports: [
@@ -80,6 +81,7 @@ import { ExampleModule } from './example/example.module';
     CategoriesModule,
     UploadsModule,
     ExampleModule,
+    FeatureFlagModule,
     WinstonModule.forRoot(winstonConfig),
     CacheModule.forRoot({ storage: CacheStorage.Memory }),
     RateLimiterModule.forRoot({
