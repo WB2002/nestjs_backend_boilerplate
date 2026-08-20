@@ -48,6 +48,8 @@ import {
 import { ComplexityPlugin } from './common/plugins/complexity.plugin';
 import { SanitizationPipe } from './common/sanitization';
 import { UploadsModule } from './uploads/uploads.module';
+import { NotificationModule } from './core/notification';
+import { ExampleModule } from './example/example.module';
 
 @Module({
   imports: [
@@ -69,9 +71,11 @@ import { UploadsModule } from './uploads/uploads.module';
     HealthModule,
     RedisModule,
     HttpClientModule,
+    NotificationModule,
     AuthModule,
     CategoriesModule,
     UploadsModule,
+    ExampleModule,
     WinstonModule.forRoot(winstonConfig),
     CacheModule.forRoot({ storage: CacheStorage.Memory }),
     RateLimiterModule.forRoot({
