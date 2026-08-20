@@ -47,6 +47,7 @@ import {
 } from './core/request-deadline';
 import { ComplexityPlugin } from './common/plugins/complexity.plugin';
 import { SanitizationPipe } from './common/sanitization';
+import { validateEnv } from './common/config';
 import { UploadsModule } from './uploads/uploads.module';
 
 @Module({
@@ -54,6 +55,7 @@ import { UploadsModule } from './uploads/uploads.module';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
+      validate: validateEnv,
     }),
     ShutdownModule,
     MongooseModule.forRootAsync({
