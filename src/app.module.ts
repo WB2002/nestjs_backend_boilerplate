@@ -47,7 +47,11 @@ import {
 } from './core/request-deadline';
 import { ComplexityPlugin } from './common/plugins/complexity.plugin';
 import { SanitizationPipe } from './common/sanitization';
+import { validateEnv } from './common/config';
 import { UploadsModule } from './uploads/uploads.module';
+import { CaptchaModule } from './core/captcha';
+import { NotificationModule } from './core/notification';
+import { ExampleModule } from './example/example.module';
 import { FeatureFlagModule } from './feature-flag';
 
 @Module({
@@ -55,6 +59,7 @@ import { FeatureFlagModule } from './feature-flag';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
+      validate: validateEnv,
     }),
     ShutdownModule,
     MongooseModule.forRootAsync({
@@ -70,9 +75,12 @@ import { FeatureFlagModule } from './feature-flag';
     HealthModule,
     RedisModule,
     HttpClientModule,
+    CaptchaModule,
+    NotificationModule,
     AuthModule,
     CategoriesModule,
     UploadsModule,
+    ExampleModule,
     FeatureFlagModule,
     WinstonModule.forRoot(winstonConfig),
     CacheModule.forRoot({ storage: CacheStorage.Memory }),
