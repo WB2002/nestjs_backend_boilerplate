@@ -12,12 +12,14 @@ import {
 import helmet from '@fastify/helmet';
 import fastifyCookie from '@fastify/cookie';
 import multipart from '@fastify/multipart';
+import compress from '@fastify/compress';
 import mongoose from 'mongoose';
 
 const logger = new Logger('UnhandledRejection');
 
 const DEFAULT_SHUTDOWN_DRAIN_MS = 10_000;
 const DEFAULT_SHUTDOWN_FORCE_MS = 5_000;
+const DEFAULT_COMPRESSION_THRESHOLD = 1024;
 
 function parseNonNegativeInt(
   value: string | undefined,
@@ -106,6 +108,17 @@ async function bootstrap() {
       fields: 10,
       parts: uploadMaxFiles + 10,
     },
+  });
+
+  // Compress large JSON/text responses (brotli preferred, gzip fallback).
+  const compressionThreshold = parseNonNegativeInt(
+    process.env.COMPRESSION_THRESHOLD,
+    DEFAULT_COMPRESSION_THRESHOLD,
+  );
+  await fastifyAdapter.register(compress as any, {
+    global: true,
+    encodings: ['br', 'gzip'],
+    threshold: compressionThreshold,
   });
 
   const app = await NestFactory.create<NestFastifyApplication>(
