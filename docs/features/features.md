@@ -6,12 +6,15 @@ This file provides a brief overview of all features currently supported by the `
 
 ## Feature Index
 
-| Feature        | Route prefix | Detail doc                                  |
-| -------------- | ------------ | ------------------------------------------- |
-| Authentication | `/auth`      | `docs/features/auth.feature.md`             |
-| Health Check   | `/health`    | —                                           |
-| HTTP Client    | —            | `docs/features/http_client.feature.md`      |
-| Country Access | —            | `docs/features/country_access.feature.md`   |
+| Feature        | Route prefix       | Detail doc                                |
+| -------------- | ------------------ | ----------------------------------------- |
+| Authentication | `/auth`            | `docs/features/auth.feature.md`           |
+| Health Check   | `/health`          | —                                         |
+| HTTP Client    | —                  | `docs/features/http_client.feature.md`    |
+| Captcha        | `/example/captcha` | `docs/features/captcha.feature.md`        |
+| Notifications  | `/example`         | `docs/features/notification.feature.md`   |
+| Feature Flags  | `/feature-flags`   | `docs/features/feature_flag.feature.md`   |
+| Country Access | —                  | `docs/features/country_access.feature.md` |
 
 ---
 
@@ -34,6 +37,30 @@ Exposes a single `GET /health` endpoint used by Docker and load balancers to con
 Global outbound HTTP client provider under `src/core/http-client`. Supports immutable fluent configuration (`internal` / `external`), Axios transport, auth (API key, basic, bearer, OAuth client credentials, mTLS), resilience (retry, coalescing, circuit breaker, concurrency), normalized errors, OpenTelemetry/X-Ray tracing, CloudWatch EMF metrics, and NestJS shutdown hooks.
 
 For full details see `docs/features/http_client.feature.md`.
+
+---
+
+## Captcha
+
+Reusable `CaptchaService` abstraction with an hCaptcha implementation for server-side token verification. Includes a public demo endpoint `POST /example/captcha`. Not wired into auth or other business APIs.
+
+For full details see `docs/features/captcha.feature.md`.
+
+---
+
+## Notifications
+
+Generic `INotificationService` with Slack Incoming Webhooks as the first provider. Example demo endpoint: `POST /example/notification`. Notification failures do not fail the business operation.
+
+For full details see `docs/features/notification.feature.md`.
+
+---
+
+## Feature Flags
+
+Redis-backed feature flags with local in-memory evaluation, Pub/Sub updates, and periodic reconciliation. Management API is admin-only (`flag:*` permissions). Request evaluation never calls Redis.
+
+For full details see `docs/features/feature_flag.feature.md`.
 
 ---
 

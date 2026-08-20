@@ -16,6 +16,7 @@ import { ShutdownState } from '../core/shutdown';
 import { SkipRateLimit } from '../core/rate-limiter';
 import { SkipRequestDeadline } from '../core/request-deadline';
 import { SkipCountryAccess } from '../country-access';
+import { FeatureFlagHealthIndicator } from '../feature-flag';
 
 // Probes must never be throttled: load balancers share source IPs, and a 429
 // during a rolling deploy looks like an unhealthy instance.
@@ -35,6 +36,7 @@ export class HealthController {
     private microservice: MicroserviceHealthIndicator,
     private configService: ConfigService,
     private shutdownState: ShutdownState,
+    private featureFlagHealth: FeatureFlagHealthIndicator,
   ) {}
 
   @Get()
@@ -77,6 +79,9 @@ export class HealthController {
           path: '/',
           thresholdPercent: 0.9,
         }),
+
+      // Feature flags: informational only (never fails readiness on Redis outage)
+      () => this.featureFlagHealth.isHealthy('feature_flags'),
     ];
 
     // Redis check (only when Redis is configured in docker-compose / env)

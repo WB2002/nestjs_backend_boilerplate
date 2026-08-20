@@ -1,0 +1,15 @@
+title = "nestjs-boilerplate"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Placeholders and test fixtures that are not real secrets"
+paths = [
+  '''\.env\.example$''',
+  '''.*\.spec\.ts$''',
+]
+regexes = [
+  '''your-random-secret''',
+  '''super-secret-token''',
+]

@@ -13,6 +13,7 @@ import {
 import { Test } from '@nestjs/testing';
 import { HealthController } from './health.controller';
 import { ShutdownModule, ShutdownState } from '../core/shutdown';
+import { FeatureFlagHealthIndicator } from '../feature-flag';
 
 /**
  * Wire-level test of the real HealthController: proves Terminus maps the
@@ -32,6 +33,23 @@ describe('GET /health/ready (HTTP)', () => {
           provide: ConfigService,
           // No REDIS_HOST / POSTGRES_DB, so those optional checks are skipped.
           useValue: { get: jest.fn().mockReturnValue(undefined) },
+        },
+        {
+          provide: FeatureFlagHealthIndicator,
+          useValue: {
+            isHealthy: jest.fn().mockResolvedValue({
+              feature_flags: {
+                status: 'up',
+                stale: true,
+                healthy: false,
+                redisAvailable: false,
+                pubSubConnected: false,
+                flagCount: 0,
+                lastReconciledAt: null,
+                lastError: null,
+              },
+            }),
+          },
         },
       ],
     })

@@ -5,20 +5,19 @@ import { FastifyAdapter } from '@nestjs/platform-fastify';
 import { AppModule } from './app.module';
 import { WinstonModule } from 'nest-winston';
 import { winstonConfig } from './core/logger/logger.config';
-import {
-  registerGracefulShutdown,
-  ShutdownState,
-} from './core/shutdown';
+import { registerGracefulShutdown, ShutdownState } from './core/shutdown';
 import { parseTrustProxy } from './country-access';
 import helmet from '@fastify/helmet';
 import fastifyCookie from '@fastify/cookie';
 import multipart from '@fastify/multipart';
+import compress from '@fastify/compress';
 import mongoose from 'mongoose';
 
 const logger = new Logger('UnhandledRejection');
 
 const DEFAULT_SHUTDOWN_DRAIN_MS = 10_000;
 const DEFAULT_SHUTDOWN_FORCE_MS = 5_000;
+const DEFAULT_COMPRESSION_THRESHOLD = 1024;
 
 function parseNonNegativeInt(
   value: string | undefined,
@@ -44,10 +43,7 @@ async function bootstrap() {
     Number.parseInt(process.env.UPLOAD_MAX_TOTAL_SIZE ?? '20000000', 10) ||
     20_000_000;
   // Cap per-file so files * fileSize cannot exceed total before app checks run.
-  const multipartFileSize = Math.min(
-    uploadMaxFileSize,
-    uploadMaxTotalSize,
-  );
+  const multipartFileSize = Math.min(uploadMaxFileSize, uploadMaxTotalSize);
 
   const fastifyAdapter = new FastifyAdapter({
     logger: false, // Disable default Fastify logger to use Winston
@@ -108,6 +104,17 @@ async function bootstrap() {
       fields: 10,
       parts: uploadMaxFiles + 10,
     },
+  });
+
+  // Compress large JSON/text responses (brotli preferred, gzip fallback).
+  const compressionThreshold = parseNonNegativeInt(
+    process.env.COMPRESSION_THRESHOLD,
+    DEFAULT_COMPRESSION_THRESHOLD,
+  );
+  await fastifyAdapter.register(compress as any, {
+    global: true,
+    encodings: ['br', 'gzip'],
+    threshold: compressionThreshold,
   });
 
   const app = await NestFactory.create<NestFastifyApplication>(

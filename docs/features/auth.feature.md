@@ -74,7 +74,7 @@ All auth code lives under `src/auth/`. The directory contains the following file
 
 ### Users Collection
 
-Stores one document per registered user. Fields: `email` (unique, lowercased, trimmed), `passwordHash` (the Argon2id output), and `isActive` (boolean, defaults to true). Timestamps (`createdAt`, `updatedAt`) are enabled automatically.
+Stores one document per registered user. Fields: `email` (unique, lowercased, trimmed), `passwordHash` (the Argon2id output), `isActive` (boolean, defaults to true), and `role` (`admin` | `user`, defaults to `user`). Emails listed in `FEATURE_FLAG_ADMIN_EMAILS` are assigned `admin` on register and promoted on login/refresh. Timestamps (`createdAt`, `updatedAt`) are enabled automatically.
 
 ### Sessions Collection
 

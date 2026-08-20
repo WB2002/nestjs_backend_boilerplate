@@ -12,7 +12,7 @@ import { WinstonModule } from 'nest-winston';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { join } from 'path';
-import depthLimit = require('graphql-depth-limit');
+import depthLimit = require('graphql-depth-limit'); // eslint-disable-line @typescript-eslint/no-require-imports
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { HealthModule } from './health/health.module';
 import { RedisModule } from './common/redis/redis.module';
@@ -47,14 +47,20 @@ import {
 } from './core/request-deadline';
 import { ComplexityPlugin } from './common/plugins/complexity.plugin';
 import { SanitizationPipe } from './common/sanitization';
+import { validateEnv } from './common/config';
 import { UploadsModule } from './uploads/uploads.module';
 import { CountryAccessModule, CountryAccessGuard } from './country-access';
+import { CaptchaModule } from './core/captcha';
+import { NotificationModule } from './core/notification';
+import { ExampleModule } from './example/example.module';
+import { FeatureFlagModule } from './feature-flag';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
+      validate: validateEnv,
     }),
     ShutdownModule,
     MongooseModule.forRootAsync({
@@ -70,10 +76,14 @@ import { CountryAccessModule, CountryAccessGuard } from './country-access';
     HealthModule,
     RedisModule,
     HttpClientModule,
+    CaptchaModule,
+    NotificationModule,
     AuthModule,
     CategoriesModule,
     UploadsModule,
     CountryAccessModule,
+    ExampleModule,
+    FeatureFlagModule,
     WinstonModule.forRoot(winstonConfig),
     CacheModule.forRoot({ storage: CacheStorage.Memory }),
     RateLimiterModule.forRoot({

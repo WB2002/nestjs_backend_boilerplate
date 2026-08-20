@@ -1,6 +1,7 @@
 import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import prettierPlugin from 'eslint-plugin-prettier';
+import eslintConfigPrettier from 'eslint-config-prettier';
 import securityPlugin from 'eslint-plugin-security';
 import sonarjsPlugin from 'eslint-plugin-sonarjs';
 import globals from 'globals';
@@ -20,7 +21,7 @@ export default tseslint.config(
         ...globals.jest,
       },
       parserOptions: {
-        project: 'tsconfig.json',
+        project: ['./tsconfig.json', './tsconfig.spec.json'],
         tsconfigRootDir: import.meta.dirname,
       },
     },
@@ -38,4 +39,6 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'off',
     },
   },
+  // Must be last so Prettier and ESLint do not fight over formatting rules.
+  eslintConfigPrettier,
 );
