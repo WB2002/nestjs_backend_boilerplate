@@ -37,19 +37,24 @@ export class ClamAvFileScanner implements FileScanner {
   }): Promise<FileScanResult> {
     try {
       const response = await this.instream(input.buffer);
-      if (response.endsWith('OK') || response.includes(' OK')) {
+      const normalized = response.replace(/\0/g, '').trim();
+
+      if (/^stream:\s*OK$/im.test(normalized) || /\bstream:\s*OK\b/i.test(normalized)) {
         return { status: 'clean' };
       }
-      const infectedMatch = /stream: (.+) FOUND/i.exec(response);
+      const infectedMatch = /stream:\s*(.+?)\s+FOUND/i.exec(normalized);
       if (infectedMatch?.[1]) {
         return { status: 'infected', signature: infectedMatch[1].trim() };
       }
-      if (/FOUND/i.test(response)) {
-        return { status: 'infected', signature: response.trim() };
+      if (/\bFOUND\b/i.test(normalized)) {
+        return { status: 'infected', signature: normalized };
+      }
+      if (/\bERROR\b/i.test(normalized)) {
+        return { status: 'error', message: normalized };
       }
       return {
         status: 'error',
-        message: `Unexpected ClamAV response: ${response}`,
+        message: `Unexpected ClamAV response: ${normalized}`,
       };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -61,25 +66,49 @@ export class ClamAvFileScanner implements FileScanner {
     return new Promise((resolve, reject) => {
       const socket = net.createConnection({ host: this.host, port: this.port });
       const chunks: Buffer[] = [];
+      let settled = false;
 
-      const onError = (err: Error) => {
+      const finish = (err: Error | null, response?: string) => {
+        if (settled) {
+          return;
+        }
+        settled = true;
         socket.destroy();
-        reject(err);
+        if (err) {
+          reject(err);
+          return;
+        }
+        resolve(response ?? '');
       };
 
       socket.setTimeout(this.timeoutMs, () => {
-        onError(new Error('ClamAV scan timed out'));
+        finish(new Error('ClamAV scan timed out'));
       });
-      socket.on('error', onError);
-      socket.on('data', (chunk) => chunks.push(chunk));
+      socket.on('error', (err) => finish(err));
+      socket.on('data', (chunk) => {
+        chunks.push(chunk);
+        const text = Buffer.concat(chunks).toString('utf8').replace(/\0/g, '');
+        // Real clamd often replies and keeps the connection open — resolve
+        // on the first complete status line instead of waiting for 'end'.
+        if (
+          /stream:\s*OK/i.test(text) ||
+          /stream:\s*.+\s+FOUND/i.test(text) ||
+          /ERROR/i.test(text)
+        ) {
+          finish(null, text.trim());
+        }
+      });
       socket.on('end', () => {
-        resolve(Buffer.concat(chunks).toString('utf8').trim());
+        finish(null, Buffer.concat(chunks).toString('utf8').trim());
       });
 
       socket.on('connect', () => {
         socket.write(Buffer.from('zINSTREAM\0'));
         let offset = 0;
         const writeNext = () => {
+          if (settled) {
+            return;
+          }
           if (offset >= buffer.length) {
             const zero = Buffer.alloc(4);
             zero.writeUInt32BE(0, 0);

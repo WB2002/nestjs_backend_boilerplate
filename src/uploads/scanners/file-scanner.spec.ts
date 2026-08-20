@@ -12,7 +12,7 @@ describe('NoopFileScanner', () => {
 });
 
 describe('ClamAvFileScanner', () => {
-  it('parses OK and FOUND responses over INSTREAM', async () => {
+  it('parses OK and FOUND responses without waiting for socket end', async () => {
     const server = net.createServer((socket) => {
       const chunks: Buffer[] = [];
       socket.on('data', (c) => {
@@ -21,10 +21,11 @@ describe('ClamAvFileScanner', () => {
         // Wait until zero-size trailer arrives
         if (buf.includes(Buffer.from([0, 0, 0, 0]))) {
           const payload = buf.toString('utf8');
+          // Mimic real clamd: write reply and keep the connection open.
           if (payload.includes('virus')) {
-            socket.end('stream: Eicar-Test-Signature FOUND\n');
+            socket.write('stream: Eicar-Test-Signature FOUND\n');
           } else {
-            socket.end('stream: OK\n');
+            socket.write('stream: OK\n');
           }
         }
       });

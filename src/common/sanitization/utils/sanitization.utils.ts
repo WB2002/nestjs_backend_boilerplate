@@ -26,6 +26,7 @@ export async function walkAndSanitize(
   value: unknown,
   options: WalkSanitizationOptions = {},
   currentKey?: string,
+  seen: WeakSet<object> = new WeakSet(),
 ): Promise<unknown> {
   if (value == null) {
     return value;
@@ -36,8 +37,12 @@ export async function walkAndSanitize(
   }
 
   if (Array.isArray(value)) {
+    if (seen.has(value)) {
+      return value;
+    }
+    seen.add(value);
     return Promise.all(
-      value.map((item) => walkAndSanitize(item, options, currentKey)),
+      value.map((item) => walkAndSanitize(item, options, currentKey, seen)),
     );
   }
 
@@ -45,6 +50,10 @@ export async function walkAndSanitize(
     if (value instanceof Date || Buffer.isBuffer(value)) {
       return value;
     }
+    if (seen.has(value)) {
+      return value;
+    }
+    seen.add(value);
 
     const record = value as Record<string, unknown>;
     // Prefer this object's own DTO prototype so nested class instances
@@ -81,7 +90,7 @@ export async function walkAndSanitize(
 
     const out: Record<string, unknown> = {};
     for (const [key, nested] of Object.entries(record)) {
-      out[key] = await walkAndSanitize(nested, effectiveOptions, key);
+      out[key] = await walkAndSanitize(nested, effectiveOptions, key, seen);
     }
     if (proto && proto !== Object.prototype) {
       Object.assign(value as object, out);

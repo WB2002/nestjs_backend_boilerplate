@@ -77,6 +77,24 @@ describe('assertPublicHttpUrl', () => {
     );
   });
 
+  it('rejects localhost FQDN, IPv4-compatible IPv6, multicast, and 6to4', () => {
+    expect(() => assertPublicHttpUrl('http://localhost./')).toThrow(
+      UnsafeUrlError,
+    );
+    expect(() => assertPublicHttpUrl('http://[::127.0.0.1]/')).toThrow(
+      UnsafeUrlError,
+    );
+    expect(() => assertPublicHttpUrl('http://[::7f00:1]/')).toThrow(
+      UnsafeUrlError,
+    );
+    expect(() => assertPublicHttpUrl('http://[ff02::1]/')).toThrow(
+      UnsafeUrlError,
+    );
+    expect(() => assertPublicHttpUrl('http://[2002:7f00:1::]/')).toThrow(
+      UnsafeUrlError,
+    );
+  });
+
   it('rejects credentials and non-http schemes', () => {
     expect(() =>
       assertPublicHttpUrl('https://user:pass@example.com/'),

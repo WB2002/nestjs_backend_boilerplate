@@ -16,11 +16,12 @@ export class SanitizationPipe implements PipeTransform {
       return value;
     }
 
+    // GraphQL @Args maps to 'body'. Do not walk 'custom' (@Req/@Res) — those
+    // objects cycle through sockets and would hang the request.
     if (
       metadata.type !== 'body' &&
       metadata.type !== 'query' &&
-      metadata.type !== 'param' &&
-      metadata.type !== 'custom'
+      metadata.type !== 'param'
     ) {
       return value;
     }

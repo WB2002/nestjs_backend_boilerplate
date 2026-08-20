@@ -50,7 +50,8 @@ async function bootstrap() {
   const fastifyAdapter = new FastifyAdapter({
     logger: false, // Disable default Fastify logger to use Winston
     trustProxy,
-    bodyLimit: uploadMaxTotalSize,
+    // Keep the default ~1MB JSON/GraphQL body cap. Upload totals are enforced
+    // by @fastify/multipart limits + readMultipartFiles, not this global limit.
     // Allow app.close() to finish promptly during SIGTERM (drop keep-alive sockets).
     forceCloseConnections: true,
     ajv: {
