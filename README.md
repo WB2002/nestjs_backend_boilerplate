@@ -32,6 +32,16 @@
 $ pnpm install
 ```
 
+`pnpm install` also installs [Husky](https://typicode.github.io/husky/) git hooks via the `prepare` script. Pre-commit runs ESLint/Prettier on staged files and Gitleaks for secrets scanning.
+
+Install Gitleaks separately (required for commits unless Docker is available):
+
+```bash
+$ brew install gitleaks
+```
+
+See [docs/security/git_hooks.md](docs/security/git_hooks.md) for details.
+
 ## Running the app
 
 ```bash
