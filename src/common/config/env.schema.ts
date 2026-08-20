@@ -56,6 +56,14 @@ export const envSchema = {
   // Outbound HTTP client
   HTTP_CLIENT_ALLOW_PRIVATE_URLS: { required: false },
 
+  // hCaptcha (SECRET required when CaptchaModule is loaded)
+  HCAPTCHA_SITE_KEY: { required: false },
+  HCAPTCHA_SECRET: { required: true },
+  HCAPTCHA_VERIFY_BASE_URL: { required: false },
+
+  // Slack Incoming Webhooks (optional; notifications no-op without it)
+  SLACK_WEBHOOK_URL: { required: false },
+
   // GraphQL complexity budgets
   GQL_MAX_COMPLEXITY: { required: false },
   GQL_USER_BUDGET: { required: false },

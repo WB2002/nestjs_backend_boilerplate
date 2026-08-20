@@ -49,6 +49,7 @@ import { ComplexityPlugin } from './common/plugins/complexity.plugin';
 import { SanitizationPipe } from './common/sanitization';
 import { validateEnv } from './common/config';
 import { UploadsModule } from './uploads/uploads.module';
+import { CaptchaModule } from './core/captcha';
 import { NotificationModule } from './core/notification';
 import { ExampleModule } from './example/example.module';
 
@@ -73,6 +74,7 @@ import { ExampleModule } from './example/example.module';
     HealthModule,
     RedisModule,
     HttpClientModule,
+    CaptchaModule,
     NotificationModule,
     AuthModule,
     CategoriesModule,

@@ -9,6 +9,7 @@ const requiredKeys = [
   'MONGO_URI',
   'REDIS_HOST',
   'REDIS_PORT',
+  'HCAPTCHA_SECRET',
 ] as const;
 
 function validConfig(
@@ -23,6 +24,7 @@ function validConfig(
     MONGO_URI: 'mongodb://localhost:27017/test',
     REDIS_HOST: 'localhost',
     REDIS_PORT: '6379',
+    HCAPTCHA_SECRET: 'test-hcaptcha-secret',
   };
   return { ...base, ...overrides };
 }
