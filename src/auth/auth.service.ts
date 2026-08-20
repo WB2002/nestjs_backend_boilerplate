@@ -12,6 +12,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { User, Session } from './schemas';
 import { RegisterDto } from './dto';
 import { RedisService } from '@/common/redis/redis.service';
+import { UserRole } from './constants';
 
 @Injectable()
 export class AuthService {
@@ -44,6 +45,7 @@ export class AuthService {
     const newUser = new this.userModel({
       email,
       passwordHash,
+      role: this.resolveRoleForEmail(email),
     });
 
     await newUser.save();
@@ -84,10 +86,13 @@ export class AuthService {
       throw new UnauthorizedException('User not found');
     }
 
+    const role = await this.ensureAdminRoleIfAllowlisted(userForToken);
+
     const accessToken = await this.signAccessToken(
       userId,
       userForToken.email,
       token,
+      role,
     );
 
     return {
@@ -119,10 +124,13 @@ export class AuthService {
       throw new UnauthorizedException('User not found');
     }
 
+    const role = await this.ensureAdminRoleIfAllowlisted(user);
+
     const accessToken = await this.signAccessToken(
       user.id,
       user.email,
       newToken,
+      role,
     );
 
     return {
@@ -159,8 +167,38 @@ export class AuthService {
     userId: string,
     email: string,
     jti: string,
+    role: UserRole,
   ): Promise<string> {
-    const payload = { sub: userId, email, jti };
+    const payload = { sub: userId, email, jti, role };
     return this.jwtService.signAsync(payload);
+  }
+
+  private resolveRoleForEmail(email: string): UserRole {
+    return this.isAdminEmail(email) ? UserRole.ADMIN : UserRole.USER;
+  }
+
+  private isAdminEmail(email: string): boolean {
+    const raw = this.configService.get<string>('FEATURE_FLAG_ADMIN_EMAILS', '');
+    if (!raw) {
+      return false;
+    }
+    const allowlist = raw
+      .split(',')
+      .map((value) => value.trim().toLowerCase())
+      .filter(Boolean);
+    return allowlist.includes(email.trim().toLowerCase());
+  }
+
+  private async ensureAdminRoleIfAllowlisted(user: User): Promise<UserRole> {
+    const currentRole = user.role ?? UserRole.USER;
+    if (currentRole === UserRole.ADMIN) {
+      return UserRole.ADMIN;
+    }
+    if (!this.isAdminEmail(user.email)) {
+      return currentRole;
+    }
+    user.role = UserRole.ADMIN;
+    await user.save();
+    return UserRole.ADMIN;
   }
 }

@@ -48,6 +48,7 @@ import {
 import { ComplexityPlugin } from './common/plugins/complexity.plugin';
 import { SanitizationPipe } from './common/sanitization';
 import { UploadsModule } from './uploads/uploads.module';
+import { FeatureFlagModule } from './feature-flag';
 
 @Module({
   imports: [
@@ -72,6 +73,7 @@ import { UploadsModule } from './uploads/uploads.module';
     AuthModule,
     CategoriesModule,
     UploadsModule,
+    FeatureFlagModule,
     WinstonModule.forRoot(winstonConfig),
     CacheModule.forRoot({ storage: CacheStorage.Memory }),
     RateLimiterModule.forRoot({
