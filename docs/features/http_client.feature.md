@@ -101,6 +101,16 @@ OAuth acquires/caches tokens, applies skew, single-flights concurrent token requ
 - `.addMetrics()` emits CloudWatch Embedded Metric Format (EMF) to stdout for agent/Lambda collection.
 - `.addLogging()` writes structured Nest/Winston logs with sensitive headers/query values redacted.
 
+## Inbound deadline inheritance
+
+When outbound `HttpClient` runs inside an HTTP handler (request-deadline ALS active):
+
+- If the outbound request has **no** `signal`, the inbound **`AbortSignal`** is attached automatically.
+- **`timeoutMs`** and **`totalTimeoutMs`** from `.addTimeout(...)` are capped by **`remainingMs()`** on the inbound deadline (`min(policy, remaining)`).
+- Background jobs or CLI code without ALS behave unchanged (no signal, policy timeouts only).
+
+Handlers can still pass an explicit per-call `signal` to override inbound propagation.
+
 ## Lifecycle
 
 `HttpClient` implements `OnApplicationShutdown`. With `app.enableShutdownHooks()` already enabled in `main.ts`:

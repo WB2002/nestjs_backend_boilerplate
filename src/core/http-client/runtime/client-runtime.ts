@@ -22,6 +22,7 @@ import {
   resolveIdempotencyKey,
   resolveEffectiveMaxConcurrent,
   parseHttpClientInstanceCount,
+  mergeInboundDeadlineWithPolicy,
   sleep,
   sleepWithinBudget,
 } from '../resilience';
@@ -40,6 +41,10 @@ import {
   createLogicalOperation,
 } from './operation-context';
 import { withoutUndefined } from '../utils/without-undefined';
+import {
+  getRequestSignal,
+  remainingMs,
+} from '../../request-deadline/helpers/request-deadline.helpers';
 
 export class ClientRuntime {
   private readonly transport: AxiosTransport;
@@ -148,10 +153,27 @@ export class ClientRuntime {
       };
     }
 
+    const deadlineMerge = mergeInboundDeadlineWithPolicy(
+      withoutUndefined({
+        requestSignal: request.signal,
+        requestTimeoutMs: request.timeoutMs,
+        policyTimeoutMs: this.policy.timeout?.timeoutMs,
+        policyTotalTimeoutMs: this.policy.timeout?.totalTimeoutMs,
+        inboundSignal: getRequestSignal(),
+        inboundRemainingMs: remainingMs(),
+      }),
+    );
+
+    request = withoutUndefined({
+      ...request,
+      signal: deadlineMerge.signal,
+      timeoutMs: deadlineMerge.timeoutMs,
+    });
+
     const budget = createTimeoutBudget(
       withoutUndefined({
-        timeoutMs: request.timeoutMs ?? this.policy.timeout?.timeoutMs,
-        totalTimeoutMs: this.policy.timeout?.totalTimeoutMs,
+        timeoutMs: deadlineMerge.timeoutMs,
+        totalTimeoutMs: deadlineMerge.totalTimeoutMs,
       }),
     );
 

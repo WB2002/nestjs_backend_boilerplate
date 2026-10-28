@@ -15,6 +15,7 @@ export {
   createTimeoutBudget,
   resolveEffectiveMaxConcurrent,
   parseHttpClientInstanceCount,
+  mergeInboundDeadlineWithPolicy,
   sleep,
   sleepWithinBudget,
 } from './resilience';

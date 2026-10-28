@@ -32,6 +32,7 @@ jest.mock('aws-embedded-metrics', () => ({
 // Local test servers bind to loopback; allow private/loopback outbound URLs in this suite.
 process.env.HTTP_CLIENT_ALLOW_PRIVATE_URLS = 'true';
 
+import { DeadlineContext } from '../request-deadline/context/deadline.context';
 import {
   HttpClient,
   HttpClientModule,
@@ -610,6 +611,59 @@ describe('HttpClient', () => {
         client.get('/4'),
       ]);
       expect(peak).toBeLessThanOrEqual(2);
+    } finally {
+      server.close();
+    }
+  });
+
+  it('caps outbound work by inbound request deadline remaining', async () => {
+    const deadlineInternals = {
+      clearTimer: () => undefined,
+      rescheduleFromStart: () => undefined,
+      setReason: () => undefined,
+      abort: () => undefined,
+    };
+
+    const { server, baseUrl } = await listen(async (_req, res) => {
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      res.statusCode = 200;
+      res.end('{}');
+    });
+
+    try {
+      const controller = new AbortController();
+      const startedAt = Date.now();
+      const store = {
+        signal: controller.signal,
+        startedAt,
+        deadlineAt: startedAt + 80,
+      };
+
+      await new Promise<void>((resolve, reject) => {
+        DeadlineContext.run(store, deadlineInternals, () => {
+          const client = httpClient
+            .external('inbound-deadline-cap')
+            .addBaseUrl(baseUrl)
+            .addTimeout({ timeoutMs: 10_000, totalTimeoutMs: 60_000 });
+
+          client
+            .get('/slow')
+            .then(() => {
+              reject(new Error('expected outbound abort or timeout'));
+            })
+            .catch((err: unknown) => {
+              try {
+                expect(
+                  err instanceof TimeoutError ||
+                    err instanceof RequestAbortedError,
+                ).toBe(true);
+                resolve();
+              } catch (e) {
+                reject(e);
+              }
+            });
+        });
+      });
     } finally {
       server.close();
     }
