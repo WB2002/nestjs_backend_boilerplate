@@ -20,6 +20,7 @@ import {
   createBackgroundJobsPostgresPool,
 } from './persistence/postgres/postgres.pool';
 import { PostgresJobRepository } from './persistence/postgres/postgres-job.repository';
+import { JobLeaseReclaimService } from './lease-reclaim/job-lease-reclaim.service';
 import { BackgroundJobsRunProcessor } from './processors/background-jobs-run.processor';
 
 export type BackgroundJobsModuleOptions = {
@@ -76,6 +77,7 @@ export class BackgroundJobsModule {
         PostgresJobRepository,
         JobHandlerRegistry,
         JobEnqueueService,
+        JobLeaseReclaimService,
         BackgroundJobsShutdownService,
         ...workerProviders,
       ],
