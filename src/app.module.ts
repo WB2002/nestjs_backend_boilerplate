@@ -27,12 +27,11 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { AuthModule } from './auth/auth.module';
 import { CategoriesModule } from './categories/categories.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
-import { CacheModule, CacheStorage } from './core/cache';
+import { CacheModule } from './core/cache';
 import { ShutdownModule } from './core/shutdown';
 import {
   RateLimiterModule,
   RateLimitGuard,
-  RateLimitStorage,
   RateLimitAlgorithm,
   RateLimitIdentifier,
   GuestIdMiddleware,
@@ -48,6 +47,10 @@ import {
 import { ComplexityPlugin } from './common/plugins/complexity.plugin';
 import { SanitizationPipe } from './common/sanitization';
 import { validateEnv } from './common/config';
+import {
+  resolveCacheStorage,
+  resolveRateLimitStorage,
+} from './common/config/resolve-coordination-storage';
 import { UploadsModule } from './uploads/uploads.module';
 import { CountryAccessModule, CountryAccessGuard } from './country-access';
 import { CaptchaModule } from './core/captcha';
@@ -90,24 +93,37 @@ import {
     ExampleModule,
     FeatureFlagModule,
     WinstonModule.forRoot(winstonConfig),
-    CacheModule.forRoot({ storage: CacheStorage.Memory }),
-    RateLimiterModule.forRoot({
-      storage: RateLimitStorage.Memory,
-      algorithm: RateLimitAlgorithm.FixedWindowCounter,
-      // Local HTTP needs secure:false so browsers store guest_id; production keeps Secure.
-      guestCookie: {
-        secure: process.env.NODE_ENV === 'production',
-      },
-      methods: [
-        {
-          name: 'global-ip',
-          identifier: RateLimitIdentifier.Ip,
-          duration: 60_000,
-          limit: 10,
-          cost: 1,
-          keyScope: 'global',
+    CacheModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        storage: resolveCacheStorage({
+          nodeEnv: configService.get<string>('NODE_ENV'),
+          cacheStorage: configService.get<string>('CACHE_STORAGE'),
+        }),
+      }),
+    }),
+    RateLimiterModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        storage: resolveRateLimitStorage({
+          nodeEnv: configService.get<string>('NODE_ENV'),
+          rateLimitStorage: configService.get<string>('RATE_LIMIT_STORAGE'),
+        }),
+        algorithm: RateLimitAlgorithm.FixedWindowCounter,
+        guestCookie: {
+          secure: configService.get<string>('NODE_ENV') === 'production',
         },
-      ],
+        methods: [
+          {
+            name: 'global-ip',
+            identifier: RateLimitIdentifier.Ip,
+            duration: 60_000,
+            limit: 10,
+            cost: 1,
+            keyScope: 'global',
+          },
+        ],
+      }),
     }),
     RequestDeadlineModule.forRootAsync({
       inject: [ConfigService],
