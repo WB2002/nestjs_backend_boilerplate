@@ -68,6 +68,12 @@ import {
   InboundBulkheadMiddleware,
   OverloadModule,
 } from './core/overload';
+import {
+  CsrfModule,
+  CsrfMiddleware,
+  DEFAULT_CSRF_EXEMPT_PATHS,
+} from './core/csrf';
+import { parseCsvPaths } from './core/csrf/helpers/parse-csv-paths';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -162,6 +168,16 @@ import {
         return { defaultTimeoutMs, maxTimeoutMs };
       },
     }),
+    CsrfModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        enabled: configService.get<string>('CSRF_ENABLED', 'true') !== 'false',
+        exemptPaths: parseCsvPaths(
+          configService.get<string>('CSRF_EXEMPT_PATHS'),
+          DEFAULT_CSRF_EXEMPT_PATHS,
+        ),
+      }),
+    }),
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       typePaths: ['./**/*.graphql'],
@@ -236,6 +252,7 @@ export class AppModule implements NestModule {
       .apply(
         LoggerMiddleware,
         GuestIdMiddleware,
+        CsrfMiddleware,
         InboundBulkheadMiddleware,
         RequestDeadlineMiddleware,
       )
