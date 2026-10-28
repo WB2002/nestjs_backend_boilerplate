@@ -42,7 +42,7 @@ export class PaymentsGateway {
           defaultCanRetry(req) || req.headers?.['Idempotency-Key'] != null,
       })
       .addCircuitBreaker({ failureThreshold: 5, resetTimeout: 10_000 })
-      .addConcurrencyLimit({ maxConcurrent: 50 })
+      .addConcurrencyLimit({ maxConcurrent: 50, clusterAware: true })
       .addTimeout({ timeoutMs: 5_000, totalTimeoutMs: 15_000 })
       .addTracing()
       .addMetrics()
@@ -67,6 +67,7 @@ httpClient.external('stripe').addBaseUrl('https://api.stripe.com');
 - `.addX()` returns a new immutable configured client. Policies are copied; Axios/agents are **not** created until the first request.
 - Prefer one long-lived configured client per dependency (typically built in the constructor). Rebuilding with new inline callbacks/interceptors creates a distinct runtime fingerprint and may allocate new pools/state.
 - Each materialized logical client owns isolated OAuth, circuit breaker, concurrency, and coalescing state.
+- **Multi-VM concurrency:** `.addConcurrencyLimit({ maxConcurrent: 50, clusterAware: true })` divides the cap by `HTTP_CLIENT_INSTANCE_COUNT` (default `1`) at runtime: `effective = max(1, floor(maxConcurrent / instanceCount))`. Set `HTTP_CLIENT_INSTANCE_COUNT` to your **maximum** expected task/VM count (ECS desired count ceiling or ASG max) so the **sum across instances** stays near `maxConcurrent`. Without `clusterAware`, each process uses the full `maxConcurrent` (legacy behavior).
 - Connection pools may be `.connectionPool({ mode: 'shared' | 'dedicated', ... })`. Shared pools are reference-counted and reused only when DNS/TLS/mTLS settings match (mTLS material is hashed into the pool key).
 - `baseUrl` is required for every outbound request (relative or absolute). It must use `http` or `https`. Absolute URLs must match the configured `baseUrl` origin, and resolved paths must stay under the configured `baseUrl` path (rejects `../` and percent-encoded equivalents such as `..%2f`). Axios follows no redirects (`maxRedirects: 0`) by default — do not pass raw user-controlled URLs.
 - Use `.addRequestCoalescing()` to coalesce identical in-flight safe reads (default GET/HEAD).

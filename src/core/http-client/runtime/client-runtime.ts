@@ -20,6 +20,8 @@ import {
   isBreakerFailure,
   resolveAttemptTimeoutMs,
   resolveIdempotencyKey,
+  resolveEffectiveMaxConcurrent,
+  parseHttpClientInstanceCount,
   sleep,
   sleepWithinBudget,
 } from '../resilience';
@@ -76,9 +78,11 @@ export class ClientRuntime {
       );
     }
     if (policy.concurrencyLimit) {
-      this.limiter = new ConcurrencyLimiter(
-        policy.concurrencyLimit.maxConcurrent,
+      const effectiveMax = resolveEffectiveMaxConcurrent(
+        policy.concurrencyLimit,
+        parseHttpClientInstanceCount(),
       );
+      this.limiter = new ConcurrencyLimiter(effectiveMax);
     }
   }
 

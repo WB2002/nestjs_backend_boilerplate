@@ -73,6 +73,7 @@ export const envSchema = {
 
   // Outbound HTTP client
   HTTP_CLIENT_ALLOW_PRIVATE_URLS: { required: false },
+  HTTP_CLIENT_INSTANCE_COUNT: { required: false },
 
   // hCaptcha (SECRET required when CaptchaModule is loaded)
   HCAPTCHA_SITE_KEY: { required: false },

@@ -615,6 +615,44 @@ describe('HttpClient', () => {
     }
   });
 
+  it('applies clusterAware concurrency using HTTP_CLIENT_INSTANCE_COUNT', async () => {
+    const previous = process.env.HTTP_CLIENT_INSTANCE_COUNT;
+    process.env.HTTP_CLIENT_INSTANCE_COUNT = '2';
+
+    let peak = 0;
+    let current = 0;
+    const { server, baseUrl } = await listen(async (_req, res) => {
+      current += 1;
+      peak = Math.max(peak, current);
+      await new Promise((resolve) => setTimeout(resolve, 30));
+      current -= 1;
+      res.statusCode = 200;
+      res.end('{}');
+    });
+
+    try {
+      const client = httpClient
+        .external('limit-cluster')
+        .addBaseUrl(baseUrl)
+        .addConcurrencyLimit({ maxConcurrent: 4, clusterAware: true });
+
+      await Promise.all([
+        client.get('/1'),
+        client.get('/2'),
+        client.get('/3'),
+        client.get('/4'),
+      ]);
+      expect(peak).toBeLessThanOrEqual(2);
+    } finally {
+      server.close();
+      if (previous === undefined) {
+        delete process.env.HTTP_CLIENT_INSTANCE_COUNT;
+      } else {
+        process.env.HTTP_CLIENT_INSTANCE_COUNT = previous;
+      }
+    }
+  });
+
   it('does not hold concurrency permits during retry backoff', async () => {
     let peak = 0;
     let current = 0;
