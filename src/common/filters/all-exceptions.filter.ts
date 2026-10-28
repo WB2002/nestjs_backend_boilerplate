@@ -16,6 +16,8 @@ import {
   RequestDeadlineExceededError,
   getDeadlineReason,
 } from '../../core/request-deadline';
+import { OverloadRejectedError } from '../../core/overload/errors/overload-rejected.error';
+import { resolveOverloadRetryAfterSec } from '../../core/overload/resolve-overload-retry-after-sec';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -67,6 +69,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
       message = deadlineMapped.message;
     }
 
+    const overloadMapped = this.mapOverloadException(exception);
+    if (overloadMapped) {
+      status = overloadMapped.status;
+      message = overloadMapped.message;
+      this.setRetryAfterHeader(response, overloadMapped.retryAfterSec);
+    }
+
     const responseDestroyed =
       get(response, 'raw.destroyed') === true ||
       get(response, 'destroyed') === true ||
@@ -116,6 +125,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
         };
 
     httpAdapter.reply(response, errorResponse, status);
+    return undefined;
   }
 
   private mapDeadlineException(
@@ -161,5 +171,33 @@ export class AllExceptionsFilter implements ExceptionFilter {
     }
 
     return undefined;
+  }
+
+  private mapOverloadException(
+    exception: unknown,
+  ): { status: number; message: string; retryAfterSec: number } | undefined {
+    if (!(exception instanceof OverloadRejectedError)) {
+      return undefined;
+    }
+    return {
+      status: HttpStatus.SERVICE_UNAVAILABLE,
+      message: exception.message,
+      retryAfterSec: resolveOverloadRetryAfterSec(),
+    };
+  }
+
+  private setRetryAfterHeader(response: unknown, retryAfterSec: number): void {
+    const value = String(retryAfterSec);
+    const res = response as {
+      header?: (name: string, val: string) => void;
+      setHeader?: (name: string, val: string) => void;
+    };
+    if (typeof res.header === 'function') {
+      res.header('Retry-After', value);
+      return;
+    }
+    if (typeof res.setHeader === 'function') {
+      res.setHeader('Retry-After', value);
+    }
   }
 }

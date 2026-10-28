@@ -16,6 +16,7 @@ import { ShutdownState } from '../core/shutdown';
 import { SkipRateLimit } from '../core/rate-limiter';
 import { SkipRequestDeadline } from '../core/request-deadline';
 import { SkipCountryAccess } from '../country-access';
+import { SkipInboundBulkhead } from '../core/overload';
 import { FeatureFlagHealthIndicator } from '../feature-flag';
 
 // Probes must never be throttled: load balancers share source IPs, and a 429
@@ -26,6 +27,7 @@ import { FeatureFlagHealthIndicator } from '../feature-flag';
 @SkipRateLimit()
 @SkipRequestDeadline()
 @SkipCountryAccess()
+@SkipInboundBulkhead()
 @Controller('health')
 export class HealthController {
   constructor(

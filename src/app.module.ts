@@ -54,6 +54,10 @@ import { CaptchaModule } from './core/captcha';
 import { NotificationModule } from './core/notification';
 import { ExampleModule } from './example/example.module';
 import { FeatureFlagModule } from './feature-flag';
+import {
+  InboundBulkheadMiddleware,
+  OverloadModule,
+} from './core/overload';
 
 @Module({
   imports: [
@@ -63,6 +67,7 @@ import { FeatureFlagModule } from './feature-flag';
       validate: validateEnv,
     }),
     ShutdownModule,
+    OverloadModule.forRoot(),
     MongooseModule.forRootAsync({
       useFactory: (configService: ConfigService) => ({
         uri: configService.get<string>('MONGO_URI'),
@@ -192,7 +197,12 @@ import { FeatureFlagModule } from './feature-flag';
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
-      .apply(LoggerMiddleware, GuestIdMiddleware, RequestDeadlineMiddleware)
+      .apply(
+        LoggerMiddleware,
+        GuestIdMiddleware,
+        InboundBulkheadMiddleware,
+        RequestDeadlineMiddleware,
+      )
       .forRoutes({ path: '*', method: RequestMethod.ALL });
   }
 }

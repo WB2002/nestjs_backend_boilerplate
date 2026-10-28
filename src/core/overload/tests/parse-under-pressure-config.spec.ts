@@ -1,8 +1,8 @@
 import {
   DEFAULT_OVERLOAD_RETRY_AFTER_SEC,
   DEFAULT_UNDER_PRESSURE_MAX_EVENT_LOOP_DELAY_MS,
-} from './overload.constants';
-import { parseUnderPressureConfig } from './parse-under-pressure-config';
+} from '../overload.constants';
+import { parseUnderPressureConfig } from '../parse-under-pressure-config';
 
 describe('parseUnderPressureConfig', () => {
   it('defaults to disabled with safe thresholds', () => {

@@ -6,6 +6,7 @@ import {
   RequestCancelledError,
   RequestDeadlineExceededError,
 } from '../../core/request-deadline';
+import { OverloadRejectedError } from '../../core/overload/errors/overload-rejected.error';
 
 jest.mock('uuid', () => ({
   v4: () => 'test-uuid',
@@ -57,6 +58,32 @@ describe('AllExceptionsFilter deadline mapping', () => {
         message: 'Request cancelled by client',
       }),
       HTTP_STATUS_CLIENT_CLOSED_REQUEST,
+    );
+  });
+
+  it('maps OverloadRejectedError to 503 with Retry-After', () => {
+    const response = {
+      raw: { destroyed: false, writableEnded: false },
+      header: jest.fn(),
+    };
+    const overloadHost = {
+      getType: () => 'http',
+      switchToHttp: () => ({
+        getRequest: () => ({ headers: { 'x-request-id': 'req-1' } }),
+        getResponse: () => response,
+      }),
+    };
+    const filter = new AllExceptionsFilter(httpAdapterHost);
+    filter.catch(new OverloadRejectedError(), overloadHost as never);
+
+    expect(response.header).toHaveBeenCalledWith('Retry-After', expect.any(String));
+    expect(reply).toHaveBeenCalledWith(
+      response,
+      expect.objectContaining({
+        statusCode: HttpStatus.SERVICE_UNAVAILABLE,
+        message: 'Service temporarily unavailable',
+      }),
+      HttpStatus.SERVICE_UNAVAILABLE,
     );
   });
 
