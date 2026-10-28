@@ -38,6 +38,8 @@ export interface CircuitBreakerPolicy {
 
 export interface ConcurrencyLimitPolicy {
   maxConcurrent: number;
+  /** When set, effective limit = max(1, floor(maxConcurrent / instanceCount)) */
+  clusterAware?: boolean;
 }
 
 export interface CoalescingPolicy {

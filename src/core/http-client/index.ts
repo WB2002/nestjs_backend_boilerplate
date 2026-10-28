@@ -13,6 +13,8 @@ export {
   defaultCoalescingKey,
   resolveIdempotencyKey,
   createTimeoutBudget,
+  resolveEffectiveMaxConcurrent,
+  parseHttpClientInstanceCount,
   sleep,
   sleepWithinBudget,
 } from './resilience';
