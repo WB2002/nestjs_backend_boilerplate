@@ -1,4 +1,5 @@
 import type { ConcurrencyLimitPolicy } from '../types/policy.types';
+import { scaleClusterAwareLimit } from './scale-cluster-aware-limit';
 
 /**
  * When clusterAware is set, divides maxConcurrent by instance count so the sum
@@ -11,6 +12,5 @@ export function resolveEffectiveMaxConcurrent(
   if (!policy.clusterAware) {
     return policy.maxConcurrent;
   }
-  const instances = Math.max(1, instanceCount);
-  return Math.max(1, Math.floor(policy.maxConcurrent / instances));
+  return scaleClusterAwareLimit(policy.maxConcurrent, instanceCount);
 }
