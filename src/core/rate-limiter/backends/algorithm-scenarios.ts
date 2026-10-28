@@ -321,11 +321,21 @@ export const LEAKY_BUCKET_SCENARIOS: AlgorithmScenario[] = [
     steps: [
       {
         input: { nowMs: 0 },
-        expected: { allowed: true, remaining: 6, resetMs: 400, retryAfterMs: 0 },
+        expected: {
+          allowed: true,
+          remaining: 6,
+          resetMs: 400,
+          retryAfterMs: 0,
+        },
       },
       {
         input: { nowMs: 0 },
-        expected: { allowed: true, remaining: 2, resetMs: 800, retryAfterMs: 0 },
+        expected: {
+          allowed: true,
+          remaining: 2,
+          resetMs: 800,
+          retryAfterMs: 0,
+        },
       },
       {
         // level=8; cost=4 → overflow 2 → retry 200; reset 800

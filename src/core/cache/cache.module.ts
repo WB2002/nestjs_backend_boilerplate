@@ -29,9 +29,7 @@ import { CacheService } from './cache.service';
 class CacheBackendLifecycle implements OnModuleDestroy {
   private readonly logger = new Logger(CacheBackendLifecycle.name);
 
-  constructor(
-    @Inject(CACHE_BACKEND) private readonly backend: CacheBackend,
-  ) {}
+  constructor(@Inject(CACHE_BACKEND) private readonly backend: CacheBackend) {}
 
   async onModuleDestroy(): Promise<void> {
     if (typeof this.backend.quit === 'function') {

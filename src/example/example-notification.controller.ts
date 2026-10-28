@@ -13,9 +13,7 @@ export class ExampleNotificationController {
   ) {}
 
   @Post('notification')
-  async notify(
-    @Body() body: CreateExampleNotificationDto,
-  ): Promise<{
+  async notify(@Body() body: CreateExampleNotificationDto): Promise<{
     status: 'success';
     operationId: string;
     notificationSent: boolean;

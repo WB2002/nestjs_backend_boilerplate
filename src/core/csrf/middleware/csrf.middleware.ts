@@ -32,8 +32,7 @@ export class CsrfMiddleware implements NestMiddleware, OnModuleInit {
       enabled: options?.enabled ?? DEFAULT_CSRF_OPTIONS.enabled,
       cookieName: options?.cookieName ?? DEFAULT_CSRF_OPTIONS.cookieName,
       headerName: options?.headerName ?? DEFAULT_CSRF_OPTIONS.headerName,
-      exemptPaths:
-        options?.exemptPaths ?? DEFAULT_CSRF_OPTIONS.exemptPaths,
+      exemptPaths: options?.exemptPaths ?? DEFAULT_CSRF_OPTIONS.exemptPaths,
     };
   }
 
@@ -41,7 +40,8 @@ export class CsrfMiddleware implements NestMiddleware, OnModuleInit {
     if (this.hookRegistered) {
       return;
     }
-    const instance = this.httpAdapterHost.httpAdapter.getInstance() as FastifyInstance;
+    const instance =
+      this.httpAdapterHost.httpAdapter.getInstance() as FastifyInstance;
     instance.addHook('onRequest', async (req, reply) => {
       this.enforceOnRequest(req, reply);
     });

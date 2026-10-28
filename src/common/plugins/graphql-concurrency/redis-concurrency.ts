@@ -7,7 +7,9 @@ export async function acquireRedisConcurrency(
   key: string,
   maxConcurrent: number,
   ttlSec: number,
-): Promise<{ acquired: true; current: number } | { acquired: false; current: number }> {
+): Promise<
+  { acquired: true; current: number } | { acquired: false; current: number }
+> {
   const current = await redis.incr(key);
   await redis.expire(key, ttlSec);
   if (current > maxConcurrent) {

@@ -15,10 +15,7 @@ import {
 } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import fastifyCookie from '@fastify/cookie';
-import {
-  ACCESS_TOKEN_COOKIE,
-  CSRF_TOKEN_COOKIE,
-} from '@/common/constants';
+import { ACCESS_TOKEN_COOKIE, CSRF_TOKEN_COOKIE } from '@/common/constants';
 import { CsrfModule, CsrfMiddleware } from './index';
 
 @Controller('probe')

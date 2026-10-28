@@ -10,7 +10,9 @@ export function resolveRateLimitStorageFromConfig(
   configService: ConfigService,
 ): RateLimitStorage {
   const nodeEnv = configService.get<string>('NODE_ENV') ?? 'development';
-  const rateLimitStorage = configService.get<string>('RATE_LIMIT_STORAGE')?.trim();
+  const rateLimitStorage = configService
+    .get<string>('RATE_LIMIT_STORAGE')
+    ?.trim();
   return resolveRateLimitStorage({
     nodeEnv,
     ...(rateLimitStorage ? { rateLimitStorage } : {}),

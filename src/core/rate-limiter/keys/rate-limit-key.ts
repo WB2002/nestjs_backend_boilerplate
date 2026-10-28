@@ -12,7 +12,9 @@ export function buildRateLimitKey(params: {
 }): string {
   const shouldHash =
     params.hashRouteScope ?? params.storage === RateLimitStorage.Redis;
-  const scope = shouldHash ? hashRouteScope(params.routeScope) : params.routeScope;
+  const scope = shouldHash
+    ? hashRouteScope(params.routeScope)
+    : params.routeScope;
   const policy = params.policy || 'default';
   return `rl:${policy}:${params.identifier}:${params.tracker}:${scope}`;
 }

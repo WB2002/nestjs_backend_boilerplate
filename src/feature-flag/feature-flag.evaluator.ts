@@ -118,16 +118,26 @@ export function isValidFeatureFlagShape(value: unknown): value is IFeatureFlag {
   if (typeof flag.enabled !== 'boolean') {
     return false;
   }
-  if (flag.type !== FeatureFlagType.BOOLEAN && flag.type !== FeatureFlagType.PERCENTAGE) {
+  if (
+    flag.type !== FeatureFlagType.BOOLEAN &&
+    flag.type !== FeatureFlagType.PERCENTAGE
+  ) {
     return false;
   }
   if (typeof flag.environment !== 'string') {
     return false;
   }
-  if (typeof flag.version !== 'number' || !Number.isInteger(flag.version) || flag.version < 1) {
+  if (
+    typeof flag.version !== 'number' ||
+    !Number.isInteger(flag.version) ||
+    flag.version < 1
+  ) {
     return false;
   }
-  if (typeof flag.createdAt !== 'string' || typeof flag.updatedAt !== 'string') {
+  if (
+    typeof flag.createdAt !== 'string' ||
+    typeof flag.updatedAt !== 'string'
+  ) {
     return false;
   }
   if (flag.type === FeatureFlagType.PERCENTAGE) {

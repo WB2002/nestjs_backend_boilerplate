@@ -11,7 +11,10 @@ import { InboundBulkheadService } from '../inbound-bulkhead.service';
 import { OverloadRejectedError } from '../errors/overload-rejected.error';
 import { PriorityShedRejectedError } from '../errors/priority-shed-rejected.error';
 import { isPressureExemptPath } from '../is-pressure-exempt-path';
-import { PRIORITY_SHEDDING_OPTIONS, SKIP_INBOUND_BULKHEAD_KEY } from '../overload.constants';
+import {
+  PRIORITY_SHEDDING_OPTIONS,
+  SKIP_INBOUND_BULKHEAD_KEY,
+} from '../overload.constants';
 import { resolveApiPriority } from '../priority/resolve-api-priority';
 import { shouldShedPriorityRequest } from '../priority/should-shed-priority-request';
 import { PrioritySheddingConfig } from '../priority/priority-shedding.types';
@@ -34,10 +37,10 @@ export class InboundPriorityBulkheadGuard implements CanActivate {
       return true;
     }
 
-    const skip = this.reflector.getAllAndOverride<boolean>(SKIP_INBOUND_BULKHEAD_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const skip = this.reflector.getAllAndOverride<boolean>(
+      SKIP_INBOUND_BULKHEAD_KEY,
+      [context.getHandler(), context.getClass()],
+    );
     if (skip) {
       return true;
     }
@@ -48,7 +51,11 @@ export class InboundPriorityBulkheadGuard implements CanActivate {
       return true;
     }
 
-    const priority = resolveApiPriority(this.reflector, context, this.sheddingConfig);
+    const priority = resolveApiPriority(
+      this.reflector,
+      context,
+      this.sheddingConfig,
+    );
 
     if (
       this.sheddingConfig.enabled &&

@@ -13,7 +13,10 @@ export type ExtractAccessTokenOptions = {
   allowQueryToken: boolean;
 };
 
-function readCookie(cookieHeader: string | undefined, name: string): string | null {
+function readCookie(
+  cookieHeader: string | undefined,
+  name: string,
+): string | null {
   if (!cookieHeader) {
     return null;
   }
@@ -49,10 +52,7 @@ export function extractAccessToken(
     }
   }
 
-  const cookieToken = readCookie(
-    handshake.headers.cookie,
-    ACCESS_TOKEN_COOKIE,
-  );
+  const cookieToken = readCookie(handshake.headers.cookie, ACCESS_TOKEN_COOKIE);
   if (cookieToken) {
     return cookieToken;
   }

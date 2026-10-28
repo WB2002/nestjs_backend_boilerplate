@@ -9,7 +9,11 @@ import { isPressureExemptPath } from './is-pressure-exempt-path';
 export class InboundBulkheadMiddleware implements NestMiddleware {
   constructor(private readonly bulkhead: InboundBulkheadService) {}
 
-  use(req: IncomingMessage, res: ServerResponse, next: (error?: Error) => void): void {
+  use(
+    req: IncomingMessage,
+    res: ServerResponse,
+    next: (error?: Error) => void,
+  ): void {
     if (!this.bulkhead.isEnabled()) {
       next();
       return;

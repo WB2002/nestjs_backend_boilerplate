@@ -46,12 +46,6 @@ describeWithRedis('Memory ↔ Redis backend parity', () => {
     const redisKey = scenarioKey(keyPrefix, `redis:${scenario.name}`);
     keysUsed.push(redisKey);
 
-    await runParityScenario(
-      memory,
-      redisBackend,
-      scenario,
-      memKey,
-      redisKey,
-    );
+    await runParityScenario(memory, redisBackend, scenario, memKey, redisKey);
   });
 });

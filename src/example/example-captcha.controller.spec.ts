@@ -41,10 +41,7 @@ describe('ExampleCaptchaController', () => {
       transform: true,
     });
     await expect(
-      pipe.transform(
-        {},
-        { type: 'body', metatype: ExampleCaptchaRequestDto },
-      ),
+      pipe.transform({}, { type: 'body', metatype: ExampleCaptchaRequestDto }),
     ).rejects.toBeDefined();
   });
 

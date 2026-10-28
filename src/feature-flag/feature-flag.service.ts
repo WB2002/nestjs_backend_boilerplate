@@ -6,10 +6,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Unit } from 'aws-embedded-metrics';
-import {
-  DEFAULT_FEATURE_FLAG_ENV,
-  FeatureFlagLogEvent,
-} from './constants';
+import { DEFAULT_FEATURE_FLAG_ENV, FeatureFlagLogEvent } from './constants';
 import { FeatureFlagCache } from './feature-flag.cache';
 import { evaluateFeatureFlag } from './feature-flag.evaluator';
 import { emitFeatureFlagMetrics } from './feature-flag.metrics';

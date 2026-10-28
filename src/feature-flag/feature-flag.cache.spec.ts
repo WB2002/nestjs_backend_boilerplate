@@ -1,9 +1,5 @@
 import { FeatureFlagCache } from './feature-flag.cache';
-import {
-  FeatureFlagEventType,
-  FeatureFlagType,
-  IFeatureFlag,
-} from './types';
+import { FeatureFlagEventType, FeatureFlagType, IFeatureFlag } from './types';
 
 function flag(overrides: Partial<IFeatureFlag> = {}): IFeatureFlag {
   return {

@@ -109,9 +109,7 @@ export class AdaptiveLimiter<T> {
       return;
     }
     const cur = this.currentLimit;
-    const queue = Math.trunc(
-      (cur * (this.emaRtt - this.minRtt)) / this.emaRtt,
-    );
+    const queue = Math.trunc((cur * (this.emaRtt - this.minRtt)) / this.emaRtt);
     if (queue < this.config.vegasAlpha) {
       if (cur < this.config.maxLimit) {
         this.setLimit(cur + 1);

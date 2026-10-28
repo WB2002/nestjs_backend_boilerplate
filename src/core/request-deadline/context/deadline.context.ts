@@ -38,9 +38,7 @@ export class DeadlineContext {
     return key ? this.internalsBySignal.get(key) : undefined;
   }
 
-  static setReason(
-    reason: NonNullable<RequestDeadlineStore['reason']>,
-  ): void {
+  static setReason(reason: NonNullable<RequestDeadlineStore['reason']>): void {
     const store = this.storage.getStore();
     if (store) {
       store.reason = reason;

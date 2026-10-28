@@ -75,7 +75,9 @@ describe('resolveGraphqlSubject', () => {
   });
 
   it('falls back to shared anon bucket', () => {
-    expect(resolveGraphqlSubject({}).redisKey).toBe('gql:concurrency:anon:shared');
+    expect(resolveGraphqlSubject({}).redisKey).toBe(
+      'gql:concurrency:anon:shared',
+    );
   });
 });
 
@@ -95,7 +97,10 @@ describe('recordGraphqlConcurrencyDenied', () => {
   it('emits ServiceUnavailable metric for graphql concurrency', async () => {
     await recordGraphqlConcurrencyDenied({ operationName: 'GetUser' });
     expect(emitServiceUnavailableMetric).toHaveBeenCalledWith(
-      expect.objectContaining({ reason: 'graphql_concurrency', path: '/graphql' }),
+      expect.objectContaining({
+        reason: 'graphql_concurrency',
+        path: '/graphql',
+      }),
     );
   });
 });

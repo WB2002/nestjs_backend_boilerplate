@@ -7,7 +7,10 @@ import { PriorityShedRejectedError } from '../errors/priority-shed-rejected.erro
 import { OverloadRejectedError } from '../errors/overload-rejected.error';
 import { API_PRIORITY_KEY } from '../overload.constants';
 
-function mockContext(url: string, priority?: ApiPriorityLevel): ExecutionContext {
+function mockContext(
+  url: string,
+  priority?: ApiPriorityLevel,
+): ExecutionContext {
   const finishHandlers: Array<() => void> = [];
   const res = {
     raw: {
@@ -48,7 +51,10 @@ describe('InboundPriorityBulkheadGuard', () => {
   };
 
   it('sheds low priority before hard cap', () => {
-    const bulkhead = new InboundBulkheadService({ enabled: true, maxInFlight: 100 });
+    const bulkhead = new InboundBulkheadService({
+      enabled: true,
+      maxInFlight: 100,
+    });
     for (let i = 0; i < 70; i += 1) {
       bulkhead.tryAcquire();
     }
@@ -64,7 +70,10 @@ describe('InboundPriorityBulkheadGuard', () => {
   });
 
   it('throws OverloadRejectedError at hard cap for critical', () => {
-    const bulkhead = new InboundBulkheadService({ enabled: true, maxInFlight: 2 });
+    const bulkhead = new InboundBulkheadService({
+      enabled: true,
+      maxInFlight: 2,
+    });
     bulkhead.tryAcquire();
     bulkhead.tryAcquire();
     const reflector = new Reflector();

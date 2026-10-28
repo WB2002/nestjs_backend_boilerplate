@@ -5,7 +5,9 @@ import {
 
 describe('normalizeRequestPath', () => {
   it('strips query string and trailing slash', () => {
-    expect(normalizeRequestPath('/health/ready?verbose=1')).toBe('/health/ready');
+    expect(normalizeRequestPath('/health/ready?verbose=1')).toBe(
+      '/health/ready',
+    );
     expect(normalizeRequestPath('/health/')).toBe('/health');
   });
 });

@@ -159,9 +159,7 @@ export class HCaptchaService extends CaptchaService {
     throw new CaptchaProviderUnavailableError();
   }
 
-  private tryParseResult(
-    body: unknown,
-  ): CaptchaVerificationResult | undefined {
+  private tryParseResult(body: unknown): CaptchaVerificationResult | undefined {
     if (!isPlainObject(body)) {
       return undefined;
     }

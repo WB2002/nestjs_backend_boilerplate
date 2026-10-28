@@ -5,7 +5,6 @@
  */
 
 /* tslint:disable */
-/* eslint-disable */
 
 export class Category {
   declare id: string;

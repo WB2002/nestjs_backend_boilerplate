@@ -20,7 +20,8 @@ export class JobLeaseReclaimService implements OnModuleInit, OnModuleDestroy {
   constructor(
     private readonly repo: PostgresJobRepository,
     private readonly enqueue: JobEnqueueService,
-    @Inject(BACKGROUND_JOBS_CONFIG) private readonly config: BackgroundJobsConfig,
+    @Inject(BACKGROUND_JOBS_CONFIG)
+    private readonly config: BackgroundJobsConfig,
   ) {}
 
   onModuleInit(): void {

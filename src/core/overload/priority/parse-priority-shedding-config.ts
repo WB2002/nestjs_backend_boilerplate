@@ -45,7 +45,9 @@ export function parsePrioritySheddingConfig(
   env: NodeJS.ProcessEnv = process.env,
 ): PrioritySheddingConfig {
   const enabled = parseBoolean(env.INBOUND_PRIORITY_SHEDDING_ENABLED, false);
-  const defaultPriority = parseDefaultPriority(env.INBOUND_DEFAULT_API_PRIORITY);
+  const defaultPriority = parseDefaultPriority(
+    env.INBOUND_DEFAULT_API_PRIORITY,
+  );
   const thresholds = {
     critical: parseRatio(
       env.INBOUND_PRIORITY_SHED_CRITICAL_AT,

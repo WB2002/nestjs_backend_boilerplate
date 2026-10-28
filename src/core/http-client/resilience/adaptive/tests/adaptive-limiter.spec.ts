@@ -1,7 +1,4 @@
-import {
-  AdaptiveLimiter,
-  AdaptiveLimitExceededError,
-} from '../index';
+import { AdaptiveLimiter, AdaptiveLimitExceededError } from '../index';
 
 describe('AdaptiveLimiter (vendored)', () => {
   it('fail-fast when at cap', async () => {

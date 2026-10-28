@@ -250,8 +250,7 @@ export class CacheService {
     key: string,
     options: CacheGetOrSetOptions,
   ): Promise<{ hit: true; value: T | null } | { hit: false }> {
-    const deadline =
-      Date.now() + (this.options.loaderWaitMs ?? 5_000);
+    const deadline = Date.now() + (this.options.loaderWaitMs ?? 5_000);
     while (Date.now() < deadline) {
       await new Promise((r) => setTimeout(r, PEER_POLL_MS));
       const hit = await this.get<T>(key);

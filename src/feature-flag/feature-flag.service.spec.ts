@@ -1,9 +1,6 @@
 import { FeatureFlagCache } from './feature-flag.cache';
 import { evaluateFeatureFlag } from './feature-flag.evaluator';
-import {
-  FeatureFlagType,
-  IFeatureFlag,
-} from './types';
+import { FeatureFlagType, IFeatureFlag } from './types';
 
 /**
  * Simulates request-path evaluation using only the local cache (no Redis).
@@ -46,8 +43,8 @@ describe('FeatureFlagService evaluation path (local)', () => {
     ]);
 
     // Simulate outage: no cache mutation, evaluation still works.
-    expect(
-      evaluateFeatureFlag(cache.get('new-checkout'), {}).enabled,
-    ).toBe(true);
+    expect(evaluateFeatureFlag(cache.get('new-checkout'), {}).enabled).toBe(
+      true,
+    );
   });
 });

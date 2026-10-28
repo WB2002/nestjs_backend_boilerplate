@@ -1,10 +1,7 @@
 import Redis from 'ioredis';
 import { FeatureFlagRepository } from './feature-flag.repository';
 import { featureFlagIndexKey, featureFlagKey } from './feature-flag.keys';
-import {
-  FeatureFlagTargetingAttribute,
-  FeatureFlagType,
-} from './types';
+import { FeatureFlagTargetingAttribute, FeatureFlagType } from './types';
 
 function redisConnectionOptions(): { host: string; port: number } {
   return {

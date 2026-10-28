@@ -23,7 +23,9 @@ describe('SlackNotificationService', () => {
   let logSpy: jest.SpyInstance;
   let errorSpy: jest.SpyInstance;
 
-  function createService(webhookUrl: string | undefined): SlackNotificationService {
+  function createService(
+    webhookUrl: string | undefined,
+  ): SlackNotificationService {
     configGet = jest.fn().mockImplementation((key: string) => {
       if (key === 'SLACK_WEBHOOK_URL') {
         return webhookUrl;
@@ -49,7 +51,9 @@ describe('SlackNotificationService', () => {
   }
 
   beforeEach(() => {
-    logSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation(() => undefined);
+    logSpy = jest
+      .spyOn(Logger.prototype, 'log')
+      .mockImplementation(() => undefined);
     errorSpy = jest
       .spyOn(Logger.prototype, 'error')
       .mockImplementation(() => undefined);
@@ -103,15 +107,16 @@ describe('SlackNotificationService', () => {
 
   it('maps Slack HTTP errors to NotificationError', async () => {
     post.mockRejectedValue(
-      new HttpError('HTTP 500 for POST https://hooks.slack.com/services/secret', {
-        status: 500,
-        metadata: { url: WEBHOOK_URL },
-      }),
+      new HttpError(
+        'HTTP 500 for POST https://hooks.slack.com/services/secret',
+        {
+          status: 500,
+          metadata: { url: WEBHOOK_URL },
+        },
+      ),
     );
 
-    await expect(
-      service.send({ message: 'hi' }),
-    ).rejects.toMatchObject({
+    await expect(service.send({ message: 'hi' })).rejects.toMatchObject({
       name: 'NotificationError',
       code: NotificationErrorCode.HTTP_ERROR,
     });

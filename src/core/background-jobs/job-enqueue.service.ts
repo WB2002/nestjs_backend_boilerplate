@@ -15,7 +15,8 @@ export class JobEnqueueService {
   constructor(
     private readonly repo: PostgresJobRepository,
     @InjectQueue(BACKGROUND_JOBS_BULL_QUEUE) private readonly queue: Queue,
-    @Inject(BACKGROUND_JOBS_CONFIG) private readonly config: BackgroundJobsConfig,
+    @Inject(BACKGROUND_JOBS_CONFIG)
+    private readonly config: BackgroundJobsConfig,
   ) {}
 
   async enqueue(input: EnqueueJobInput): Promise<EnqueueJobResult> {
@@ -26,9 +27,7 @@ export class JobEnqueueService {
     const inserted = await this.repo.insertPending({
       queueName,
       jobName: input.jobName,
-      ...(input.dedupeKey !== undefined
-        ? { dedupeKey: input.dedupeKey }
-        : {}),
+      ...(input.dedupeKey !== undefined ? { dedupeKey: input.dedupeKey } : {}),
       payload: input.payload,
       runAt,
       maxAttempts,

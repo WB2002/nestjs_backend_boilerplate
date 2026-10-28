@@ -2,9 +2,7 @@ import { resolveEffectiveMaxConcurrent } from './resolve-max-concurrent';
 
 describe('resolveEffectiveMaxConcurrent', () => {
   it('returns maxConcurrent when clusterAware is omitted', () => {
-    expect(
-      resolveEffectiveMaxConcurrent({ maxConcurrent: 50 }, 10),
-    ).toBe(50);
+    expect(resolveEffectiveMaxConcurrent({ maxConcurrent: 50 }, 10)).toBe(50);
   });
 
   it('returns maxConcurrent when clusterAware is false', () => {

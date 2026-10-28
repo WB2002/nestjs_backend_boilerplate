@@ -1,4 +1,9 @@
-import { HttpException, HttpStatus, Injectable, OnModuleDestroy } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  OnModuleDestroy,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { RedisService } from '@/common/redis/redis.service';
 import { parseWebSocketConfig } from '../config/parse-websocket-config';

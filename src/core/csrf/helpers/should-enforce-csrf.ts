@@ -1,7 +1,4 @@
-import {
-  ACCESS_TOKEN_COOKIE,
-  SESSION_ID_COOKIE,
-} from '@/common/constants';
+import { ACCESS_TOKEN_COOKIE, SESSION_ID_COOKIE } from '@/common/constants';
 
 const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 

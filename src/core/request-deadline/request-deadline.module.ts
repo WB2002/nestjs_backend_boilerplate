@@ -57,9 +57,7 @@ export class RequestDeadlineModule {
     inject?: unknown[];
     useFactory: (
       ...args: unknown[]
-    ) =>
-      | RequestDeadlineModuleOptions
-      | Promise<RequestDeadlineModuleOptions>;
+    ) => RequestDeadlineModuleOptions | Promise<RequestDeadlineModuleOptions>;
   }): DynamicModule {
     const optionsProvider: Provider = {
       provide: REQUEST_DEADLINE_OPTIONS,

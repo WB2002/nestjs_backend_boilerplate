@@ -91,9 +91,13 @@ describe('feature-flag.evaluator', () => {
     });
 
     it('uses default when targeting context is missing', () => {
-      const result = evaluateFeatureFlag(percentageFlag(), {}, {
-        defaultValue: false,
-      });
+      const result = evaluateFeatureFlag(
+        percentageFlag(),
+        {},
+        {
+          defaultValue: false,
+        },
+      );
       expect(result).toEqual({
         enabled: false,
         usedDefault: true,
@@ -114,10 +118,9 @@ describe('feature-flag.evaluator', () => {
     });
 
     it('returns false when percentage flag is disabled', () => {
-      const result = evaluateFeatureFlag(
-        percentageFlag({ enabled: false }),
-        { userId: 'user-1' },
-      );
+      const result = evaluateFeatureFlag(percentageFlag({ enabled: false }), {
+        userId: 'user-1',
+      });
       expect(result.enabled).toBe(false);
       expect(result.reason).toBe('disabled');
     });
@@ -125,13 +128,13 @@ describe('feature-flag.evaluator', () => {
 
   describe('missing flag', () => {
     it('uses defaultValue', () => {
-      expect(evaluateFeatureFlag(undefined, {}, { defaultValue: true })).toEqual(
-        {
-          enabled: true,
-          usedDefault: true,
-          reason: 'missing_flag',
-        },
-      );
+      expect(
+        evaluateFeatureFlag(undefined, {}, { defaultValue: true }),
+      ).toEqual({
+        enabled: true,
+        usedDefault: true,
+        reason: 'missing_flag',
+      });
       expect(evaluateFeatureFlag(undefined, {})).toEqual({
         enabled: false,
         usedDefault: true,
@@ -146,9 +149,7 @@ describe('feature-flag.evaluator', () => {
       expect(isValidFeatureFlagShape(percentageFlag())).toBe(true);
       expect(isValidFeatureFlagShape({ key: 'x' })).toBe(false);
       expect(
-        isValidFeatureFlagShape(
-          percentageFlag({ rolloutPercentage: 150 }),
-        ),
+        isValidFeatureFlagShape(percentageFlag({ rolloutPercentage: 150 })),
       ).toBe(false);
     });
   });

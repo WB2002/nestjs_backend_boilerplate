@@ -7,7 +7,8 @@ export function resolveGuestTracker(
   req: FastifyRequest,
   options: RateLimiterModuleOptions,
 ): string {
-  const guestCookieName = options.guestCookie?.name ?? DEFAULT_GUEST_COOKIE_NAME;
+  const guestCookieName =
+    options.guestCookie?.name ?? DEFAULT_GUEST_COOKIE_NAME;
   const cookies = (req as FastifyRequest & { cookies?: Record<string, string> })
     .cookies;
   const value = cookies?.[guestCookieName];

@@ -23,7 +23,12 @@ describe('createPressureHandler', () => {
       header: jest.fn().mockReturnThis(),
       send: jest.fn(),
     };
-    handler({ url: '/health/ready' } as never, reply as never, 'eventLoopDelay', 999);
+    handler(
+      { url: '/health/ready' } as never,
+      reply as never,
+      'eventLoopDelay',
+      999,
+    );
     expect(reply.send).not.toHaveBeenCalled();
   });
 

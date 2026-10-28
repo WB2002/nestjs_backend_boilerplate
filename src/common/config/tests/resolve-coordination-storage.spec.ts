@@ -45,9 +45,7 @@ describe('resolveRateLimitStorage', () => {
 
 describe('resolveCacheStorage', () => {
   it('defaults to Memory in test when unset', () => {
-    expect(resolveCacheStorage({ nodeEnv: 'test' })).toBe(
-      CacheStorage.Memory,
-    );
+    expect(resolveCacheStorage({ nodeEnv: 'test' })).toBe(CacheStorage.Memory);
   });
 
   it('defaults to Redis in production when unset', () => {

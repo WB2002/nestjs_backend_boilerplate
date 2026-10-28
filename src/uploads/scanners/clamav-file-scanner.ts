@@ -39,7 +39,10 @@ export class ClamAvFileScanner implements FileScanner {
       const response = await this.instream(input.buffer);
       const normalized = response.replace(/\0/g, '').trim();
 
-      if (/^stream:\s*OK$/im.test(normalized) || /\bstream:\s*OK\b/i.test(normalized)) {
+      if (
+        /^stream:\s*OK$/im.test(normalized) ||
+        /\bstream:\s*OK\b/i.test(normalized)
+      ) {
         return { status: 'clean' };
       }
       const infectedMatch = /stream:\s*(.+?)\s+FOUND/i.exec(normalized);

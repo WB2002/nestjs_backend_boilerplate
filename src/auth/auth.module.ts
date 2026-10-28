@@ -36,7 +36,12 @@ import { AccessTokenAuthenticator } from './access-token-authenticator.service';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, LocalStrategy, JwtStrategy, AccessTokenAuthenticator],
+  providers: [
+    AuthService,
+    LocalStrategy,
+    JwtStrategy,
+    AccessTokenAuthenticator,
+  ],
   exports: [AuthService, AccessTokenAuthenticator],
 })
 export class AuthModule {}

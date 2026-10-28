@@ -82,7 +82,11 @@ describe('RedisCacheBackend', () => {
       keyPrefix: DEFAULT_CACHE_KEY_PREFIX,
     });
     const userKey = `svc-${Date.now()}`;
-    await service.set(userKey, { ok: true }, { softTtlMs: 500, hardTtlMs: 2000 });
+    await service.set(
+      userKey,
+      { ok: true },
+      { softTtlMs: 500, hardTtlMs: 2000 },
+    );
     const raw = await redis.get(`cache:${userKey}`);
     expect(raw).toBeTruthy();
     expect(JSON.parse(raw as string)).toMatchObject({ v: { ok: true } });

@@ -6,17 +6,19 @@ import {
 
 describe('parseTimeoutHeader', () => {
   it('parses a positive integer header', () => {
-    expect(
-      parseTimeoutHeader({ 'x-request-timeout-ms': '5000' }),
-    ).toBe(5000);
+    expect(parseTimeoutHeader({ 'x-request-timeout-ms': '5000' })).toBe(5000);
   });
 
   it('returns undefined for missing, invalid, or non-positive values', () => {
     expect(parseTimeoutHeader(undefined)).toBeUndefined();
     expect(parseTimeoutHeader({})).toBeUndefined();
-    expect(parseTimeoutHeader({ 'x-request-timeout-ms': 'abc' })).toBeUndefined();
+    expect(
+      parseTimeoutHeader({ 'x-request-timeout-ms': 'abc' }),
+    ).toBeUndefined();
     expect(parseTimeoutHeader({ 'x-request-timeout-ms': '0' })).toBeUndefined();
-    expect(parseTimeoutHeader({ 'x-request-timeout-ms': '-1' })).toBeUndefined();
+    expect(
+      parseTimeoutHeader({ 'x-request-timeout-ms': '-1' }),
+    ).toBeUndefined();
   });
 });
 

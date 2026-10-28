@@ -1,8 +1,5 @@
 import { DynamicModule, Global, Module } from '@nestjs/common';
-import {
-  CSRF_OPTIONS,
-  DEFAULT_CSRF_OPTIONS,
-} from './constants/csrf.constants';
+import { CSRF_OPTIONS, DEFAULT_CSRF_OPTIONS } from './constants/csrf.constants';
 import { CsrfMiddleware } from './middleware/csrf.middleware';
 import { CsrfTokenService } from './csrf-token.service';
 import { CsrfModuleOptions } from './types/csrf.types';

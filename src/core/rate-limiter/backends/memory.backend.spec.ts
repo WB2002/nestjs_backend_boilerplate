@@ -14,7 +14,8 @@ import {
 } from './algorithm-scenarios';
 
 function baseCtx(
-  overrides: Partial<ConsumeContext> & Pick<ConsumeContext, 'algorithm' | 'key'>,
+  overrides: Partial<ConsumeContext> &
+    Pick<ConsumeContext, 'algorithm' | 'key'>,
 ): ConsumeContext {
   return {
     limit: 3,

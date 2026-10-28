@@ -41,7 +41,11 @@ export interface AdaptiveLimiterConfig {
   clock: (() => number) | undefined;
 }
 
-function positiveInt(value: number | undefined, field: string, fallback: number): number {
+function positiveInt(
+  value: number | undefined,
+  field: string,
+  fallback: number,
+): number {
   if (value === undefined) {
     return fallback;
   }
@@ -59,7 +63,9 @@ function positiveGradientSmoothing(value: number | undefined): number {
   return v;
 }
 
-function parseAlgorithm(value: AdaptiveAlgorithm | undefined): AdaptiveAlgorithm {
+function parseAlgorithm(
+  value: AdaptiveAlgorithm | undefined,
+): AdaptiveAlgorithm {
   if (value === undefined) {
     return 'aimd';
   }
@@ -80,7 +86,7 @@ export function parseAdaptiveConfig(
 ): AdaptiveLimiterConfig {
   const input = config ?? {};
   const algorithm = parseAlgorithm(input.algorithm);
-  let minLimit = positiveInt(input.minLimit, 'minLimit', DEFAULT_MIN_LIMIT);
+  const minLimit = positiveInt(input.minLimit, 'minLimit', DEFAULT_MIN_LIMIT);
   let maxLimit = positiveInt(input.maxLimit, 'maxLimit', DEFAULT_MAX_LIMIT);
   let initialLimit = positiveInt(
     input.initialLimit,
@@ -88,7 +94,11 @@ export function parseAdaptiveConfig(
     DEFAULT_INITIAL_LIMIT,
   );
   let vegasBeta = positiveInt(input.vegasBeta, 'vegasBeta', DEFAULT_VEGAS_BETA);
-  const vegasAlpha = positiveInt(input.vegasAlpha, 'vegasAlpha', DEFAULT_VEGAS_ALPHA);
+  const vegasAlpha = positiveInt(
+    input.vegasAlpha,
+    'vegasAlpha',
+    DEFAULT_VEGAS_ALPHA,
+  );
 
   if (maxLimit < minLimit) {
     maxLimit = minLimit;

@@ -7,10 +7,7 @@ import {
 } from '../constants';
 import type { SanitizeHtmlOptions } from '../types';
 
-function definePropertyMeta(
-  key: string,
-  value: unknown,
-): PropertyDecorator {
+function definePropertyMeta(key: string, value: unknown): PropertyDecorator {
   return (target, propertyKey) => {
     Reflect.defineMetadata(key, value, target, propertyKey);
   };

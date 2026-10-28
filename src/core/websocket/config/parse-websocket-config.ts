@@ -55,10 +55,7 @@ export function parseWebSocketConfig(
       : nodeEnv === 'production';
 
   return {
-    enabled: parseBoolean(
-      configService.get<string>('WEBSOCKET_ENABLED'),
-      true,
-    ),
+    enabled: parseBoolean(configService.get<string>('WEBSOCKET_ENABLED'), true),
     path:
       configService.get<string>('WEBSOCKET_PATH')?.trim() ||
       DEFAULT_WEBSOCKET_PATH,

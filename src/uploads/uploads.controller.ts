@@ -1,9 +1,4 @@
-import {
-  Controller,
-  Post,
-  Req,
-  BadRequestException,
-} from '@nestjs/common';
+import { Controller, Post, Req, BadRequestException } from '@nestjs/common';
 import type { FastifyRequest } from 'fastify';
 import '@fastify/multipart';
 import { UploadsService } from './uploads.service';

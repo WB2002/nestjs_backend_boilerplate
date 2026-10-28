@@ -1,4 +1,9 @@
-import { Inject, Injectable, NestMiddleware, OnModuleInit } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  NestMiddleware,
+  OnModuleInit,
+} from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { IncomingMessage, ServerResponse } from 'http';
@@ -30,7 +35,8 @@ export class GuestIdMiddleware implements NestMiddleware, OnModuleInit {
     if (this.hookRegistered) {
       return;
     }
-    const instance = this.httpAdapterHost.httpAdapter.getInstance() as FastifyInstance;
+    const instance =
+      this.httpAdapterHost.httpAdapter.getInstance() as FastifyInstance;
     instance.addHook('onRequest', async (req, reply) => {
       this.ensureGuestId(req, reply);
     });
@@ -43,11 +49,13 @@ export class GuestIdMiddleware implements NestMiddleware, OnModuleInit {
   }
 
   ensureGuestId(req: FastifyRequest, reply: FastifyReply): string {
-    const cookieName = this.options.guestCookie?.name ?? DEFAULT_GUEST_COOKIE_NAME;
+    const cookieName =
+      this.options.guestCookie?.name ?? DEFAULT_GUEST_COOKIE_NAME;
     const existing = this.readValidGuestId(req, cookieName);
     if (existing) {
       if (!req.cookies) {
-        (req as FastifyRequest & { cookies: Record<string, string> }).cookies = {};
+        (req as FastifyRequest & { cookies: Record<string, string> }).cookies =
+          {};
       }
       // Normalize to unsigned UUID for rate-limit resolvers.
       req.cookies[cookieName] = existing;
@@ -57,10 +65,7 @@ export class GuestIdMiddleware implements NestMiddleware, OnModuleInit {
     return this.mintGuestId(req, reply, cookieName);
   }
 
-  readValidGuestId(
-    req: FastifyRequest,
-    cookieName: string,
-  ): string | null {
+  readValidGuestId(req: FastifyRequest, cookieName: string): string | null {
     const raw = req.cookies?.[cookieName];
     if (!raw) {
       return null;
@@ -105,7 +110,8 @@ export class GuestIdMiddleware implements NestMiddleware, OnModuleInit {
     });
 
     if (!req.cookies) {
-      (req as FastifyRequest & { cookies: Record<string, string> }).cookies = {};
+      (req as FastifyRequest & { cookies: Record<string, string> }).cookies =
+        {};
     }
     req.cookies[cookieName] = guestId;
     return guestId;

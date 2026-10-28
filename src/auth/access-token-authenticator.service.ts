@@ -37,7 +37,9 @@ export class AccessTokenAuthenticator {
     return this.userFromVerifiedPayload(payload);
   }
 
-  async userFromVerifiedPayload(payload: JwtPayload): Promise<AuthenticatedUser> {
+  async userFromVerifiedPayload(
+    payload: JwtPayload,
+  ): Promise<AuthenticatedUser> {
     const isRevoked = await this.authService.isRevoked(payload.jti);
     if (isRevoked) {
       throw new UnauthorizedException('Session has been revoked');

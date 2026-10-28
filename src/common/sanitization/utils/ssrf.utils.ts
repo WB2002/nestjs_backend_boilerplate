@@ -57,9 +57,7 @@ export async function assertPublicHttpUrlAsync(raw: string): Promise<URL> {
 
   for (const address of records) {
     if (isPrivateOrReservedAddress(address)) {
-      throw new UnsafeUrlError(
-        'URL resolves to a private or reserved address',
-      );
+      throw new UnsafeUrlError('URL resolves to a private or reserved address');
     }
   }
 

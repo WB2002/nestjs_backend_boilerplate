@@ -18,7 +18,10 @@ function parseBoolean(value: string | undefined, fallback: boolean): boolean {
   return fallback;
 }
 
-function parseNonNegativeInt(value: string | undefined, fallback: number): number {
+function parseNonNegativeInt(
+  value: string | undefined,
+  fallback: number,
+): number {
   const parsed = Number.parseInt(value ?? '', 10);
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
 }
@@ -35,10 +38,7 @@ export function parseUnderPressureConfig(
     env.UNDER_PRESSURE_MAX_HEAP_USED_BYTES,
     0,
   );
-  const maxRssBytes = parseNonNegativeInt(
-    env.UNDER_PRESSURE_MAX_RSS_BYTES,
-    0,
-  );
+  const maxRssBytes = parseNonNegativeInt(env.UNDER_PRESSURE_MAX_RSS_BYTES, 0);
   const retryAfterSec = Math.max(
     1,
     parseNonNegativeInt(

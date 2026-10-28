@@ -20,7 +20,10 @@ export class RedisRateLimitBackend implements RateLimitBackend {
       token_bucket: readFileSync(join(luaDir, 'token_bucket.lua'), 'utf8'),
       leaky_bucket: readFileSync(join(luaDir, 'leaky_bucket.lua'), 'utf8'),
       fixed_window: readFileSync(join(luaDir, 'fixed_window.lua'), 'utf8'),
-      sliding_window_log: readFileSync(join(luaDir, 'sliding_window_log.lua'), 'utf8'),
+      sliding_window_log: readFileSync(
+        join(luaDir, 'sliding_window_log.lua'),
+        'utf8',
+      ),
       sliding_window_counter: readFileSync(
         join(luaDir, 'sliding_window_counter.lua'),
         'utf8',
@@ -38,7 +41,10 @@ export class RedisRateLimitBackend implements RateLimitBackend {
 
   private async loadScripts(): Promise<void> {
     for (const name of Object.keys(this.scripts) as RedisLuaScriptName[]) {
-      this.shas[name] = (await this.redis.script('LOAD', this.scripts[name])) as string;
+      this.shas[name] = (await this.redis.script(
+        'LOAD',
+        this.scripts[name],
+      )) as string;
     }
   }
 

@@ -58,7 +58,11 @@ export class MemoryRateLimitBackend implements RateLimitBackend {
     return this.meta.size;
   }
 
-  private touch(key: string, store: MemoryStoreName, ctx: ConsumeContext): void {
+  private touch(
+    key: string,
+    store: MemoryStoreName,
+    ctx: ConsumeContext,
+  ): void {
     this.meta.set(key, {
       expiresAt: ctx.nowMs + ctx.durationMs * MEMORY_KEY_TTL_MULTIPLIER,
       lastAccess: ctx.nowMs,
@@ -113,9 +117,12 @@ export class MemoryRateLimitBackend implements RateLimitBackend {
 
     if (state.tokens < ctx.cost) {
       const deficit = ctx.cost - state.tokens;
-      const retryAfterMs = refillPerMs > 0 ? Math.ceil(deficit / refillPerMs) : ctx.durationMs;
+      const retryAfterMs =
+        refillPerMs > 0 ? Math.ceil(deficit / refillPerMs) : ctx.durationMs;
       const resetMs =
-        refillPerMs > 0 ? Math.ceil((capacity - state.tokens) / refillPerMs) : ctx.durationMs;
+        refillPerMs > 0
+          ? Math.ceil((capacity - state.tokens) / refillPerMs)
+          : ctx.durationMs;
       return {
         allowed: false,
         remaining: Math.floor(state.tokens),
@@ -126,7 +133,9 @@ export class MemoryRateLimitBackend implements RateLimitBackend {
 
     state.tokens -= ctx.cost;
     const resetMs =
-      refillPerMs > 0 ? Math.ceil((capacity - state.tokens) / refillPerMs) : ctx.durationMs;
+      refillPerMs > 0
+        ? Math.ceil((capacity - state.tokens) / refillPerMs)
+        : ctx.durationMs;
     return {
       allowed: true,
       remaining: Math.floor(state.tokens),
@@ -151,8 +160,10 @@ export class MemoryRateLimitBackend implements RateLimitBackend {
 
     if (state.level + ctx.cost > capacity) {
       const overflow = state.level + ctx.cost - capacity;
-      const retryAfterMs = leakPerMs > 0 ? Math.ceil(overflow / leakPerMs) : ctx.durationMs;
-      const resetMs = leakPerMs > 0 ? Math.ceil(state.level / leakPerMs) : ctx.durationMs;
+      const retryAfterMs =
+        leakPerMs > 0 ? Math.ceil(overflow / leakPerMs) : ctx.durationMs;
+      const resetMs =
+        leakPerMs > 0 ? Math.ceil(state.level / leakPerMs) : ctx.durationMs;
       return {
         allowed: false,
         remaining: Math.max(0, Math.floor(capacity - state.level)),
@@ -162,7 +173,8 @@ export class MemoryRateLimitBackend implements RateLimitBackend {
     }
 
     state.level += ctx.cost;
-    const resetMs = leakPerMs > 0 ? Math.ceil(state.level / leakPerMs) : ctx.durationMs;
+    const resetMs =
+      leakPerMs > 0 ? Math.ceil(state.level / leakPerMs) : ctx.durationMs;
     return {
       allowed: true,
       remaining: Math.max(0, Math.floor(capacity - state.level)),
@@ -225,7 +237,9 @@ export class MemoryRateLimitBackend implements RateLimitBackend {
     this.touch(ctx.key, 'slidingLogs', ctx);
     const newUsed = used + ctx.cost;
     const oldest = entries[0];
-    const resetMs = oldest ? Math.max(0, oldest.ts + ctx.durationMs - ctx.nowMs) : ctx.durationMs;
+    const resetMs = oldest
+      ? Math.max(0, oldest.ts + ctx.durationMs - ctx.nowMs)
+      : ctx.durationMs;
     return {
       allowed: true,
       remaining: Math.max(0, ctx.limit - newUsed),

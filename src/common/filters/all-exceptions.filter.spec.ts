@@ -84,7 +84,10 @@ describe('AllExceptionsFilter deadline mapping', () => {
     const filter = new AllExceptionsFilter(httpAdapterHost);
     filter.catch(new PriorityShedRejectedError(), shedHost as never);
 
-    expect(response.header).toHaveBeenCalledWith('Retry-After', expect.any(String));
+    expect(response.header).toHaveBeenCalledWith(
+      'Retry-After',
+      expect.any(String),
+    );
     expect(reply).toHaveBeenCalledWith(
       response,
       expect.objectContaining({
@@ -113,7 +116,10 @@ describe('AllExceptionsFilter deadline mapping', () => {
     const filter = new AllExceptionsFilter(httpAdapterHost);
     filter.catch(new OverloadRejectedError(), overloadHost as never);
 
-    expect(response.header).toHaveBeenCalledWith('Retry-After', expect.any(String));
+    expect(response.header).toHaveBeenCalledWith(
+      'Retry-After',
+      expect.any(String),
+    );
     expect(reply).toHaveBeenCalledWith(
       response,
       expect.objectContaining({

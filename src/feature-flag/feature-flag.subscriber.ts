@@ -7,10 +7,7 @@ import { FeatureFlagCache } from './feature-flag.cache';
 import { featureFlagEventsChannel } from './feature-flag.keys';
 import { emitFeatureFlagMetrics } from './feature-flag.metrics';
 import { FeatureFlagRepository } from './feature-flag.repository';
-import {
-  FeatureFlagEventType,
-  IFeatureFlagEvent,
-} from './types';
+import { FeatureFlagEventType, IFeatureFlagEvent } from './types';
 
 @Injectable()
 export class FeatureFlagSubscriber {

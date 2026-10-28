@@ -82,7 +82,9 @@ export function parseBackgroundJobsConfigFromService(
   configService: ConfigService,
 ): BackgroundJobsConfig {
   return parseBackgroundJobsConfig({
-    BACKGROUND_JOBS_ENABLED: configService.get<string>('BACKGROUND_JOBS_ENABLED'),
+    BACKGROUND_JOBS_ENABLED: configService.get<string>(
+      'BACKGROUND_JOBS_ENABLED',
+    ),
     BACKGROUND_WORKER_ENABLED: configService.get<string>(
       'BACKGROUND_WORKER_ENABLED',
     ),

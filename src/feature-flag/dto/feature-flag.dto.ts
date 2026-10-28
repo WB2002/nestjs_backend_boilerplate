@@ -12,10 +12,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import {
-  FeatureFlagTargetingAttribute,
-  FeatureFlagType,
-} from '../types';
+import { FeatureFlagTargetingAttribute, FeatureFlagType } from '../types';
 
 export class FeatureFlagTargetingDto {
   @IsIn([
@@ -37,13 +34,17 @@ export class CreateFeatureFlagDto {
   @IsIn([FeatureFlagType.BOOLEAN, FeatureFlagType.PERCENTAGE])
   type!: typeof FeatureFlagType.BOOLEAN | typeof FeatureFlagType.PERCENTAGE;
 
-  @ValidateIf((dto: CreateFeatureFlagDto) => dto.type === FeatureFlagType.PERCENTAGE)
+  @ValidateIf(
+    (dto: CreateFeatureFlagDto) => dto.type === FeatureFlagType.PERCENTAGE,
+  )
   @IsInt()
   @Min(0)
   @Max(100)
   rolloutPercentage?: number;
 
-  @ValidateIf((dto: CreateFeatureFlagDto) => dto.type === FeatureFlagType.PERCENTAGE)
+  @ValidateIf(
+    (dto: CreateFeatureFlagDto) => dto.type === FeatureFlagType.PERCENTAGE,
+  )
   @ValidateNested()
   @Type(() => FeatureFlagTargetingDto)
   targeting?: FeatureFlagTargetingDto;
@@ -75,13 +76,17 @@ export class UpdateFeatureFlagDto {
   @IsIn([FeatureFlagType.BOOLEAN, FeatureFlagType.PERCENTAGE])
   type!: typeof FeatureFlagType.BOOLEAN | typeof FeatureFlagType.PERCENTAGE;
 
-  @ValidateIf((dto: UpdateFeatureFlagDto) => dto.type === FeatureFlagType.PERCENTAGE)
+  @ValidateIf(
+    (dto: UpdateFeatureFlagDto) => dto.type === FeatureFlagType.PERCENTAGE,
+  )
   @IsInt()
   @Min(0)
   @Max(100)
   rolloutPercentage?: number;
 
-  @ValidateIf((dto: UpdateFeatureFlagDto) => dto.type === FeatureFlagType.PERCENTAGE)
+  @ValidateIf(
+    (dto: UpdateFeatureFlagDto) => dto.type === FeatureFlagType.PERCENTAGE,
+  )
   @ValidateNested()
   @Type(() => FeatureFlagTargetingDto)
   targeting?: FeatureFlagTargetingDto;

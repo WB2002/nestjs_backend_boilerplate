@@ -28,12 +28,8 @@ export function parseTimeoutHeader(
 }
 
 /** Parse env/config timeout; invalid values fall back to `fallback`. */
-export function parsePositiveTimeoutMs(
-  raw: unknown,
-  fallback: number,
-): number {
-  const n =
-    typeof raw === 'number' ? raw : Number(String(raw ?? '').trim());
+export function parsePositiveTimeoutMs(raw: unknown, fallback: number): number {
+  const n = typeof raw === 'number' ? raw : Number(String(raw ?? '').trim());
   if (!Number.isFinite(n) || n <= 0) {
     return fallback;
   }

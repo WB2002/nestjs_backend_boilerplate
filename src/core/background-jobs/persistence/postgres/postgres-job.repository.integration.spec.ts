@@ -25,10 +25,7 @@ describeIntegration('PostgresJobRepository integration', () => {
     poolA = new Pool({ connectionString: uri });
     poolB = new Pool({ connectionString: uri });
     const migration = readFileSync(
-      join(
-        process.cwd(),
-        'migrations/postgres/002_create_background_jobs.sql',
-      ),
+      join(process.cwd(), 'migrations/postgres/002_create_background_jobs.sql'),
       'utf8',
     );
     await poolA.query(migration);

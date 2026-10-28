@@ -1,9 +1,5 @@
 import { FeatureFlagCache } from './feature-flag.cache';
-import {
-  FeatureFlagEventType,
-  FeatureFlagType,
-  IFeatureFlag,
-} from './types';
+import { FeatureFlagEventType, FeatureFlagType, IFeatureFlag } from './types';
 
 describe('Pub/Sub + reconciliation recovery', () => {
   const flag = (version: number): IFeatureFlag => ({

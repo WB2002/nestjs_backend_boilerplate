@@ -1,5 +1,8 @@
 import { DynamicModule, Global, Module } from '@nestjs/common';
-import { INBOUND_BULKHEAD_OPTIONS, PRIORITY_SHEDDING_OPTIONS } from './overload.constants';
+import {
+  INBOUND_BULKHEAD_OPTIONS,
+  PRIORITY_SHEDDING_OPTIONS,
+} from './overload.constants';
 import { InboundBulkheadMiddleware } from './inbound-bulkhead.middleware';
 import { InboundBulkheadService } from './inbound-bulkhead.service';
 import { InboundPriorityBulkheadGuard } from './guards/inbound-priority-bulkhead.guard';

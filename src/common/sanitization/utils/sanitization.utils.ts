@@ -60,11 +60,7 @@ export async function walkAndSanitize(
     // get correct per-property metadata (@SkipSanitization, @SafeUrl, …).
     let effectiveOptions = options;
     const proto = Object.getPrototypeOf(value) as object | null;
-    if (
-      proto &&
-      proto !== Object.prototype &&
-      proto !== Array.prototype
-    ) {
+    if (proto && proto !== Object.prototype && proto !== Array.prototype) {
       effectiveOptions = { ...options, metadataTarget: proto };
     } else if (options.metadataTarget && currentKey) {
       const NestedType = Reflect.getMetadata(

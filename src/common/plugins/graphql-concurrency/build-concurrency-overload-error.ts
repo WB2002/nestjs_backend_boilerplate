@@ -1,7 +1,9 @@
 import { GraphQLError } from 'graphql';
 import { GRAPHQL_OVERLOAD_EXTENSION_CODE } from './graphql-concurrency.constants';
 
-export function buildConcurrencyOverloadError(subjectLabel: string): GraphQLError {
+export function buildConcurrencyOverloadError(
+  subjectLabel: string,
+): GraphQLError {
   return new GraphQLError(
     `Too many concurrent queries for subject ${subjectLabel}`,
     {

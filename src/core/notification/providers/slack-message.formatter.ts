@@ -40,7 +40,9 @@ export function formatSlackMessageText(notification: INotification): string {
     if (value === undefined) {
       continue;
     }
-    preferredLines.push(`${labelForPreferredKey(key)}: ${formatMetadataValue(value)}`);
+    preferredLines.push(
+      `${labelForPreferredKey(key)}: ${formatMetadataValue(value)}`,
+    );
     usedPreferred.add(key);
   }
 
@@ -54,7 +56,9 @@ export function formatSlackMessageText(notification: INotification): string {
     if (value === undefined) {
       continue;
     }
-    additionalLines.push(`• ${escapeMrkdwn(key)}: ${formatMetadataValue(value)}`);
+    additionalLines.push(
+      `• ${escapeMrkdwn(key)}: ${formatMetadataValue(value)}`,
+    );
   }
 
   if (preferredLines.length > 0) {

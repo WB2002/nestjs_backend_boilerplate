@@ -4,7 +4,10 @@ import { InboundBulkheadService } from '../inbound-bulkhead.service';
 import { OverloadRejectedError } from '../errors/overload-rejected.error';
 
 describe('InboundBulkheadMiddleware', () => {
-  function createMiddleware(maxInFlight: number, enabled = true): {
+  function createMiddleware(
+    maxInFlight: number,
+    enabled = true,
+  ): {
     middleware: InboundBulkheadMiddleware;
     service: InboundBulkheadService;
   } {
@@ -21,7 +24,11 @@ describe('InboundBulkheadMiddleware', () => {
   it('skips health probe paths', () => {
     const { middleware } = createMiddleware(1);
     const next = jest.fn();
-    middleware.use({ url: '/health/ready' } as never, mockResponse() as never, next);
+    middleware.use(
+      { url: '/health/ready' } as never,
+      mockResponse() as never,
+      next,
+    );
     expect(next).toHaveBeenCalledWith();
   });
 

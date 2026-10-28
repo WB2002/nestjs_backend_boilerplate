@@ -29,10 +29,7 @@ import {
   RateLimitMethodConfig,
   RateLimiterModuleOptions,
 } from '../types/rate-limit.types';
-import {
-  MissingFingerprintError,
-  MissingGuestIdError,
-} from '../errors';
+import { MissingFingerprintError, MissingGuestIdError } from '../errors';
 import { buildRateLimitKey, resolveRouteScope } from '../keys';
 import { resolveTracker } from '../trackers';
 
@@ -50,10 +47,10 @@ export class RateLimitGuard extends ThrottlerGuard {
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const skip = this.reflector.getAllAndOverride<boolean>(SKIP_RATE_LIMIT_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const skip = this.reflector.getAllAndOverride<boolean>(
+      SKIP_RATE_LIMIT_KEY,
+      [context.getHandler(), context.getClass()],
+    );
     if (skip) {
       return true;
     }
@@ -76,9 +73,16 @@ export class RateLimitGuard extends ThrottlerGuard {
     for (const method of methods) {
       let tracker: string | null;
       try {
-        tracker = resolveTracker(context, method.identifier, this.rateLimitOptions);
+        tracker = resolveTracker(
+          context,
+          method.identifier,
+          this.rateLimitOptions,
+        );
       } catch (err) {
-        if (err instanceof MissingFingerprintError || err instanceof MissingGuestIdError) {
+        if (
+          err instanceof MissingFingerprintError ||
+          err instanceof MissingGuestIdError
+        ) {
           throw new HttpException(
             {
               statusCode: HttpStatus.BAD_REQUEST,
@@ -141,7 +145,10 @@ export class RateLimitGuard extends ThrottlerGuard {
       );
 
       if (!result.allowed) {
-        const retryAfterSec = Math.max(1, Math.ceil(result.retryAfterMs / 1000));
+        const retryAfterSec = Math.max(
+          1,
+          Math.ceil(result.retryAfterMs / 1000),
+        );
         if (typeof res.header === 'function') {
           res.header('Retry-After', String(retryAfterSec));
         } else if (typeof res.setHeader === 'function') {
@@ -163,10 +170,9 @@ export class RateLimitGuard extends ThrottlerGuard {
   }
 
   private resolveMethods(context: ExecutionContext): RateLimitMethodConfig[] {
-    const handlerMeta = this.reflector.get<RateLimitDecoratorOptions | undefined>(
-      RATE_LIMIT_KEY,
-      context.getHandler(),
-    );
+    const handlerMeta = this.reflector.get<
+      RateLimitDecoratorOptions | undefined
+    >(RATE_LIMIT_KEY, context.getHandler());
     const classMeta = this.reflector.get<RateLimitDecoratorOptions | undefined>(
       RATE_LIMIT_KEY,
       context.getClass(),
@@ -184,10 +190,9 @@ export class RateLimitGuard extends ThrottlerGuard {
   private resolveDecoratorAlgorithm(
     context: ExecutionContext,
   ): RateLimitAlgorithm | undefined {
-    const handlerMeta = this.reflector.get<RateLimitDecoratorOptions | undefined>(
-      RATE_LIMIT_KEY,
-      context.getHandler(),
-    );
+    const handlerMeta = this.reflector.get<
+      RateLimitDecoratorOptions | undefined
+    >(RATE_LIMIT_KEY, context.getHandler());
     const classMeta = this.reflector.get<RateLimitDecoratorOptions | undefined>(
       RATE_LIMIT_KEY,
       context.getClass(),

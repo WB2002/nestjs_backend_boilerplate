@@ -20,7 +20,9 @@ export function createBackgroundJobsPostgresPool(
 
 @Injectable()
 export class BackgroundJobsPostgresPoolLifecycle implements OnModuleDestroy {
-  private readonly logger = new Logger(BackgroundJobsPostgresPoolLifecycle.name);
+  private readonly logger = new Logger(
+    BackgroundJobsPostgresPoolLifecycle.name,
+  );
 
   constructor(
     @Inject(BACKGROUND_JOBS_POSTGRES_POOL) private readonly pool: Pool,

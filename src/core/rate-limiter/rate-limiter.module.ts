@@ -83,7 +83,12 @@ export class RateLimiterModule {
         GuestIdMiddleware,
         RateLimitBackendLifecycle,
       ],
-      exports: [RATE_LIMIT_OPTIONS, RATE_LIMIT_BACKEND, RateLimitGuard, GuestIdMiddleware],
+      exports: [
+        RATE_LIMIT_OPTIONS,
+        RATE_LIMIT_BACKEND,
+        RateLimitGuard,
+        GuestIdMiddleware,
+      ],
     };
   }
 
@@ -132,7 +137,12 @@ export class RateLimiterModule {
         GuestIdMiddleware,
         RateLimitBackendLifecycle,
       ],
-      exports: [RATE_LIMIT_OPTIONS, RATE_LIMIT_BACKEND, RateLimitGuard, GuestIdMiddleware],
+      exports: [
+        RATE_LIMIT_OPTIONS,
+        RATE_LIMIT_BACKEND,
+        RateLimitGuard,
+        GuestIdMiddleware,
+      ],
     };
   }
 

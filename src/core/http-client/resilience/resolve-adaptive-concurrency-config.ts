@@ -18,15 +18,11 @@ export function resolveAdaptiveConcurrencyConfig(
   const rawInitial = tuning.initialLimit ?? DEFAULT_INITIAL;
   const rawMin = tuning.minLimit ?? DEFAULT_MIN;
 
-  const maxLimit = cluster
-    ? scaleClusterAwareLimit(rawMax, instances)
-    : rawMax;
+  const maxLimit = cluster ? scaleClusterAwareLimit(rawMax, instances) : rawMax;
   const initialLimit = cluster
     ? scaleClusterAwareLimit(rawInitial, instances)
     : rawInitial;
-  const minLimit = cluster
-    ? scaleClusterAwareLimit(rawMin, instances)
-    : rawMin;
+  const minLimit = cluster ? scaleClusterAwareLimit(rawMin, instances) : rawMin;
 
   return {
     algorithm: tuning.algorithm ?? DEFAULT_ALGORITHM,
@@ -36,7 +32,9 @@ export function resolveAdaptiveConcurrencyConfig(
     ...(tuning.successThreshold !== undefined
       ? { successThreshold: tuning.successThreshold }
       : {}),
-    ...(tuning.vegasAlpha !== undefined ? { vegasAlpha: tuning.vegasAlpha } : {}),
+    ...(tuning.vegasAlpha !== undefined
+      ? { vegasAlpha: tuning.vegasAlpha }
+      : {}),
     ...(tuning.vegasBeta !== undefined ? { vegasBeta: tuning.vegasBeta } : {}),
     ...(tuning.vegasMinSamples !== undefined
       ? { vegasMinSamples: tuning.vegasMinSamples }

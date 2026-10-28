@@ -18,7 +18,9 @@ describe('RateLimitGuard', () => {
   let backend: jest.Mocked<RateLimitBackend>;
   let headers: Record<string, string>;
 
-  const createContext = (req: Record<string, unknown> = {}): ExecutionContext => {
+  const createContext = (
+    req: Record<string, unknown> = {},
+  ): ExecutionContext => {
     headers = {};
     return {
       getHandler: () => jest.fn(),
@@ -51,25 +53,19 @@ describe('RateLimitGuard', () => {
         retryAfterMs: 0,
       } satisfies ConsumeResult),
     };
-    guard = new RateLimitGuard(
-      [] as never,
-      {} as never,
-      reflector,
-      backend,
-      {
-        storage: RateLimitStorage.Memory,
-        algorithm: RateLimitAlgorithm.FixedWindowCounter,
-        methods: [
-          {
-            name: 'global-ip',
-            identifier: RateLimitIdentifier.Ip,
-            duration: 60_000,
-            limit: 10,
-            keyScope: 'global',
-          },
-        ],
-      },
-    );
+    guard = new RateLimitGuard([] as never, {} as never, reflector, backend, {
+      storage: RateLimitStorage.Memory,
+      algorithm: RateLimitAlgorithm.FixedWindowCounter,
+      methods: [
+        {
+          name: 'global-ip',
+          identifier: RateLimitIdentifier.Ip,
+          duration: 60_000,
+          limit: 10,
+          keyScope: 'global',
+        },
+      ],
+    });
   });
 
   it('uses route metadata over global', async () => {

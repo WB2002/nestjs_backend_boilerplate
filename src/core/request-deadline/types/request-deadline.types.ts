@@ -1,6 +1,4 @@
-export type RequestDeadlineAbortReason =
-  | 'timeout'
-  | 'client_disconnected';
+export type RequestDeadlineAbortReason = 'timeout' | 'client_disconnected';
 
 export interface RequestDeadlineStore {
   signal: AbortSignal;

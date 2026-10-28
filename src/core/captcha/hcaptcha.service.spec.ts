@@ -153,9 +153,9 @@ describe('HCaptchaService', () => {
   });
 
   it('throws CaptchaConfigurationError when secret is missing', () => {
-    expect(() =>
-      createService({ HCAPTCHA_SECRET: undefined }),
-    ).toThrow(CaptchaConfigurationError);
+    expect(() => createService({ HCAPTCHA_SECRET: undefined })).toThrow(
+      CaptchaConfigurationError,
+    );
   });
 
   it('parses well-formed success:false from an HTTP error body', async () => {

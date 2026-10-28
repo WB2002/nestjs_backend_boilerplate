@@ -2,7 +2,10 @@ export { registerUnderPressure } from './register-under-pressure';
 export { parseUnderPressureConfig } from './parse-under-pressure-config';
 export { parseInboundBulkheadConfig } from './parse-inbound-bulkhead-config';
 export { buildOverloadErrorResponse } from './build-overload-error-response';
-export { isPressureExemptPath, normalizeRequestPath } from './is-pressure-exempt-path';
+export {
+  isPressureExemptPath,
+  normalizeRequestPath,
+} from './is-pressure-exempt-path';
 export { createPressureHandler } from './create-pressure-handler';
 export { resolveOverloadRetryAfterSec } from './resolve-overload-retry-after-sec';
 export { OverloadModule } from './overload.module';

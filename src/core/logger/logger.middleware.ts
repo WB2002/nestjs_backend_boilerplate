@@ -11,8 +11,9 @@ export class LoggerMiddleware implements NestMiddleware {
     const requestId = (req.headers['x-request-id'] as string) || uuidv4();
     const userId = req.user?.id || 'anonymous';
     const url = typeof req.url === 'string' ? req.url : '';
-    const spanContext =
-      !isTraceExemptPath(url) ? trace.getActiveSpan()?.spanContext() : undefined;
+    const spanContext = !isTraceExemptPath(url)
+      ? trace.getActiveSpan()?.spanContext()
+      : undefined;
 
     LoggerContext.run(
       {
@@ -22,7 +23,7 @@ export class LoggerMiddleware implements NestMiddleware {
         ...(spanContext?.spanId ? { spanId: spanContext.spanId } : {}),
       },
       () => {
-      res.setHeader('x-request-id', requestId);
+        res.setHeader('x-request-id', requestId);
         next();
       },
     );

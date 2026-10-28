@@ -2,9 +2,7 @@ import { Body, Controller, Post } from '@nestjs/common';
 import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { Public } from '@/common/decorators/public.decorator';
 import { JobEnqueueService } from '@/core/background-jobs';
-import {
-  EXAMPLE_ECHO_JOB_NAME,
-} from './jobs/example-echo.job-handler';
+import { EXAMPLE_ECHO_JOB_NAME } from './jobs/example-echo.job-handler';
 
 class EnqueueEchoJobDto {
   @IsString()

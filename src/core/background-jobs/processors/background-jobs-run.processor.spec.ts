@@ -11,9 +11,7 @@ describe('BackgroundJobsRunProcessor', () => {
   it('skips handler when claim returns null and job completed', async () => {
     const repo = {
       claimById: jest.fn().mockResolvedValue(null),
-      getStatus: jest
-        .fn()
-        .mockResolvedValue(BackgroundJobStatus.Completed),
+      getStatus: jest.fn().mockResolvedValue(BackgroundJobStatus.Completed),
       markCompleted: jest.fn(),
     } as unknown as PostgresJobRepository;
     const handler = { handle: jest.fn() };

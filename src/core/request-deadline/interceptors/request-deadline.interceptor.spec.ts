@@ -10,9 +10,7 @@ import {
 import { RequestDeadlineInterceptor } from './request-deadline.interceptor';
 import { RequestDeadlineStore } from '../types/request-deadline.types';
 
-function mockContext(
-  headers: Record<string, unknown> = {},
-): ExecutionContext {
+function mockContext(headers: Record<string, unknown> = {}): ExecutionContext {
   return {
     getHandler: () => () => undefined,
     getClass: () => class Test {},

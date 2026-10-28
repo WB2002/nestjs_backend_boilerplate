@@ -22,7 +22,8 @@ export class BackgroundJobsRunProcessor extends WorkerHost {
   constructor(
     private readonly repo: PostgresJobRepository,
     private readonly registry: JobHandlerRegistry,
-    @Inject(BACKGROUND_JOBS_CONFIG) private readonly config: BackgroundJobsConfig,
+    @Inject(BACKGROUND_JOBS_CONFIG)
+    private readonly config: BackgroundJobsConfig,
   ) {
     super();
   }
@@ -66,11 +67,7 @@ export class BackgroundJobsRunProcessor extends WorkerHost {
         return;
       }
       const delayMs = 1000 * row.attempts;
-      await this.repo.markFailed(
-        row.id,
-        err,
-        new Date(Date.now() + delayMs),
-      );
+      await this.repo.markFailed(row.id, err, new Date(Date.now() + delayMs));
     }
   }
 }

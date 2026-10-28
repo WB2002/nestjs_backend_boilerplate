@@ -1,9 +1,6 @@
 import FormData from 'form-data';
 import type { HttpRequest, QueryParamValue } from '../types';
-import {
-  assertPublicHttpUrl,
-  UnsafeUrlError,
-} from '@/common/sanitization';
+import { assertPublicHttpUrl, UnsafeUrlError } from '@/common/sanitization';
 
 export function buildUrl(options: {
   baseUrl?: string;

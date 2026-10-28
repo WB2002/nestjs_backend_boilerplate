@@ -13,7 +13,9 @@ describe('parsePrioritySheddingConfig', () => {
 
   it('enables when INBOUND_PRIORITY_SHEDDING_ENABLED=true', () => {
     expect(
-      parsePrioritySheddingConfig({ INBOUND_PRIORITY_SHEDDING_ENABLED: 'true' }),
+      parsePrioritySheddingConfig({
+        INBOUND_PRIORITY_SHEDDING_ENABLED: 'true',
+      }),
     ).toEqual(expect.objectContaining({ enabled: true }));
   });
 

@@ -30,7 +30,9 @@ describe('HealthController readiness', () => {
       }),
     };
     featureFlagHealth = {
-      isHealthy: jest.fn().mockResolvedValue({ featureFlags: { status: 'up' } }),
+      isHealthy: jest
+        .fn()
+        .mockResolvedValue({ featureFlags: { status: 'up' } }),
     };
     shutdownState = new ShutdownState();
     controller = new HealthController(
@@ -50,7 +52,9 @@ describe('HealthController readiness', () => {
   it('ready() runs dependency checks when not shutting down', async () => {
     await controller.ready();
     expect(health.check).toHaveBeenCalledTimes(1);
-    const checks = health.check.mock.calls[0][0] as Array<() => Promise<unknown>>;
+    const checks = health.check.mock.calls[0][0] as Array<
+      () => Promise<unknown>
+    >;
     expect(checks.length).toBeGreaterThanOrEqual(3);
     await expect(checks[0]!()).resolves.toEqual({ mongo: { status: 'up' } });
   });
@@ -58,7 +62,9 @@ describe('HealthController readiness', () => {
   it('ready() reports shuttingDown down when shutdown has begun', async () => {
     shutdownState.beginShutdown();
     await controller.ready();
-    const checks = health.check.mock.calls[0][0] as Array<() => Promise<unknown>>;
+    const checks = health.check.mock.calls[0][0] as Array<
+      () => Promise<unknown>
+    >;
     expect(checks).toHaveLength(1);
     await expect(checks[0]!()).resolves.toEqual({
       shuttingDown: {

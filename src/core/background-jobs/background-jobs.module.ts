@@ -30,9 +30,7 @@ export type BackgroundJobsModuleOptions = {
 @Global()
 @Module({})
 export class BackgroundJobsModule {
-  static forRootAsync(
-    options: BackgroundJobsModuleOptions,
-  ): DynamicModule {
+  static forRootAsync(options: BackgroundJobsModuleOptions): DynamicModule {
     const workerProviders = options.registerWorker
       ? [BackgroundJobsRunProcessor]
       : [];

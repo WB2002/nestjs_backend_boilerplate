@@ -15,7 +15,10 @@ const MESSAGE_WINDOW_SEC = 60;
 
 @Injectable()
 export class WsMessageRateLimiterGuard implements CanActivate {
-  private readonly localCounts = new Map<string, { count: number; resetAt: number }>();
+  private readonly localCounts = new Map<
+    string,
+    { count: number; resetAt: number }
+  >();
 
   constructor(
     private readonly configService: ConfigService,

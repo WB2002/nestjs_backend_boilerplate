@@ -3,11 +3,7 @@ import { looksLikeSqlInjection } from './utils/sql-injection.utils';
 import { assertPublicHttpUrl, UnsafeUrlError } from './utils/ssrf.utils';
 import { walkAndSanitize } from './utils/sanitization.utils';
 import { BadRequestException } from '@nestjs/common';
-import {
-  SafeUrl,
-  SkipSanitization,
-  SkipSqlInjectionCheck,
-} from './decorators';
+import { SafeUrl, SkipSanitization, SkipSqlInjectionCheck } from './decorators';
 
 describe('sanitizeHtmlString', () => {
   it('strips script and tags by default', () => {
@@ -96,9 +92,9 @@ describe('assertPublicHttpUrl', () => {
   });
 
   it('rejects credentials and non-http schemes', () => {
-    expect(() =>
-      assertPublicHttpUrl('https://user:pass@example.com/'),
-    ).toThrow(UnsafeUrlError);
+    expect(() => assertPublicHttpUrl('https://user:pass@example.com/')).toThrow(
+      UnsafeUrlError,
+    );
     expect(() => assertPublicHttpUrl('file:///etc/passwd')).toThrow(
       UnsafeUrlError,
     );

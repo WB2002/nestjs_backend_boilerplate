@@ -5,8 +5,5 @@ export {
   type AdaptiveLimiterConfig,
   type AdaptiveLimiterConfigInput,
 } from './adaptive-config';
-export {
-  AdaptiveLimiter,
-  type AdaptiveOperation,
-} from './adaptive-limiter';
+export { AdaptiveLimiter, type AdaptiveOperation } from './adaptive-limiter';
 export { NEVER_ABORTED_SIGNAL } from './never-aborted-signal';

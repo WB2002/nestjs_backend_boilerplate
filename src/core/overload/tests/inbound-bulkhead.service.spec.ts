@@ -2,7 +2,9 @@ import { InboundBulkheadService } from '../inbound-bulkhead.service';
 import { InboundBulkheadConfig } from '../inbound-bulkhead.types';
 
 describe('InboundBulkheadService', () => {
-  function createService(config: InboundBulkheadConfig): InboundBulkheadService {
+  function createService(
+    config: InboundBulkheadConfig,
+  ): InboundBulkheadService {
     return new InboundBulkheadService(config);
   }
 

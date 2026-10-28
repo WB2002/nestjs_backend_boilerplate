@@ -1,7 +1,4 @@
-import {
-  AdaptiveLimiter,
-  type AdaptiveLimiterConfigInput,
-} from './adaptive';
+import { AdaptiveLimiter, type AdaptiveLimiterConfigInput } from './adaptive';
 import type { ConcurrencyGate } from './concurrency-gate.types';
 import { mergeAbortSignals } from './merge-abort-signals';
 

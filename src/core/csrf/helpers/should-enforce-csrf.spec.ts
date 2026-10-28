@@ -1,7 +1,4 @@
-import {
-  ACCESS_TOKEN_COOKIE,
-  SESSION_ID_COOKIE,
-} from '@/common/constants';
+import { ACCESS_TOKEN_COOKIE, SESSION_ID_COOKIE } from '@/common/constants';
 import { shouldEnforceCsrf } from './should-enforce-csrf';
 
 describe('shouldEnforceCsrf', () => {
