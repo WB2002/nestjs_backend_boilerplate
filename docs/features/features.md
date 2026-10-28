@@ -55,7 +55,7 @@ Last reviewed against the boilerplate roadmap (code audit, not task status).
 | ↳ Guest ID (public API) | **Done** | `GuestIdMiddleware` + cookie |
 | External + internal HTTP client | **Done** | `HttpClient.internal()` / `.external()` |
 | Exponential backoff with jitter | **Done** | Strategy helpers + tests |
-| Backpressure | **Partial** | `@fastify/under-pressure` + inbound fail-fast bulkhead (`INBOUND_MAX_IN_FLIGHT`, 503 + Retry-After); outbound concurrency + GraphQL Redis concurrency — API priority queues still missing |
+| Backpressure | **Partial** | `@fastify/under-pressure` + inbound bulkhead + GraphQL Redis concurrency (503 overload); outbound HttpClient limits — API priority queues still missing |
 | Circuit breaker | **Done** | Per logical client |
 | Deadline propagation | **Partial** | Inbound ALS + `x-request-deadline`; outbound `HttpClient` inherits signal + caps timeouts by `remainingMs()` — optional `x-request-deadline` header to downstreams not wired |
 | Request coalescing | **Done** | HTTP client; cache layer single-flight |
@@ -195,7 +195,7 @@ See [country_access.feature.md](./country_access.feature.md).
 
 ### GraphQL
 
-Apollo on Fastify, schema via `*.graphql`, sample `CategoriesModule`, depth limit, query complexity + Redis concurrency cap in `ComplexityPlugin`.
+Apollo on Fastify, schema via `*.graphql`, sample `CategoriesModule`, depth limit, query complexity + **Redis-backed** per-subject concurrency in `ComplexityPlugin` (`GQL_MAX_CONCURRENCY`, TTL leak safety via `GQL_CONCURRENCY_KEY_TTL_SEC`, keys by JWT user or `guest_id` cookie). Concurrency denial returns **503** + `Retry-After` (overload). Limits are **cluster-wide** when Redis is shared across tasks.
 
 ### File uploads
 
