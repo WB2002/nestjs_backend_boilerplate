@@ -7,6 +7,7 @@ import {
   remainingMs,
   throwIfAborted,
 } from './request-deadline.helpers';
+import { RequestDeadlineStore } from '../types/request-deadline.types';
 
 const noopInternals = {
   clearTimer: () => undefined,
@@ -41,11 +42,11 @@ describe('request-deadline helpers', () => {
 
   it('throwIfAborted throws typed errors by reason', () => {
     const controller = new AbortController();
-    const store = {
+    const store: RequestDeadlineStore = {
       signal: controller.signal,
       startedAt: Date.now(),
       deadlineAt: Date.now(),
-      reason: 'timeout' as const,
+      reason: 'timeout',
     };
 
     DeadlineContext.run(store, noopInternals, () => {

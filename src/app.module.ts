@@ -47,6 +47,8 @@ import {
 import { ComplexityPlugin } from './common/plugins/complexity.plugin';
 import { SanitizationPipe } from './common/sanitization';
 import { validateEnv } from './common/config';
+import { isWebSocketEnabled } from './common/config/load-env-file';
+import { ExampleRealtimeModule } from './example/example-realtime.module';
 import {
   configServiceFromFactoryArgs,
   resolveCacheStorageFromConfig,
@@ -62,7 +64,6 @@ import {
   InboundBulkheadMiddleware,
   OverloadModule,
 } from './core/overload';
-
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -95,6 +96,7 @@ import {
     UploadsModule,
     CountryAccessModule,
     ExampleModule,
+    ...(isWebSocketEnabled() ? [ExampleRealtimeModule] : []),
     FeatureFlagModule,
     WinstonModule.forRoot(winstonConfig),
     CacheModule.forRootAsync({

@@ -105,7 +105,7 @@ describe('RequestDeadlineMiddleware', () => {
     });
 
     expect(closeListeners).toHaveLength(1);
-    closeListeners[0]();
+    closeListeners[0]!();
     expect(signal!.aborted).toBe(true);
   });
 
@@ -121,7 +121,7 @@ describe('RequestDeadlineMiddleware', () => {
       signal = getRequestSignal();
     });
 
-    finishListeners[0]();
+    finishListeners[0]!();
     jest.advanceTimersByTime(5000);
     expect(signal!.aborted).toBe(false);
   });

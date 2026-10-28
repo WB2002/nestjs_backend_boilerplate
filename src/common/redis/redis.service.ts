@@ -1,6 +1,6 @@
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import Redis from 'ioredis';
+import Redis, { RedisOptions } from 'ioredis';
 
 /** Max time to wait for a graceful QUIT before dropping the socket. */
 const QUIT_TIMEOUT_MS = 1_000;
@@ -54,5 +54,12 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       throw new Error('Redis client is not initialized');
     }
     return this.client;
+  }
+
+  duplicate(overrides?: RedisOptions): Redis {
+    return this.getClient().duplicate({
+      enableOfflineQueue: false,
+      ...overrides,
+    });
   }
 }

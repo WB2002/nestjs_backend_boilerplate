@@ -8,6 +8,7 @@ import {
   SKIP_REQUEST_DEADLINE_KEY,
 } from '../constants/request-deadline.constants';
 import { RequestDeadlineInterceptor } from './request-deadline.interceptor';
+import { RequestDeadlineStore } from '../types/request-deadline.types';
 
 function mockContext(
   headers: Record<string, unknown> = {},
@@ -34,11 +35,10 @@ describe('RequestDeadlineInterceptor', () => {
 
     const controller = new AbortController();
     const startedAt = Date.now();
-    const store = {
+    const store: RequestDeadlineStore = {
       signal: controller.signal,
       startedAt,
       deadlineAt: startedAt + 30_000,
-      reason: undefined as undefined | 'timeout' | 'client_disconnected',
     };
     const internals = {
       clearTimer: () => undefined,

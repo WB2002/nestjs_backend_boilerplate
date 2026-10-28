@@ -1,17 +1,17 @@
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { FastifyRequest } from 'fastify';
-import { AuthService } from '../auth.service';
 import { ACCESS_TOKEN_COOKIE } from '@/common/constants';
 import { JwtPayload } from '@/types';
+import { AccessTokenAuthenticator } from '../access-token-authenticator.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     configService: ConfigService,
-    private authService: AuthService,
+    private readonly accessTokenAuthenticator: AccessTokenAuthenticator,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
@@ -30,16 +30,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: JwtPayload) {
-    const isRevoked = await this.authService.isRevoked(payload.jti);
-    if (isRevoked) {
-      throw new UnauthorizedException('Session has been revoked');
-    }
-    return {
-      id: payload.sub,
-      email: payload.email,
-      jti: payload.jti,
-      role: payload.role ?? 'user',
-    };
+  validate(payload: JwtPayload) {
+    return this.accessTokenAuthenticator.userFromVerifiedPayload(payload);
   }
 }

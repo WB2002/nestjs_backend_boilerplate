@@ -3,6 +3,7 @@ import { Reflector } from '@nestjs/core';
 import { RateLimitGuard } from './rate-limit.guard';
 import { RateLimitAlgorithm } from '../enums/rate-limit-algorithm.enum';
 import { RateLimitIdentifier } from '../enums/rate-limit-identifier.enum';
+import { RateLimitStorage } from '../enums/rate-limit-storage.enum';
 import {
   RATE_LIMIT_COST_KEY,
   RATE_LIMIT_KEY,
@@ -56,7 +57,7 @@ describe('RateLimitGuard', () => {
       reflector,
       backend,
       {
-        storage: undefined,
+        storage: RateLimitStorage.Memory,
         algorithm: RateLimitAlgorithm.FixedWindowCounter,
         methods: [
           {

@@ -3,7 +3,14 @@ import type { Config } from 'jest';
 const config: Config = {
   moduleFileExtensions: ['js', 'json', 'ts'],
   rootDir: '.',
+  // Only application tests under src/ (ignore .worktrees/ copies of the repo).
+  roots: ['<rootDir>/src'],
   testRegex: '.*\\.spec\\.ts$',
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    String.raw`/\.worktrees/`,
+    '/dist/',
+  ],
   transform: {
     '^.+\\.(t|j)s$': [
       'ts-jest',

@@ -36,6 +36,7 @@ Overview of capabilities in `nestjs_backend_boilerplate`. **Implementation statu
 | Notifications (Slack) | `/example` | Done | [notification.feature.md](./notification.feature.md) |
 | Feature flags | `/feature-flags` | Done | [feature_flag.feature.md](./feature_flag.feature.md) |
 | Country access (geo allow/block) | Global guard | Done | [country_access.feature.md](./country_access.feature.md) |
+| WebSockets (Socket.IO) | `/realtime` namespace | Done | [websocket.feature.md](./websocket.feature.md) |
 | Environment validation | Boot | Done | — (`src/common/config/`) |
 | Input sanitization | Global pipe | Done | — (`src/common/sanitization/`) |
 | Global exception handler | APP_FILTER | Done | — (`src/common/filters/`) |
@@ -125,7 +126,7 @@ Last reviewed against the boilerplate roadmap (code audit, not task status).
 | Slack integration | **Done** | Webhook provider |
 | Push notifications | **Missing** | — |
 | Send email | **Missing** | — |
-| WebSockets + Redis pub/sub | **Missing** | — |
+| WebSockets + Redis pub/sub | **Done** | [websocket.feature.md](./websocket.feature.md) |
 | Server-Sent Events (SSE) | **Missing** | — |
 | GraphQL setup | **Done** | Apollo, depth limit, complexity plugin |
 | gRPC setup | **Missing** | `@nestjs/microservices` used for Redis health ping only |

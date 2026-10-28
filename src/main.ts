@@ -16,6 +16,14 @@ import {
   parseUnderPressureConfig,
   registerUnderPressure,
 } from './core/overload';
+import { ConfigService } from '@nestjs/config';
+import { RedisService } from './common/redis/redis.service';
+import {
+  assertWebSocketProductionOrigins,
+  parseWebSocketConfig,
+  RedisIoAdapter,
+  WebSocketShutdownService,
+} from './core/websocket';
 
 const logger = new Logger('UnhandledRejection');
 
@@ -136,6 +144,28 @@ async function bootstrap() {
     credentials: true,
   });
 
+  const configService = app.get(ConfigService);
+  const wsConfig = parseWebSocketConfig(configService);
+  assertWebSocketProductionOrigins(
+    wsConfig,
+    configService.get<string>('NODE_ENV') ?? 'development',
+  );
+  if (wsConfig.enabled) {
+    const redisService = app.get(RedisService);
+    const pubClient = redisService.duplicate();
+    const subClient = redisService.duplicate();
+    const redisIoAdapter = new RedisIoAdapter(
+      app,
+      pubClient,
+      subClient,
+      wsConfig,
+    );
+    if (wsConfig.redisAdapterEnabled) {
+      redisIoAdapter.connectToRedis();
+    }
+    app.useWebSocketAdapter(redisIoAdapter);
+  }
+
   // Manual SIGTERM/SIGINT handlers (not enableShutdownHooks): mark readiness
   // 503 first, wait for ALB drain, then close so Nest lifecycle runs.
   await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
@@ -150,6 +180,9 @@ async function bootstrap() {
       DEFAULT_SHUTDOWN_FORCE_MS,
     ),
     beforeClose: async () => {
+      if (wsConfig.enabled) {
+        await app.get(WebSocketShutdownService).closeAll();
+      }
       // Abort pending Mongo connect attempts so Nest mongoose teardown cannot hang.
       try {
         await mongoose.connection.destroy();

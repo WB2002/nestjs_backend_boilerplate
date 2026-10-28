@@ -9,6 +9,7 @@ import { User, UserSchema } from './schemas/user.schema';
 import { Session, SessionSchema } from './schemas/session.schema';
 import { LocalStrategy } from './strategies/local.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { AccessTokenAuthenticator } from './access-token-authenticator.service';
 
 @Module({
   imports: [
@@ -35,7 +36,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, LocalStrategy, JwtStrategy],
-  exports: [AuthService],
+  providers: [AuthService, LocalStrategy, JwtStrategy, AccessTokenAuthenticator],
+  exports: [AuthService, AccessTokenAuthenticator],
 })
 export class AuthModule {}

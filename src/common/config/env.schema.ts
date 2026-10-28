@@ -93,6 +93,16 @@ export const envSchema = {
   GQL_MAX_CONCURRENCY: { required: false },
   GQL_CONCURRENCY_KEY_TTL_SEC: { required: false },
 
+  // WebSocket (Socket.IO)
+  WEBSOCKET_ENABLED: { required: false },
+  WEBSOCKET_PATH: { required: false },
+  WEBSOCKET_ALLOW_QUERY_TOKEN: { required: false },
+  WEBSOCKET_REDIS_ADAPTER: { required: false },
+  WEBSOCKET_MAX_CONNECTIONS_PER_USER: { required: false },
+  WEBSOCKET_MAX_INBOUND_BUFFER_BYTES: { required: false },
+  WEBSOCKET_MESSAGES_PER_MINUTE: { required: false },
+  WEBSOCKET_CONNECTION_KEY_TTL_SEC: { required: false },
+
   // Feature flags (optional; defaults applied in FeatureFlagService)
   FEATURE_FLAG_ENV: { required: false },
   FEATURE_FLAG_RECONCILE_MS: { required: false },
