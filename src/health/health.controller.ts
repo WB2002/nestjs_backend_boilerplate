@@ -10,7 +10,10 @@ import {
 import { Transport, RedisOptions } from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
 import { Client } from 'pg';
-import type { HealthIndicatorResult } from '@nestjs/terminus';
+import type {
+  HealthIndicatorFunction,
+  HealthIndicatorResult,
+} from '@nestjs/terminus';
 import { Public } from '../common/decorators/public.decorator';
 import { ShutdownState } from '../core/shutdown';
 import { SkipRateLimit } from '../core/rate-limiter';
@@ -66,13 +69,18 @@ export class HealthController {
     return this.health.check(this.buildChecks());
   }
 
-  private buildChecks(): Array<() => Promise<HealthIndicatorResult>> {
-    const checks: Array<() => Promise<HealthIndicatorResult>> = [
+  private buildChecks(): HealthIndicatorFunction[] {
+    const checks: HealthIndicatorFunction[] = [
       // MongoDB check (wrapped so connection failures never crash the process)
-      () =>
-        this.mongoose.pingCheck('mongo').catch(() => ({
-          mongo: { status: 'down' as const, message: 'Unavailable' },
-        })),
+      async () => {
+        try {
+          return await this.mongoose.pingCheck('mongo');
+        } catch {
+          return {
+            mongo: { status: 'down' as const, message: 'Unavailable' },
+          };
+        }
+      },
 
       // Memory check (heap used > 150MB)
       () => this.memory.checkHeap('memory_heap', 150 * 1024 * 1024),
@@ -92,14 +100,15 @@ export class HealthController {
     const redisHost = this.configService.get<string>('REDIS_HOST');
     if (redisHost) {
       checks.push(() =>
-        this.microservice.pingCheck<RedisOptions>('redis', {
-          transport: Transport.REDIS,
-          options: {
-            host: redisHost,
-            port: this.configService.get<number>('REDIS_PORT', 6379),
-          },
-          timeout: 3000,
-        }),
+        this.microservice
+          .pingCheck<RedisOptions>('redis', {
+            transport: Transport.REDIS,
+            options: {
+              host: redisHost,
+              port: this.configService.get<number>('REDIS_PORT', 6379),
+            },
+          })
+          .withTimeout(3000),
       );
     }
 

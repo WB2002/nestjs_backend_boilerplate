@@ -64,10 +64,7 @@ import { NotificationModule } from './core/notification';
 import { ExampleModule } from './example/example.module';
 import { ExampleJobsModule } from './example/example-jobs.module';
 import { FeatureFlagModule } from './feature-flag';
-import {
-  InboundPriorityBulkheadGuard,
-  OverloadModule,
-} from './core/overload';
+import { InboundPriorityBulkheadGuard, OverloadModule } from './core/overload';
 import {
   CsrfModule,
   CsrfMiddleware,
@@ -195,7 +192,7 @@ import { parseCsvPaths } from './core/csrf/helpers/parse-csv-paths';
         path: join(process.cwd(), 'src/graphql.ts'),
         outputAs: 'class',
       },
-      playground: true,
+      graphiql: true,
       validationRules: [depthLimit(10)],
     }),
   ],

@@ -1,4 +1,16 @@
 {
   "extends": "./tsconfig.json",
-  "exclude": ["node_modules", "test", "dist", "**/*spec.ts"]
+  "compilerOptions": {
+    "rootDir": "./src",
+    "types": ["node"]
+  },
+  "exclude": [
+    "node_modules",
+    "test",
+    "dist",
+    "**/*spec.ts",
+    "src/core/rate-limiter/backends/algorithm-scenarios.ts",
+    "src/core/rate-limiter/backends/redis-test-utils.ts",
+    "src/core/cache/backends/redis-test-utils.ts"
+  ]
 }

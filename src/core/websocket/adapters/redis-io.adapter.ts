@@ -24,13 +24,14 @@ export class RedisIoAdapter extends IoAdapter {
   createIOServer(port: number, options?: ServerOptions) {
     const server = super.createIOServer(port, {
       path: this.wsConfig.path,
+      serveClient: false,
       cors: {
         origin: this.wsConfig.corsOrigins,
         credentials: true,
       },
       maxHttpBufferSize: this.wsConfig.maxInboundBufferBytes,
       ...options,
-    });
+    } as ServerOptions);
     if (this.adapterConstructor) {
       server.adapter(this.adapterConstructor);
     }

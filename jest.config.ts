@@ -25,8 +25,14 @@ const config: Config = {
   collectCoverageFrom: ['src/core/http-client/**/*.(t|j)s'],
   coverageDirectory: './coverage',
   testEnvironment: 'node',
+  testEnvironmentOptions: {
+    customExportConditions: ['node', 'require', 'import', 'default'],
+  },
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    '^sanitize-html$': '<rootDir>/jest/sanitize-html-shim.cjs',
+    '^@nestjs/bullmq$': '<rootDir>/jest/nestjs-bullmq-shim.cjs',
+    '^pg$': '<rootDir>/jest/pg-shim.cjs',
   },
 };
 

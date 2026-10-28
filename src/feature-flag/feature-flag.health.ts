@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import {
-  HealthIndicator,
   HealthIndicatorResult,
-  HealthCheckError,
+  HealthIndicatorService,
 } from '@nestjs/terminus';
 import { FeatureFlagService } from './feature-flag.service';
 
@@ -11,14 +10,15 @@ import { FeatureFlagService } from './feature-flag.service';
  * Does NOT fail readiness — Redis outages must not take the app out of rotation.
  */
 @Injectable()
-export class FeatureFlagHealthIndicator extends HealthIndicator {
-  constructor(private readonly featureFlagService: FeatureFlagService) {
-    super();
-  }
+export class FeatureFlagHealthIndicator {
+  constructor(
+    private readonly featureFlagService: FeatureFlagService,
+    private readonly healthIndicatorService: HealthIndicatorService,
+  ) {}
 
   async isHealthy(key: string): Promise<HealthIndicatorResult> {
     const status = this.featureFlagService.getHealthStatus();
-    const result = this.getStatus(key, true, {
+    return this.healthIndicatorService.check(key).up({
       stale: status.stale,
       healthy: status.healthy,
       redisAvailable: status.redisAvailable,
@@ -27,10 +27,5 @@ export class FeatureFlagHealthIndicator extends HealthIndicator {
       lastReconciledAt: status.lastReconciledAt,
       lastError: status.lastError,
     });
-    // Always up for Terminus aggregation — stale is informational only.
-    if (!result[key]) {
-      throw new HealthCheckError('Feature flags health check failed', result);
-    }
-    return result;
   }
 }

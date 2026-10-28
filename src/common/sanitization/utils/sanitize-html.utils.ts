@@ -1,11 +1,11 @@
-import * as sanitizeHtmlImport from 'sanitize-html';
 import type { SanitizeHtmlOptions } from '../types';
 
-const sanitizeHtml =
-  typeof sanitizeHtmlImport === 'function'
-    ? sanitizeHtmlImport
-    : (sanitizeHtmlImport as unknown as { default: typeof sanitizeHtmlImport })
-        .default;
+// sanitize-html is CJS; require keeps Jest (experimental-vm-modules) and Nest build stable.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const sanitizeHtml = require('sanitize-html') as (
+  value: string,
+  options?: SanitizeHtmlOptions,
+) => string;
 
 const DEFAULT_OPTIONS: SanitizeHtmlOptions = {
   allowedTags: [],
