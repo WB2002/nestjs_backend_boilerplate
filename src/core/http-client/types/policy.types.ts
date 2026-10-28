@@ -36,10 +36,28 @@ export interface CircuitBreakerPolicy {
   halfOpenMaxAttempts?: number;
 }
 
+export type ConcurrencyLimitMode = 'fixed' | 'adaptive';
+
+export interface AdaptiveConcurrencyTuning {
+  algorithm?: 'aimd' | 'vegas' | 'gradient2';
+  initialLimit?: number;
+  minLimit?: number;
+  maxLimit?: number;
+  successThreshold?: number;
+  vegasAlpha?: number;
+  vegasBeta?: number;
+  vegasMinSamples?: number;
+  gradientMinSamples?: number;
+  gradientSmoothing?: number;
+}
+
 export interface ConcurrencyLimitPolicy {
+  /** Default `fixed` when omitted */
+  mode?: ConcurrencyLimitMode;
   maxConcurrent: number;
   /** When set, effective limit = max(1, floor(maxConcurrent / instanceCount)) */
   clusterAware?: boolean;
+  adaptive?: AdaptiveConcurrencyTuning;
 }
 
 export interface CoalescingPolicy {
