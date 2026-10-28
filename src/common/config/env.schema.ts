@@ -53,6 +53,11 @@ export const envSchema = {
   // Multi-VM coordination (rate limit + cache backends)
   RATE_LIMIT_STORAGE: { required: false },
   CACHE_STORAGE: { required: false },
+  CACHE_TTL_JITTER_RATIO: { required: false },
+  CACHE_LOADER_LOCK_TTL_MS: { required: false },
+  CACHE_LOADER_WAIT_MS: { required: false },
+  CACHE_NEGATIVE_SOFT_TTL_MS: { required: false },
+  CACHE_NEGATIVE_HARD_TTL_MS: { required: false },
 
   // Country access / GeoIP
   GEOIP_DATABASE_PATH: { required: true },

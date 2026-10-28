@@ -2,6 +2,7 @@ export type {
   CacheTtl,
   CacheEntry,
   CacheFreshness,
+  CacheGetOrSetOptions,
   CacheGetResult,
   CacheModuleOptions,
 } from './cache.types';

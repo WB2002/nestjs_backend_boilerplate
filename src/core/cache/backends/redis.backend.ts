@@ -8,6 +8,10 @@ export class RedisCacheBackend implements CacheBackend {
 
   constructor(private readonly redis: Redis) {}
 
+  getRedis(): Redis {
+    return this.redis;
+  }
+
   async get<T>(key: string): Promise<CacheEntry<T> | null> {
     const raw = await this.redis.get(key);
     if (raw == null) {

@@ -12,10 +12,12 @@ import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
 import {
   CACHE_BACKEND,
+  CACHE_LOADER_LOCK,
   CACHE_OPTIONS,
   DEFAULT_CACHE_KEY_PREFIX,
   DEFAULT_CACHE_OPTIONS,
 } from './constants/cache.constants';
+import { RedisCacheLoaderLock } from './lock/redis-cache-loader-lock';
 import { CacheStorage } from './enums/cache-storage.enum';
 import { MemoryCacheBackend } from './backends/memory.backend';
 import { RedisCacheBackend } from './backends/redis.backend';
@@ -66,6 +68,7 @@ export class CacheModule {
           useValue: merged,
         },
         this.createBackendProvider(),
+        this.createLoaderLockProvider(),
         CacheService,
         CacheBackendLifecycle,
       ],
@@ -103,10 +106,24 @@ export class CacheModule {
       providers: [
         optionsProvider,
         this.createBackendProvider(),
+        this.createLoaderLockProvider(),
         CacheService,
         CacheBackendLifecycle,
       ],
       exports: [CACHE_OPTIONS, CACHE_BACKEND, CacheService],
+    };
+  }
+
+  private static createLoaderLockProvider(): Provider {
+    return {
+      provide: CACHE_LOADER_LOCK,
+      useFactory: (backend: CacheBackend) => {
+        if (backend instanceof RedisCacheBackend) {
+          return new RedisCacheLoaderLock(backend.getRedis());
+        }
+        return undefined;
+      },
+      inject: [CACHE_BACKEND],
     };
   }
 

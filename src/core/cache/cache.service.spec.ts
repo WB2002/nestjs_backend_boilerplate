@@ -1,16 +1,22 @@
 import { CacheService } from './cache.service';
 import { MemoryCacheBackend } from './backends/memory.backend';
 import { DEFAULT_CACHE_KEY_PREFIX } from './constants/cache.constants';
+import { CacheLoaderLock } from './lock/cache-loader-lock.interface';
 import { CacheModuleOptions } from './types/cache.types';
 
 function createService(
   options: CacheModuleOptions = {},
+  loaderLock?: CacheLoaderLock,
 ): { service: CacheService; backend: MemoryCacheBackend } {
   const backend = new MemoryCacheBackend();
-  const service = new CacheService(backend, {
-    keyPrefix: DEFAULT_CACHE_KEY_PREFIX,
-    ...options,
-  });
+  const service = new CacheService(
+    backend,
+    {
+      keyPrefix: DEFAULT_CACHE_KEY_PREFIX,
+      ...options,
+    },
+    loaderLock,
+  );
   return { service, backend };
 }
 
@@ -135,5 +141,34 @@ describe('CacheService SWR', () => {
       v: { id: 1 },
     });
     await expect(backend.get('user:1')).resolves.toBeNull();
+  });
+
+  it('caches null when cacheNull is enabled (penetration)', async () => {
+    const { service } = createService({
+      defaultNegativeSoftTtlMs: 500,
+      defaultNegativeHardTtlMs: 1000,
+    });
+    const loader = jest.fn(async () => null as string | null);
+    const opts = {
+      ttl: { softTtlMs: 5000, hardTtlMs: 10000 },
+      cacheNull: true,
+    };
+    await expect(service.getOrSet('missing', loader, opts)).resolves.toBeNull();
+    await expect(service.getOrSet('missing', loader, opts)).resolves.toBeNull();
+    expect(loader).toHaveBeenCalledTimes(1);
+    await expect(service.get('missing')).resolves.toEqual({
+      absent: true,
+      status: 'fresh',
+    });
+  });
+
+  it('applies TTL jitter on set when module ratio > 0', async () => {
+    const { service, backend } = createService({ ttlJitterRatio: 0.1 });
+    await service.set('k', 1, { softTtlMs: 1000, hardTtlMs: 2000 });
+    const entry = await backend.get('cache:k');
+    expect(entry).not.toBeNull();
+    const span = entry!.hardExpiresAt - entry!.softExpiresAt;
+    expect(span).toBeGreaterThanOrEqual(1000);
+    expect(span).toBeLessThanOrEqual(1200);
   });
 });

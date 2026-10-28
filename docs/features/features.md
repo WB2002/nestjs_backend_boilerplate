@@ -26,7 +26,7 @@ Overview of capabilities in `nestjs_backend_boilerplate`. **Implementation statu
 | HTTP client (internal / external) | Global provider | Done | [http_client.feature.md](./http_client.feature.md) |
 | Rate limiting | Global guard | Done | — (`src/core/rate-limiter/`) |
 | Request deadline (inbound) | Global middleware | Partial | — (`src/core/request-deadline/`) |
-| Cache (SWR + stampede protection) | Global module | Partial | `src/core/cache/` — **Multi-VM:** production defaults to Redis when `CACHE_STORAGE` unset |
+| Cache (SWR + resilience) | Global module | Partial | `src/core/cache/` — stampede (SWR + single-flight + Redis lock), opt-in negative cache & TTL jitter — **Multi-VM:** production defaults to Redis when `CACHE_STORAGE` unset |
 | Graceful shutdown | Process signals | Done | — (`src/core/shutdown/`) |
 | Response compression | Fastify plugin | Done | — |
 | Logging & request ID | Global middleware | Done | — (`src/core/logger/`) |
@@ -121,7 +121,9 @@ Last reviewed against the boilerplate roadmap (code audit, not task status).
 
 | Item | Status | Notes |
 | ---- | ------ | ----- |
-| Cache stampede protection | **Partial** | `CacheService.getOrSet` (SWR + single-flight); module registered, **not used by feature modules yet** |
+| Cache stampede protection | **Done** (core) | `CacheService.getOrSet` — SWR, in-process single-flight, Redis loader lock when `CACHE_STORAGE=redis`; feature modules opt in by injecting `CacheService` |
+| Cache penetration (negative cache) | **Partial** | Opt-in `cacheNull: true` on `getOrSet` |
+| Cache avalanche (TTL jitter) | **Partial** | `CACHE_TTL_JITTER_RATIO` / `ttlJitterRatio` on writes |
 | Feature flags | **Done** | Redis + in-memory eval, Pub/Sub, reconcile |
 | Slack integration | **Done** | Webhook provider |
 | Push notifications | **Missing** | — |
@@ -171,7 +173,23 @@ Code: `src/core/request-deadline/`.
 
 ### Cache
 
-Stale-while-revalidate and single-flight `getOrSet` to reduce stampede; memory or Redis backend. Wired in `AppModule` with in-memory storage; consumers can inject `CacheService` when needed.
+Stale-while-revalidate, in-process single-flight, and Redis SET-NX loader locks (multi-VM) on `getOrSet`. Optional TTL jitter (`CACHE_TTL_JITTER_RATIO`) spreads expirations. Opt-in negative caching (`cacheNull: true`) stores short-lived absent entries for missing keys.
+
+Example:
+
+```typescript
+await cacheService.getOrSet(
+  `user:${id}`,
+  () => repo.findById(id),
+  {
+    ttl: { softTtlMs: 60_000, hardTtlMs: 300_000 },
+    cacheNull: true,
+    negativeTtl: { softTtlMs: 30_000, hardTtlMs: 60_000 },
+  },
+);
+```
+
+Production defaults to Redis storage when `CACHE_STORAGE` is unset; development uses memory. Feature code must inject `CacheService` to use caching.
 
 Code: `src/core/cache/`.
 

@@ -27,6 +27,7 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { AuthModule } from './auth/auth.module';
 import { CategoriesModule } from './categories/categories.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { parseCacheModuleOptions } from './common/config/parse-cache-module-options';
 import { CacheModule } from './core/cache';
 import { ShutdownModule } from './core/shutdown';
 import {
@@ -101,11 +102,13 @@ import {
     WinstonModule.forRoot(winstonConfig),
     CacheModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (...args: unknown[]) => ({
-        storage: resolveCacheStorageFromConfig(
-          configServiceFromFactoryArgs(args),
-        ),
-      }),
+      useFactory: (...args: unknown[]) => {
+        const configService = configServiceFromFactoryArgs(args);
+        return {
+          storage: resolveCacheStorageFromConfig(configService),
+          ...parseCacheModuleOptions(configService),
+        };
+      },
     }),
     RateLimiterModule.forRootAsync({
       inject: [ConfigService],
