@@ -57,7 +57,7 @@ Last reviewed against the boilerplate roadmap (code audit, not task status).
 | Exponential backoff with jitter | **Done** | Strategy helpers + tests |
 | Backpressure | **Partial** | `@fastify/under-pressure` + inbound fail-fast bulkhead (`INBOUND_MAX_IN_FLIGHT`, 503 + Retry-After); outbound concurrency + GraphQL Redis concurrency — API priority queues still missing |
 | Circuit breaker | **Done** | Per logical client |
-| Deadline propagation | **Partial** | Inbound ALS + `x-request-deadline`; **not** wired to outbound `HttpClient` |
+| Deadline propagation | **Partial** | Inbound ALS + `x-request-deadline`; outbound `HttpClient` inherits signal + caps timeouts by `remainingMs()` — optional `x-request-deadline` header to downstreams not wired |
 | Request coalescing | **Done** | HTTP client; cache layer single-flight |
 | Load shedding + `Retry-After` | **Partial** | Rate-limit 429 only |
 | API priority + load shedding | **Missing** | — |
