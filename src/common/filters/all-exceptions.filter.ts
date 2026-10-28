@@ -18,6 +18,11 @@ import {
 } from '../../core/request-deadline';
 import { OverloadRejectedError } from '../../core/overload/errors/overload-rejected.error';
 import { resolveOverloadRetryAfterSec } from '../../core/overload/resolve-overload-retry-after-sec';
+import {
+  recordDependencyUnavailable503,
+  recordHealthCheck503,
+  recordInboundBulkhead503,
+} from '../../core/overload/overload-telemetry';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -61,6 +66,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     if (isDbConnectionError) {
       status = HttpStatus.SERVICE_UNAVAILABLE;
       message = 'Service temporarily unavailable';
+      recordDependencyUnavailable503(httpAdapter.getRequestUrl(request));
     }
 
     const deadlineMapped = this.mapDeadlineException(exception);
@@ -74,6 +80,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       status = overloadMapped.status;
       message = overloadMapped.message;
       this.setRetryAfterHeader(response, overloadMapped.retryAfterSec);
+      recordInboundBulkhead503(httpAdapter.getRequestUrl(request));
     }
 
     const responseDestroyed =
@@ -107,6 +114,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
       status === HttpStatus.SERVICE_UNAVAILABLE &&
       isPlainObject(res) &&
       has(res, 'details');
+
+    if (isTerminusHealthResult) {
+      recordHealthCheck503(httpAdapter.getRequestUrl(request));
+    }
 
     const errorResponse = isTerminusHealthResult
       ? {

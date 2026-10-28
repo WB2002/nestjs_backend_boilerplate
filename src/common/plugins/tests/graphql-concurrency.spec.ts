@@ -1,3 +1,9 @@
+jest.mock('@/core/telemetry/service-unavailable.metrics', () => ({
+  emitServiceUnavailableMetric: jest.fn().mockResolvedValue(undefined),
+}));
+
+import { emitServiceUnavailableMetric } from '@/core/telemetry/service-unavailable.metrics';
+import { recordGraphqlConcurrencyDenied } from '../graphql-concurrency/record-concurrency-denied';
 import {
   applyGraphqlOverloadHttpHeaders,
   buildConcurrencyOverloadError,
@@ -78,6 +84,19 @@ describe('buildConcurrencyOverloadError', () => {
     const err = buildConcurrencyOverloadError('guest-1');
     expect(err.extensions?.code).toBe(GRAPHQL_OVERLOAD_EXTENSION_CODE);
     expect(err.extensions?.http).toEqual({ status: 503 });
+  });
+});
+
+describe('recordGraphqlConcurrencyDenied', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('emits ServiceUnavailable metric for graphql concurrency', async () => {
+    await recordGraphqlConcurrencyDenied({ operationName: 'GetUser' });
+    expect(emitServiceUnavailableMetric).toHaveBeenCalledWith(
+      expect.objectContaining({ reason: 'graphql_concurrency', path: '/graphql' }),
+    );
   });
 });
 

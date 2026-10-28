@@ -170,13 +170,16 @@ import { parseCsvPaths } from './core/csrf/helpers/parse-csv-paths';
     }),
     CsrfModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        enabled: configService.get<string>('CSRF_ENABLED', 'true') !== 'false',
-        exemptPaths: parseCsvPaths(
-          configService.get<string>('CSRF_EXEMPT_PATHS'),
-          DEFAULT_CSRF_EXEMPT_PATHS,
-        ),
-      }),
+      useFactory: (configService: unknown) => {
+        const config = configService as ConfigService;
+        return {
+          enabled: config.get<string>('CSRF_ENABLED', 'true') !== 'false',
+          exemptPaths: parseCsvPaths(
+            config.get<string>('CSRF_EXEMPT_PATHS'),
+            DEFAULT_CSRF_EXEMPT_PATHS,
+          ),
+        };
+      },
     }),
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,

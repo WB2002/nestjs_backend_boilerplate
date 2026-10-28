@@ -1,3 +1,8 @@
+jest.mock('@/core/telemetry/service-unavailable.metrics', () => ({
+  emitServiceUnavailableMetric: jest.fn().mockResolvedValue(undefined),
+}));
+
+import { emitServiceUnavailableMetric } from '@/core/telemetry/service-unavailable.metrics';
 import { createPressureHandler } from '../create-pressure-handler';
 import { UnderPressureConfig } from '../overload.types';
 
@@ -43,6 +48,9 @@ describe('createPressureHandler', () => {
         path: '/auth/login',
         requestId: 'rid-1',
       }),
+    );
+    expect(emitServiceUnavailableMetric).toHaveBeenCalledWith(
+      expect.objectContaining({ reason: 'under_pressure' }),
     );
   });
 });

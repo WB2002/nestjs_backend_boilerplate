@@ -103,8 +103,8 @@ Last reviewed against the boilerplate roadmap (code audit, not task status).
 | Item | Status | Notes |
 | ---- | ------ | ----- |
 | Logging | **Done** | Winston, middleware, interceptor |
-| Tracing | **Partial** | HTTP client opt-in OTel/X-Ray; app `TracingInterceptor` is logger context only |
-| Metrics & alerts | **Partial** | HTTP client EMF, feature-flag metrics; no alerting |
+| Tracing | **Done** | OTel SDK + HTTP instrumentation (`OTEL_ENABLED`); health probes excluded; HttpClient `.addTracing()` — [observability.feature.md](./observability.feature.md) |
+| Metrics & alerts | **Done** | App EMF `ServiceUnavailable` by overload reason + [CloudWatch alarm guide](../operations/cloudwatch-overload-alerts.md); HttpClient / feature-flag EMF unchanged |
 | Request / correlation ID | **Done** | `x-request-id` middleware |
 | Health checks | **Done** | Terminus: Mongo, memory, disk, Redis, Postgres, feature flags |
 | Graceful shutdown | **Done** | SIGTERM/SIGINT, readiness 503, drain |

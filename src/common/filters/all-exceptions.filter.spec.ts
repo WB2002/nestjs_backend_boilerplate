@@ -8,9 +8,15 @@ import {
 } from '../../core/request-deadline';
 import { OverloadRejectedError } from '../../core/overload/errors/overload-rejected.error';
 
+jest.mock('@/core/telemetry/service-unavailable.metrics', () => ({
+  emitServiceUnavailableMetric: jest.fn().mockResolvedValue(undefined),
+}));
+
 jest.mock('uuid', () => ({
   v4: () => 'test-uuid',
 }));
+
+import { emitServiceUnavailableMetric } from '@/core/telemetry/service-unavailable.metrics';
 
 describe('AllExceptionsFilter deadline mapping', () => {
   const reply = jest.fn();
@@ -31,6 +37,7 @@ describe('AllExceptionsFilter deadline mapping', () => {
 
   beforeEach(() => {
     reply.mockClear();
+    jest.clearAllMocks();
   });
 
   it('maps RequestDeadlineExceededError to 504', () => {
@@ -84,6 +91,9 @@ describe('AllExceptionsFilter deadline mapping', () => {
         message: 'Service temporarily unavailable',
       }),
       HttpStatus.SERVICE_UNAVAILABLE,
+    );
+    expect(emitServiceUnavailableMetric).toHaveBeenCalledWith(
+      expect.objectContaining({ reason: 'inbound_bulkhead' }),
     );
   });
 

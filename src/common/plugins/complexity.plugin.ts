@@ -22,9 +22,11 @@ import {
   applyGraphqlOverloadHttpHeaders,
   buildConcurrencyOverloadError,
   DEFAULT_GQL_CONCURRENCY_KEY_TTL_SEC,
+  recordGraphqlConcurrencyDenied,
   releaseRedisConcurrency,
   resolveGraphqlSubject,
 } from './graphql-concurrency';
+import { trace } from '@opentelemetry/api';
 
 function parsePositiveInt(value: unknown, fallback: number): number {
   const parsed = Number.parseInt(String(value ?? ''), 10);
@@ -95,12 +97,20 @@ export class ComplexityPlugin implements ApolloServerPlugin {
         contextValue.res,
         resolveOverloadRetryAfterSec(),
       );
+      const opName = requestContext.request.operationName;
+      await recordGraphqlConcurrencyDenied(
+        opName ? { operationName: opName } : {},
+      );
       throw buildConcurrencyOverloadError(label);
     }
 
     return {
       async didResolveOperation({ request, document }) {
         const operationName = request.operationName;
+        const activeSpan = trace.getActiveSpan();
+        if (activeSpan && operationName) {
+          activeSpan.setAttribute('graphql.operation.name', operationName);
+        }
         const operations = document ? separateOperations(document) : {};
         const operationDocument =
           (operationName ? operations[operationName] : document) ?? document;

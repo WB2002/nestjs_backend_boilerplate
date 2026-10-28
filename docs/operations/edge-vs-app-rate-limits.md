@@ -60,5 +60,6 @@ Health probes **`/health`** and **`/health/ready`** are exempt from rate limit, 
 
 ## See also
 
+- [CloudWatch alarms for 503 overload metrics](./cloudwatch-overload-alerts.md)
 - [ALB multi-VM deployment](./alb-multi-vm.md)
 - [Features status — rate limiting](../features/features.md)

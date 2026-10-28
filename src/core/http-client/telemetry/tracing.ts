@@ -6,12 +6,11 @@ import {
   SpanStatusCode,
   trace,
 } from '@opentelemetry/api';
-import { AWSXRayPropagator } from '@opentelemetry/propagator-aws-xray';
+import { getAwsXrayPropagator } from '@/core/telemetry/xray-propagation';
 import type { ClientIdentity, HttpRequest, HttpResponse } from '../types';
 import { redactHeaders, redactUrl } from './redaction';
 
 const tracer = trace.getTracer('core.http-client');
-const xrayPropagator = new AWSXRayPropagator();
 
 export interface TraceHandles {
   span?: Span;
@@ -100,7 +99,7 @@ function createTraceHandles(span: Span, injectEnabled: boolean): TraceHandles {
       const carrier: Record<string, string> = { ...headers };
       const ctx = trace.setSpan(context.active(), span);
       propagation.inject(ctx, carrier);
-      xrayPropagator.inject(ctx, carrier, {
+      getAwsXrayPropagator().inject(ctx, carrier, {
         set(carrierObj, key, value) {
           carrierObj[key] = value;
         },

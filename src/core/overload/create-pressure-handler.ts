@@ -1,6 +1,7 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { buildOverloadErrorResponse } from './build-overload-error-response';
 import { isPressureExemptPath } from './is-pressure-exempt-path';
+import { recordUnderPressure503 } from './overload-telemetry';
 import { UnderPressureConfig } from './overload.types';
 
 /**
@@ -18,6 +19,10 @@ export function createPressureHandler(config: UnderPressureConfig) {
       return;
     }
 
+    recordUnderPressure503({
+      path: request.url,
+      pressureType: _type,
+    });
     const body = buildOverloadErrorResponse(request);
     void reply
       .code(503)
