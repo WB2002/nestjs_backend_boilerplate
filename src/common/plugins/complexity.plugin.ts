@@ -11,27 +11,50 @@ import {
   fieldExtensionsEstimator,
 } from 'graphql-query-complexity';
 import { GraphQLError, separateOperations } from 'graphql';
+import type { FastifyReply, FastifyRequest } from 'fastify';
 import { RedisService } from '../redis/redis.service';
 import { withoutUndefined } from '@/common/utils/object.utils';
+import { GuestIdMiddleware } from '@/core/rate-limiter';
+import { DEFAULT_GUEST_COOKIE_NAME } from '@/core/rate-limiter/constants/rate-limit.constants';
+import { resolveOverloadRetryAfterSec } from '@/core/overload/resolve-overload-retry-after-sec';
+import {
+  acquireRedisConcurrency,
+  applyGraphqlOverloadHttpHeaders,
+  buildConcurrencyOverloadError,
+  DEFAULT_GQL_CONCURRENCY_KEY_TTL_SEC,
+  releaseRedisConcurrency,
+  resolveGraphqlSubject,
+} from './graphql-concurrency';
+
+function parsePositiveInt(value: unknown, fallback: number): number {
+  const parsed = Number.parseInt(String(value ?? ''), 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
 
 @Injectable()
 export class ComplexityPlugin implements ApolloServerPlugin {
   private readonly maxComplexity: number;
   private readonly userBudget: number;
   private readonly maxConcurrency: number;
+  private readonly concurrencyKeyTtlSec: number;
 
   constructor(
     private configService: ConfigService,
     private redisService: RedisService,
+    private guestIdMiddleware: GuestIdMiddleware,
   ) {
     this.maxComplexity = this.configService.get<number>(
       'GQL_MAX_COMPLEXITY',
       50,
     );
-    this.userBudget = this.configService.get<number>('GQL_USER_BUDGET', 1000); // units per window
+    this.userBudget = this.configService.get<number>('GQL_USER_BUDGET', 1000);
     this.maxConcurrency = this.configService.get<number>(
       'GQL_MAX_CONCURRENCY',
       3,
+    );
+    this.concurrencyKeyTtlSec = parsePositiveInt(
+      this.configService.get('GQL_CONCURRENCY_KEY_TTL_SEC'),
+      DEFAULT_GQL_CONCURRENCY_KEY_TTL_SEC,
     );
   }
 
@@ -44,21 +67,35 @@ export class ComplexityPlugin implements ApolloServerPlugin {
   ): Promise<GraphQLRequestListener<Record<string, unknown>>> {
     const { schema } = requestContext;
     const contextValue = requestContext.contextValue as {
-      req?: { user?: { id?: string } };
+      req?: FastifyRequest & { user?: { id?: string } };
+      res?: FastifyReply;
     };
-    const userId = contextValue.req?.user?.id || 'anonymous';
-    const concurrencyKey = `gql:concurrency:${userId}`;
+    const req = contextValue.req;
+    const guestId = req
+      ? this.guestIdMiddleware.readValidGuestId(req, DEFAULT_GUEST_COOKIE_NAME)
+      : null;
+    const { redisKey, budgetKey, label } = resolveGraphqlSubject({
+      userId: req?.user?.id,
+      guestId,
+    });
+
     const maxComplexity = this.maxComplexity;
     const userBudget = this.userBudget;
     const redis = this.redis;
+    const releaseState = { released: false };
 
-    // 1. Check Concurrency
-    const currentConcurrency = await redis.incr(concurrencyKey);
-    if (currentConcurrency > this.maxConcurrency) {
-      await redis.decr(concurrencyKey);
-      throw new GraphQLError(`Too many concurrent queries for user ${userId}`, {
-        extensions: { code: 'TOO_MANY_CONCURRENT_REQUESTS' },
-      });
+    const acquired = await acquireRedisConcurrency(
+      redis,
+      redisKey,
+      this.maxConcurrency,
+      this.concurrencyKeyTtlSec,
+    );
+    if (!acquired.acquired) {
+      applyGraphqlOverloadHttpHeaders(
+        contextValue.res,
+        resolveOverloadRetryAfterSec(),
+      );
+      throw buildConcurrencyOverloadError(label);
     }
 
     return {
@@ -86,7 +123,6 @@ export class ComplexityPlugin implements ApolloServerPlugin {
           }),
         );
 
-        // 2. Check Max Query Complexity
         if (complexity > maxComplexity) {
           throw new GraphQLError(
             `Query complexity of ${complexity} exceeds the maximum allowed complexity of ${maxComplexity}`,
@@ -94,8 +130,6 @@ export class ComplexityPlugin implements ApolloServerPlugin {
           );
         }
 
-        // 3. Check Per-User Budget
-        const budgetKey = `gql:budget:${userId}`;
         const currentUsage = await redis.get(budgetKey);
         const usageAmount = parseInt(currentUsage || '0', 10);
 
@@ -108,7 +142,6 @@ export class ComplexityPlugin implements ApolloServerPlugin {
           );
         }
 
-        // Record usage (with a 1-minute TTL for the window)
         await redis.incrby(budgetKey, complexity);
         if (!currentUsage) {
           await redis.expire(budgetKey, 60);
@@ -116,13 +149,11 @@ export class ComplexityPlugin implements ApolloServerPlugin {
       },
 
       async willSendResponse() {
-        // Cleanup Concurrency on finish
-        await redis.decr(concurrencyKey);
+        await releaseRedisConcurrency(redis, redisKey, releaseState);
       },
 
       async didEncounterErrors() {
-        // Cleanup Concurrency on error
-        await redis.decr(concurrencyKey);
+        await releaseRedisConcurrency(redis, redisKey, releaseState);
       },
     };
   }

@@ -87,6 +87,7 @@ export const envSchema = {
   GQL_MAX_COMPLEXITY: { required: false },
   GQL_USER_BUDGET: { required: false },
   GQL_MAX_CONCURRENCY: { required: false },
+  GQL_CONCURRENCY_KEY_TTL_SEC: { required: false },
 
   // Feature flags (optional; defaults applied in FeatureFlagService)
   FEATURE_FLAG_ENV: { required: false },

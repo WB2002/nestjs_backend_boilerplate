@@ -1,0 +1,4 @@
+export const GQL_CONCURRENCY_KEY_PREFIX = 'gql:concurrency:';
+export const GQL_BUDGET_KEY_PREFIX = 'gql:budget:';
+export const DEFAULT_GQL_CONCURRENCY_KEY_TTL_SEC = 300;
+export const GRAPHQL_OVERLOAD_EXTENSION_CODE = 'TOO_MANY_CONCURRENT_REQUESTS';
