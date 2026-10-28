@@ -19,3 +19,10 @@ export const getSessionIdCookieOptions = (
   path: '/auth/refresh',
   maxAge: ttl,
 });
+
+export const getCsrfTokenCookieOptions = (): CookieSerializeOptions => ({
+  httpOnly: false,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'strict',
+  path: '/',
+});
