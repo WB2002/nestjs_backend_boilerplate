@@ -118,6 +118,12 @@ export const envSchema = {
   FEATURE_FLAG_ADMIN_EMAILS: { required: false },
   FEATURE_FLAG_METRICS: { required: false },
 
+  // OpenTelemetry / app EMF metrics
+  OTEL_ENABLED: { required: false },
+  OTEL_SERVICE_NAME: { required: false },
+  OTEL_EXPORTER_OTLP_ENDPOINT: { required: false },
+  APP_METRICS_ENABLED: { required: false },
+
   // Background jobs (BullMQ + Postgres ledger)
   BACKGROUND_JOBS_ENABLED: { required: false },
   BACKGROUND_WORKER_ENABLED: { required: false },
