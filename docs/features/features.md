@@ -9,6 +9,11 @@ Overview of capabilities in `nestjs_backend_boilerplate`. **Implementation statu
 | **Missing** | No meaningful implementation in the repo |
 | **N/A** | Optional / deferred by design |
 
+## Operations (multi-VM)
+
+- [Edge vs app rate limits](./operations/edge-vs-app-rate-limits.md)
+- [ALB + multi-VM deployment](./operations/alb-multi-vm.md)
+
 ---
 
 ## Feature index
@@ -55,11 +60,11 @@ Last reviewed against the boilerplate roadmap (code audit, not task status).
 | ↳ Guest ID (public API) | **Done** | `GuestIdMiddleware` + cookie |
 | External + internal HTTP client | **Done** | `HttpClient.internal()` / `.external()` |
 | Exponential backoff with jitter | **Done** | Strategy helpers + tests |
-| Backpressure | **Partial** | `@fastify/under-pressure` + inbound bulkhead + GraphQL Redis concurrency (503 overload); outbound HttpClient fixed + optional adaptive concurrency — API priority queues still missing |
+| Backpressure | **Partial** | Under-pressure + inbound bulkhead + GraphQL Redis concurrency + HttpClient limits — see [edge vs app rate limits](./operations/edge-vs-app-rate-limits.md); API priority queues still missing |
 | Circuit breaker | **Done** | Per logical client |
-| Deadline propagation | **Partial** | Inbound ALS + `x-request-deadline`; outbound `HttpClient` inherits signal + caps timeouts by `remainingMs()` — optional `x-request-deadline` header to downstreams not wired |
+| Deadline propagation | **Done** | Inbound ALS; outbound `HttpClient` inherits signal + caps timeouts by `remainingMs()` — optional `x-request-deadline` header to downstreams not wired |
 | Request coalescing | **Done** | HTTP client; cache layer single-flight |
-| Load shedding + `Retry-After` | **Partial** | Rate-limit 429 only |
+| Load shedding + `Retry-After` | **Partial** | **429** rate limit; **503** overload (pressure, bulkhead, GraphQL concurrency) — see ops doc |
 | API priority + load shedding | **Missing** | — |
 | Queue-based load leveling | **Missing** | — |
 | Streaming responses | **Partial** | Client `responseType: 'stream'`; no Nest SSE/stream endpoints |
