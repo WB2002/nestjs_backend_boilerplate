@@ -5,7 +5,7 @@ import {
 
 export function resolveGraphqlSubject(input: {
   userId?: string;
-  guestId?: string | null;
+  guestId?: string;
 }): { redisKey: string; budgetKey: string; label: string } {
   if (input.userId) {
     const segment = `user:${input.userId}`;

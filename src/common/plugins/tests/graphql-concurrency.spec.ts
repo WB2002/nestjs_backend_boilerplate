@@ -56,7 +56,7 @@ describe('releaseRedisConcurrency', () => {
 
 describe('resolveGraphqlSubject', () => {
   it('uses user id when authenticated', () => {
-    expect(resolveGraphqlSubject({ userId: 'u-1', guestId: null }).redisKey).toBe(
+    expect(resolveGraphqlSubject({ userId: 'u-1' }).redisKey).toBe(
       'gql:concurrency:user:u-1',
     );
   });

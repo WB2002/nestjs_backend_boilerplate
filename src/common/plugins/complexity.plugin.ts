@@ -75,8 +75,8 @@ export class ComplexityPlugin implements ApolloServerPlugin {
       ? this.guestIdMiddleware.readValidGuestId(req, DEFAULT_GUEST_COOKIE_NAME)
       : null;
     const { redisKey, budgetKey, label } = resolveGraphqlSubject({
-      userId: req?.user?.id,
-      guestId,
+      ...(req?.user?.id ? { userId: req.user.id } : {}),
+      ...(guestId ? { guestId } : {}),
     });
 
     const maxComplexity = this.maxComplexity;
