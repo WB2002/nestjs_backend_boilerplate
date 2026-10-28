@@ -50,6 +50,10 @@ export const envSchema = {
   // Rate limiting / client IP
   TRUST_PROXY: { required: false },
 
+  // Multi-VM coordination (rate limit + cache backends)
+  RATE_LIMIT_STORAGE: { required: false },
+  CACHE_STORAGE: { required: false },
+
   // Country access / GeoIP
   GEOIP_DATABASE_PATH: { required: true },
   COUNTRY_ACCESS_REFRESH_INTERVAL_MS: { required: false },
