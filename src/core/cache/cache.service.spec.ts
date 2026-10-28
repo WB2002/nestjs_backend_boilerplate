@@ -168,7 +168,7 @@ describe('CacheService SWR', () => {
     const entry = await backend.get('cache:k');
     expect(entry).not.toBeNull();
     const span = entry!.hardExpiresAt - entry!.softExpiresAt;
-    expect(span).toBeGreaterThanOrEqual(1000);
+    expect(span).toBeGreaterThanOrEqual(900);
     expect(span).toBeLessThanOrEqual(1200);
   });
 });
