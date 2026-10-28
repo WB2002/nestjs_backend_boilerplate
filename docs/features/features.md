@@ -1,77 +1,220 @@
 # Features
 
-This file provides a brief overview of all features currently supported by the `nestjs_backend_boilerplate`. For implementation details of any feature, refer to its dedicated doc linked below.
+Overview of capabilities in `nestjs_backend_boilerplate`. **Implementation status** reflects what exists in code (`src/`, tests, scripts, migrations), not task-board labels.
+
+| Status | Meaning |
+| ------ | ------- |
+| **Done** | Implemented and wired (or available as a global module) |
+| **Partial** | Code exists but incomplete, not used app-wide, or subset only |
+| **Missing** | No meaningful implementation in the repo |
+| **N/A** | Optional / deferred by design |
 
 ---
 
-## Feature Index
+## Feature index
 
-| Feature        | Route prefix       | Detail doc                                |
-| -------------- | ------------------ | ----------------------------------------- |
-| Authentication | `/auth`            | `docs/features/auth.feature.md`           |
-| Health Check   | `/health`          | —                                         |
-| HTTP Client    | —                  | `docs/features/http_client.feature.md`    |
-| Captcha        | `/example/captcha` | `docs/features/captcha.feature.md`        |
-| Notifications  | `/example`         | `docs/features/notification.feature.md`   |
-| Feature Flags  | `/feature-flags`   | `docs/features/feature_flag.feature.md`   |
-| Country Access | —                  | `docs/features/country_access.feature.md` |
-
----
-
-## Authentication
-
-Handles user registration, login, logout, and session management. Passwords are stored as hashes — never in plain text. Authentication is cookie-based using JWTs. All routes in the application are protected by default — unauthenticated access must be explicitly opted into using `@Public()`.
-
-For full details see `docs/features/auth.feature.md`.
-
----
-
-## Health Check
-
-Exposes a single `GET /health` endpoint used by Docker and load balancers to confirm the application is running. No authentication required. Returns a status response indicating the application is alive.
-
----
-
-## HTTP Client
-
-Global outbound HTTP client provider under `src/core/http-client`. Supports immutable fluent configuration (`internal` / `external`), Axios transport, auth (API key, basic, bearer, OAuth client credentials, mTLS), resilience (retry, coalescing, circuit breaker, concurrency), normalized errors, OpenTelemetry/X-Ray tracing, CloudWatch EMF metrics, and NestJS shutdown hooks.
-
-For full details see `docs/features/http_client.feature.md`.
+| Feature | Route / scope | Status | Detail doc |
+| ------- | ------------- | ------ | ---------- |
+| Authentication | `/auth` | Done | [auth.feature.md](./auth.feature.md) |
+| Authorization (RBAC) | Feature-flag admin APIs | Partial | [feature_flag.feature.md](./feature_flag.feature.md) |
+| Health checks | `/health`, `/health/ready` | Done | — |
+| HTTP client (internal / external) | Global provider | Done | [http_client.feature.md](./http_client.feature.md) |
+| Rate limiting | Global guard | Done | — (`src/core/rate-limiter/`) |
+| Request deadline (inbound) | Global middleware | Partial | — (`src/core/request-deadline/`) |
+| Cache (SWR + stampede protection) | Global module | Partial | — (`src/core/cache/`) |
+| Graceful shutdown | Process signals | Done | — (`src/core/shutdown/`) |
+| Response compression | Fastify plugin | Done | — |
+| Logging & request ID | Global middleware | Done | — (`src/core/logger/`) |
+| GraphQL | `/graphql` | Done | — (`src/categories/`, `app.module.ts`) |
+| File uploads | `/uploads` | Done | — (`src/uploads/`) |
+| Captcha (hCaptcha) | `/example/captcha` | Partial | [captcha.feature.md](./captcha.feature.md) |
+| Notifications (Slack) | `/example` | Done | [notification.feature.md](./notification.feature.md) |
+| Feature flags | `/feature-flags` | Done | [feature_flag.feature.md](./feature_flag.feature.md) |
+| Country access (geo allow/block) | Global guard | Done | [country_access.feature.md](./country_access.feature.md) |
+| Environment validation | Boot | Done | — (`src/common/config/`) |
+| Input sanitization | Global pipe | Done | — (`src/common/sanitization/`) |
+| Global exception handler | APP_FILTER | Done | — (`src/common/filters/`) |
+| ESLint + Husky + Gitleaks | Git hooks | Done | [../security/git_hooks.md](../security/git_hooks.md) |
+| CORS & CSP (Helmet) | `main.ts` | Done | — |
+| Cookies | Auth + rate-limit guest | Done | — |
 
 ---
 
-## Captcha
+## Implementation status (full checklist)
 
-Reusable `CaptchaService` abstraction with an hCaptcha implementation for server-side token verification. Includes a public demo endpoint `POST /example/captcha`. Not wired into auth or other business APIs.
+Last reviewed against the boilerplate roadmap (code audit, not task status).
 
-For full details see `docs/features/captcha.feature.md`.
+### Resilience & HTTP
+
+| Item | Status | Notes |
+| ---- | ------ | ----- |
+| Rate limiting | **Done** | `RateLimitGuard`, memory + Redis backends, multiple algorithms, `Retry-After` |
+| ↳ IP | **Done** | Default `global-ip` policy in `app.module.ts` |
+| ↳ userId | **Done** | Tracker + tests; guard runs after JWT |
+| ↳ Device fingerprint | **Done** | Header-based tracker |
+| ↳ Guest ID (public API) | **Done** | `GuestIdMiddleware` + cookie |
+| External + internal HTTP client | **Done** | `HttpClient.internal()` / `.external()` |
+| Exponential backoff with jitter | **Done** | Strategy helpers + tests |
+| Backpressure | **Partial** | `@fastify/under-pressure` (503 + Retry-After, health exempt); outbound concurrency + GraphQL Redis concurrency — inbound fail-fast bulkhead still missing |
+| Circuit breaker | **Done** | Per logical client |
+| Deadline propagation | **Partial** | Inbound ALS + `x-request-deadline`; **not** wired to outbound `HttpClient` |
+| Request coalescing | **Done** | HTTP client; cache layer single-flight |
+| Load shedding + `Retry-After` | **Partial** | Rate-limit 429 only |
+| API priority + load shedding | **Missing** | — |
+| Queue-based load leveling | **Missing** | — |
+| Streaming responses | **Partial** | Client `responseType: 'stream'`; no Nest SSE/stream endpoints |
+| Graceful degradation | **Partial** | Lazy Mongo, soft health, fail-open notifications — no unified framework |
+| Load testing | **Missing** | No k6 / Artillery / ZAP configs |
+
+### Security, auth, data
+
+| Item | Status | Notes |
+| ---- | ------ | ----- |
+| Google Tink / AWS Encryption SDK | **Missing** | — |
+| Encryption & hashing | **Partial** | Argon2 passwords, RS256 JWT, SHA for keys/fingerprints |
+| Authentication | **Done** | Register, login, refresh, logout, sessions |
+| Authorization | **Partial** | JWT default-deny + `@Public()`; RBAC on feature-flag APIs only |
+| Audit logs table | **Partial** | Mongo `feature_flag_audits` only |
+| IP geographic allow/block | **Done** | MaxMind + global guard |
+| HCaptcha / reCAPTCHA | **Partial** | hCaptcha only |
+| CSRF | **Missing** | — |
+| CSP headers | **Done** | `@fastify/helmet` |
+| CORS | **Done** | `enableCors` in `main.ts` |
+| Input sanitization | **Done** | Global `SanitizationPipe` |
+| Max payload size | **Done** | Multipart limits, upload caps, default JSON body cap |
+| File upload + type validation | **Done** | Magic bytes, optional ClamAV |
+| Bot detection (beyond CAPTCHA) | **Missing** | — |
+| Secrets scanning (git hooks) | **Done** | Gitleaks pre-commit |
+| Dependency vulnerability scanning | **Partial** | `pnpm.overrides`; no audit in CI/hooks |
+| PII tagging / data masking | **Missing** | Redaction in HTTP client telemetry only |
+| Row-level security | **Missing** | Deferred |
+| Cookies support | **Done** | `@fastify/cookie`, session / access tokens |
+| Stripe | **Missing** | Doc example only |
+
+### Observability & ops
+
+| Item | Status | Notes |
+| ---- | ------ | ----- |
+| Logging | **Done** | Winston, middleware, interceptor |
+| Tracing | **Partial** | HTTP client opt-in OTel/X-Ray; app `TracingInterceptor` is logger context only |
+| Metrics & alerts | **Partial** | HTTP client EMF, feature-flag metrics; no alerting |
+| Request / correlation ID | **Done** | `x-request-id` middleware |
+| Health checks | **Done** | Terminus: Mongo, memory, disk, Redis, Postgres, feature flags |
+| Graceful shutdown | **Done** | SIGTERM/SIGINT, readiness 503, drain |
+| Environment validation | **Done** | `validateEnv` + `env.schema.ts` |
+| ESLint + Husky | **Done** | lint-staged on pre-commit |
+| Global exception handler | **Done** | `AllExceptionsFilter` |
+| Response compression | **Done** | Brotli + gzip |
+| CI/CD pipeline | **Missing** | Dockerfile / compose only |
+| Config hot-reload | **Missing** | Boot-time env only |
+| DB migrations via CLI | **Partial** | SQL under `migrations/postgres/`; manual `psql` |
+| Database seeding | **Missing** | — |
+| Background jobs (BullMQ / Celery / Oban) | **Missing** | — |
+
+### Caching & integrations
+
+| Item | Status | Notes |
+| ---- | ------ | ----- |
+| Cache stampede protection | **Partial** | `CacheService.getOrSet` (SWR + single-flight); module registered, **not used by feature modules yet** |
+| Feature flags | **Done** | Redis + in-memory eval, Pub/Sub, reconcile |
+| Slack integration | **Done** | Webhook provider |
+| Push notifications | **Missing** | — |
+| Send email | **Missing** | — |
+| WebSockets + Redis pub/sub | **Missing** | — |
+| Server-Sent Events (SSE) | **Missing** | — |
+| GraphQL setup | **Done** | Apollo, depth limit, complexity plugin |
+| gRPC setup | **Missing** | `@nestjs/microservices` used for Redis health ping only |
+| OWASP ZAP test | **Missing** | — |
 
 ---
 
-## Notifications
+## Documented features (detail)
 
-Generic `INotificationService` with Slack Incoming Webhooks as the first provider. Example demo endpoint: `POST /example/notification`. Notification failures do not fail the business operation.
+### Authentication
 
-For full details see `docs/features/notification.feature.md`.
+Registration, login, logout, and session management. Passwords hashed with Argon2id. Cookie-based JWT (RS256). Routes are protected by default; use `@Public()` to opt out.
+
+See [auth.feature.md](./auth.feature.md).
+
+### Health check
+
+Public probes (no auth, no rate limit, no deadline, no country guard):
+
+- `GET /health` — liveness-style check
+- `GET /health/ready` — returns 503 while shutting down
+
+Checks include MongoDB, heap, disk, optional Redis/Postgres, and feature-flag health (informational).
+
+### HTTP client
+
+Global provider under `src/core/http-client`: fluent `internal` / `external` clients, Axios transport, auth (API key, basic, bearer, OAuth client credentials, mTLS), retry with backoff/jitter, request coalescing, circuit breaker, concurrency limits, optional tracing/metrics, shutdown hooks.
+
+See [http_client.feature.md](./http_client.feature.md).
+
+### Rate limiting
+
+Global `RateLimitGuard` with pluggable identifiers (IP, userId, device fingerprint, guest ID), multiple algorithms, memory or Redis storage, standard rate-limit headers and `Retry-After` on deny. `GuestIdMiddleware` issues a guest cookie for anonymous clients.
+
+Code: `src/core/rate-limiter/`.
+
+### Request deadline
+
+Per-request timeout via middleware and ALS; exposes abort `signal` and `x-request-deadline`. Outbound HTTP does not automatically inherit the inbound deadline.
+
+Code: `src/core/request-deadline/`.
+
+### Cache
+
+Stale-while-revalidate and single-flight `getOrSet` to reduce stampede; memory or Redis backend. Wired in `AppModule` with in-memory storage; consumers can inject `CacheService` when needed.
+
+Code: `src/core/cache/`.
+
+### Captcha
+
+`CaptchaService` with hCaptcha implementation and demo `POST /example/captcha`. Not wired into auth flows. No reCAPTCHA provider.
+
+See [captcha.feature.md](./captcha.feature.md).
+
+### Notifications
+
+`INotificationService` with Slack Incoming Webhooks. Demo: `POST /example/notification`. Failures do not fail the caller’s business operation.
+
+See [notification.feature.md](./notification.feature.md).
+
+### Feature flags
+
+Redis-backed flags, in-memory evaluation on the request path, Pub/Sub + reconciliation. Admin CRUD with permission guards; audit rows in `feature_flag_audits`.
+
+See [feature_flag.feature.md](./feature_flag.feature.md).
+
+### Country access
+
+Geo allow/block using MaxMind GeoLite2, in-memory snapshot, global guard. Default Postgres repository; Mongo swap documented.
+
+See [country_access.feature.md](./country_access.feature.md).
+
+### GraphQL
+
+Apollo on Fastify, schema via `*.graphql`, sample `CategoriesModule`, depth limit, query complexity + Redis concurrency cap in `ComplexityPlugin`.
+
+### File uploads
+
+Multipart uploads with count/size/total limits, extension + magic-byte validation, optional ClamAV scan.
+
+Code: `src/uploads/`.
+
+### Cross-cutting (no separate feature doc)
+
+- **Logging:** Winston + request ID (`src/core/logger/`).
+- **Sanitization:** Global pipe before validation (`src/common/sanitization/`).
+- **Compression / security headers / CORS:** Registered in `src/main.ts`.
+- **Shutdown:** `registerGracefulShutdown` + `ShutdownState` (`src/core/shutdown/`).
+- **Env validation:** `src/common/config/validate-env.ts`.
 
 ---
 
-## Feature Flags
+## Adding a new feature
 
-Redis-backed feature flags with local in-memory evaluation, Pub/Sub updates, and periodic reconciliation. Management API is admin-only (`flag:*` permissions). Request evaluation never calls Redis.
-
-For full details see `docs/features/feature_flag.feature.md`.
-
----
-
-## Country Access
-
-Database-agnostic country allowlisting with local MaxMind GeoLite2 Country lookups, an in-memory snapshot, and a global Nest guard. Default persistence is PostgreSQL; MongoDB is a one-line repository swap. Request path never hits the database or a remote GeoIP API.
-
-For full details see `docs/features/country_access.feature.md`.
-
----
-
-## Adding a New Feature
-
-When a new feature is added to the project, add it to the Feature Index table above and create a dedicated doc at `docs/features/<resource>_feature.md`. Link it in the table and in the entry.
+1. Add a row to **Feature index** (and update **Implementation status** if it maps to a roadmap item).
+2. Create `docs/features/<resource>.feature.md` when the feature needs more than a short summary.
+3. Link the doc from the index table and from a **Documented features** subsection if applicable.
