@@ -29,6 +29,7 @@ const config: Config = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^sanitize-html$': '<rootDir>/jest/sanitize-html-shim.cjs',
+    '^pg$': '<rootDir>/jest/pg-require.cjs',
   },
 };
 
