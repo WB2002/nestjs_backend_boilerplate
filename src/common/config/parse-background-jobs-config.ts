@@ -14,6 +14,9 @@ export type BackgroundJobsConfig = {
   defaultQueueName: string;
   claimLeaseSec: number;
   workerConcurrency: number;
+  leaseReclaimEnabled: boolean;
+  leaseReclaimIntervalMs: number;
+  leaseReclaimBatchSize: number;
   postgres: BackgroundJobsPostgresConfig;
 };
 
@@ -37,6 +40,16 @@ export function parseBackgroundJobsConfig(
     env.BACKGROUND_JOBS_WORKER_CONCURRENCY,
     5,
   );
+  const leaseReclaimEnabled =
+    env.BACKGROUND_JOBS_LEASE_RECLAIM_ENABLED !== 'false';
+  const leaseReclaimIntervalMs = parsePositiveInt(
+    env.BACKGROUND_JOBS_LEASE_RECLAIM_INTERVAL_MS,
+    30_000,
+  );
+  const leaseReclaimBatchSize = parsePositiveInt(
+    env.BACKGROUND_JOBS_LEASE_RECLAIM_BATCH_SIZE,
+    100,
+  );
 
   const postgres: BackgroundJobsPostgresConfig = {
     host: env.POSTGRES_HOST?.trim() || 'localhost',
@@ -58,6 +71,9 @@ export function parseBackgroundJobsConfig(
     defaultQueueName,
     claimLeaseSec,
     workerConcurrency,
+    leaseReclaimEnabled,
+    leaseReclaimIntervalMs,
+    leaseReclaimBatchSize,
     postgres,
   };
 }
@@ -78,6 +94,15 @@ export function parseBackgroundJobsConfigFromService(
     ),
     BACKGROUND_JOBS_WORKER_CONCURRENCY: configService.get<string>(
       'BACKGROUND_JOBS_WORKER_CONCURRENCY',
+    ),
+    BACKGROUND_JOBS_LEASE_RECLAIM_ENABLED: configService.get<string>(
+      'BACKGROUND_JOBS_LEASE_RECLAIM_ENABLED',
+    ),
+    BACKGROUND_JOBS_LEASE_RECLAIM_INTERVAL_MS: configService.get<string>(
+      'BACKGROUND_JOBS_LEASE_RECLAIM_INTERVAL_MS',
+    ),
+    BACKGROUND_JOBS_LEASE_RECLAIM_BATCH_SIZE: configService.get<string>(
+      'BACKGROUND_JOBS_LEASE_RECLAIM_BATCH_SIZE',
     ),
     POSTGRES_HOST: configService.get<string>('POSTGRES_HOST'),
     POSTGRES_PORT: configService.get<string>('POSTGRES_PORT'),

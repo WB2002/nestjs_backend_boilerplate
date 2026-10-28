@@ -136,6 +136,9 @@ export const envSchema = {
   BACKGROUND_JOBS_DEFAULT_QUEUE: { required: false },
   BACKGROUND_JOBS_CLAIM_LEASE_SEC: { required: false },
   BACKGROUND_JOBS_WORKER_CONCURRENCY: { required: false },
+  BACKGROUND_JOBS_LEASE_RECLAIM_ENABLED: { required: false },
+  BACKGROUND_JOBS_LEASE_RECLAIM_INTERVAL_MS: { required: false },
+  BACKGROUND_JOBS_LEASE_RECLAIM_BATCH_SIZE: { required: false },
 } as const satisfies Record<string, EnvField>;
 
 export type EnvSchema = typeof envSchema;
