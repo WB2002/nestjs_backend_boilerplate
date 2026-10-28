@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Post,
@@ -20,13 +21,24 @@ import {
 } from '@/common/utils';
 import { ConfigService } from '@nestjs/config';
 import { AuthRequest } from './types/auth.types';
+import { CsrfTokenService } from '@/core/csrf/csrf-token.service';
+import { setCsrfCookie } from '@/core/csrf/helpers/set-csrf-cookie';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private authService: AuthService,
     private configService: ConfigService,
+    private readonly csrfTokenService: CsrfTokenService,
   ) {}
+
+  @Public()
+  @Get('csrf')
+  getCsrf(@Res({ passthrough: true }) res: FastifyReply) {
+    const csrfToken = this.csrfTokenService.generateToken();
+    setCsrfCookie(res, csrfToken);
+    return { csrfToken };
+  }
 
   @Public()
   @Post('register')
@@ -67,9 +79,13 @@ export class AuthController {
       getSessionIdCookieOptions(sessionTtl),
     );
 
+    const csrfToken = this.csrfTokenService.generateToken();
+    setCsrfCookie(res, csrfToken);
+
     return {
       accessToken,
       sessionId,
+      csrfToken,
     };
   }
 
@@ -102,9 +118,13 @@ export class AuthController {
       getSessionIdCookieOptions(sessionTtl),
     );
 
+    const csrfToken = this.csrfTokenService.generateToken();
+    setCsrfCookie(res, csrfToken);
+
     return {
       accessToken,
       sessionId,
+      csrfToken,
     };
   }
 

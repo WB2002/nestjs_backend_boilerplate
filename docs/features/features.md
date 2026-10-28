@@ -84,7 +84,7 @@ Last reviewed against the boilerplate roadmap (code audit, not task status).
 | Audit logs table | **Partial** | Mongo `feature_flag_audits` only |
 | IP geographic allow/block | **Done** | MaxMind + global guard |
 | HCaptcha / reCAPTCHA | **Partial** | hCaptcha only |
-| CSRF | **Missing** | — |
+| CSRF | **Done** | Double-submit cookie; see [csrf.feature.md](./csrf.feature.md) |
 | CSP headers | **Done** | `@fastify/helmet` |
 | CORS | **Done** | `enableCors` in `main.ts` |
 | Input sanitization | **Done** | Global `SanitizationPipe` |

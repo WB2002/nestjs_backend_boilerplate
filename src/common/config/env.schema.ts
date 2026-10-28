@@ -14,6 +14,10 @@ export const envSchema = {
   ACCESS_TOKEN_TTL: { required: true },
   SESSION_TTL: { required: true },
 
+  // CSRF (cookie-based browser sessions)
+  CSRF_ENABLED: { required: false },
+  CSRF_EXEMPT_PATHS: { required: false },
+
   // MongoDB
   MONGO_URI: { required: true },
   MONGO_PORT: { required: false },

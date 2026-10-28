@@ -17,6 +17,7 @@ This feature implements email and password based authentication. Passwords are h
 | Session revocation | On logout, the session `token` UUID is written to a Redis set with a TTL equal to `ACCESS_TOKEN_TTL`. The JWT Strategy checks this set on every request. After `ACCESS_TOKEN_TTL` seconds the access token expires on its own, so the Redis entry is no longer needed and is automatically removed |
 | Access token payload | Contains `sub` (userId), `email`, and `jti` (the session `token` UUID). The standard JWT `jti` claim is what the JWT Strategy uses to look up the revocation entry in Redis |
 | Token transport — web | The `access_token` and `session_id` are delivered as `httpOnly, Secure, SameSite=Strict` cookies. The browser attaches them automatically and JavaScript cannot read them |
+| CSRF (web) | Double-submit cookie: readable `csrf_token` plus `X-CSRF-Token` on POST/PUT/PATCH/DELETE when session cookies are sent. Bootstrap via `GET /auth/csrf`; rotated on login/refresh. See [csrf.feature.md](./csrf.feature.md) |
 | Token transport — mobile | The `access_token` is also returned in the JSON response body so native apps can store it in Keychain or Keystore and send it as an `Authorization: Bearer` header. The `session_id` is returned in the body as well so mobile apps can store it and send it as a custom header on refresh requests |
 | Access token lifetime | Short-lived (15 minutes) |
 | Session lifetime | Rolling from `SESSION_TTL` (e.g. 7 days), extended on every successful refresh |
@@ -176,6 +177,10 @@ The access token is expired so this route is `@Public()`. The `session_id` UUID 
 ### `POST /auth/logout` — Protected
 
 Requires a valid access token. The `session_id` is read from the cookie or request body. The session document is deleted. Both cookies are cleared.
+
+### `GET /auth/csrf` — Public
+
+Issues a new CSRF token, sets the `csrf_token` cookie (readable by JavaScript), and returns `{ csrfToken }`. SPAs should call this before the first mutating request when using cookie auth.
 
 ---
 
