@@ -42,20 +42,49 @@ export class JobEnqueueService {
     await this.queue.add(
       BACKGROUND_JOBS_RUN_JOB_NAME,
       { jobRowId: inserted.id },
-      {
-        jobId: inserted.id,
-        delay: delayMs,
-        removeOnComplete: true,
-        removeOnFail: false,
-        attempts: maxAttempts,
-        backoff: { type: 'exponential', delay: 1000 },
-      },
+      this.buildRunJobOptions(inserted.id, maxAttempts, delayMs),
     );
 
     return {
       jobRowId: inserted.id,
       enqueued: true,
       deduplicated: false,
+    };
+  }
+
+  async wakeJobRow(jobRowId: string, maxAttempts: number): Promise<void> {
+    const existing = await this.queue.getJob(jobRowId);
+    if (existing) {
+      const state = await existing.getState();
+      if (
+        state === 'active' ||
+        state === 'waiting' ||
+        state === 'delayed' ||
+        state === 'prioritized'
+      ) {
+        return;
+      }
+      await existing.remove();
+    }
+    await this.queue.add(
+      BACKGROUND_JOBS_RUN_JOB_NAME,
+      { jobRowId },
+      this.buildRunJobOptions(jobRowId, maxAttempts, 0),
+    );
+  }
+
+  private buildRunJobOptions(
+    jobRowId: string,
+    maxAttempts: number,
+    delayMs: number,
+  ): Parameters<Queue['add']>[2] {
+    return {
+      jobId: jobRowId,
+      delay: delayMs,
+      removeOnComplete: true,
+      removeOnFail: false,
+      attempts: maxAttempts,
+      backoff: { type: 'exponential', delay: 1000 },
     };
   }
 }
