@@ -21,7 +21,7 @@ Overview of capabilities in `nestjs_backend_boilerplate`. **Implementation statu
 | HTTP client (internal / external) | Global provider | Done | [http_client.feature.md](./http_client.feature.md) |
 | Rate limiting | Global guard | Done | — (`src/core/rate-limiter/`) |
 | Request deadline (inbound) | Global middleware | Partial | — (`src/core/request-deadline/`) |
-| Cache (SWR + stampede protection) | Global module | Partial | — (`src/core/cache/`) |
+| Cache (SWR + stampede protection) | Global module | Partial | `src/core/cache/` — **Multi-VM:** production defaults to Redis when `CACHE_STORAGE` unset |
 | Graceful shutdown | Process signals | Done | — (`src/core/shutdown/`) |
 | Response compression | Fastify plugin | Done | — |
 | Logging & request ID | Global middleware | Done | — (`src/core/logger/`) |
@@ -48,7 +48,7 @@ Last reviewed against the boilerplate roadmap (code audit, not task status).
 
 | Item | Status | Notes |
 | ---- | ------ | ----- |
-| Rate limiting | **Done** | `RateLimitGuard`, memory + Redis backends, multiple algorithms, `Retry-After` |
+| Rate limiting | **Done** | `RateLimitGuard`, memory + Redis backends, `Retry-After`. **Multi-VM:** production defaults to Redis when `RATE_LIMIT_STORAGE` unset; prefer `RateLimitIdentifier.UserId` for enterprise APIs over IP-only `global-ip`. |
 | ↳ IP | **Done** | Default `global-ip` policy in `app.module.ts` |
 | ↳ userId | **Done** | Tracker + tests; guard runs after JWT |
 | ↳ Device fingerprint | **Done** | Header-based tracker |
