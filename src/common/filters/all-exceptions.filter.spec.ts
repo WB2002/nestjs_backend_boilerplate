@@ -7,6 +7,7 @@ import {
   RequestDeadlineExceededError,
 } from '../../core/request-deadline';
 import { OverloadRejectedError } from '../../core/overload/errors/overload-rejected.error';
+import { PriorityShedRejectedError } from '../../core/overload/errors/priority-shed-rejected.error';
 
 jest.mock('@/core/telemetry/service-unavailable.metrics', () => ({
   emitServiceUnavailableMetric: jest.fn().mockResolvedValue(undefined),
@@ -65,6 +66,35 @@ describe('AllExceptionsFilter deadline mapping', () => {
         message: 'Request cancelled by client',
       }),
       HTTP_STATUS_CLIENT_CLOSED_REQUEST,
+    );
+  });
+
+  it('maps PriorityShedRejectedError to 503 with Retry-After and api_priority_shed metric', () => {
+    const response = {
+      raw: { destroyed: false, writableEnded: false },
+      header: jest.fn(),
+    };
+    const shedHost = {
+      getType: () => 'http',
+      switchToHttp: () => ({
+        getRequest: () => ({ headers: { 'x-request-id': 'req-1' } }),
+        getResponse: () => response,
+      }),
+    };
+    const filter = new AllExceptionsFilter(httpAdapterHost);
+    filter.catch(new PriorityShedRejectedError(), shedHost as never);
+
+    expect(response.header).toHaveBeenCalledWith('Retry-After', expect.any(String));
+    expect(reply).toHaveBeenCalledWith(
+      response,
+      expect.objectContaining({
+        statusCode: HttpStatus.SERVICE_UNAVAILABLE,
+        message: 'Service unavailable: request priority shed under load',
+      }),
+      HttpStatus.SERVICE_UNAVAILABLE,
+    );
+    expect(emitServiceUnavailableMetric).toHaveBeenCalledWith(
+      expect.objectContaining({ reason: 'api_priority_shed' }),
     );
   });
 
