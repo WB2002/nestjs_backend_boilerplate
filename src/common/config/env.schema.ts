@@ -113,6 +113,13 @@ export const envSchema = {
   FEATURE_FLAG_RECONCILE_MS: { required: false },
   FEATURE_FLAG_ADMIN_EMAILS: { required: false },
   FEATURE_FLAG_METRICS: { required: false },
+
+  // Background jobs (BullMQ + Postgres ledger)
+  BACKGROUND_JOBS_ENABLED: { required: false },
+  BACKGROUND_WORKER_ENABLED: { required: false },
+  BACKGROUND_JOBS_DEFAULT_QUEUE: { required: false },
+  BACKGROUND_JOBS_CLAIM_LEASE_SEC: { required: false },
+  BACKGROUND_JOBS_WORKER_CONCURRENCY: { required: false },
 } as const satisfies Record<string, EnvField>;
 
 export type EnvSchema = typeof envSchema;

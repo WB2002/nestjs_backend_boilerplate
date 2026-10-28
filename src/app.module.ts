@@ -49,6 +49,8 @@ import { ComplexityPlugin } from './common/plugins/complexity.plugin';
 import { SanitizationPipe } from './common/sanitization';
 import { validateEnv } from './common/config';
 import { isWebSocketEnabled } from './common/config/load-env-file';
+import { isBackgroundJobsEnabled } from './common/config/is-background-jobs-enabled';
+import { BackgroundJobsModule } from './core/background-jobs';
 import { ExampleRealtimeModule } from './example/example-realtime.module';
 import {
   configServiceFromFactoryArgs,
@@ -60,6 +62,7 @@ import { CountryAccessModule, CountryAccessGuard } from './country-access';
 import { CaptchaModule } from './core/captcha';
 import { NotificationModule } from './core/notification';
 import { ExampleModule } from './example/example.module';
+import { ExampleJobsModule } from './example/example-jobs.module';
 import { FeatureFlagModule } from './feature-flag';
 import {
   InboundBulkheadMiddleware,
@@ -98,6 +101,14 @@ import {
     CountryAccessModule,
     ExampleModule,
     ...(isWebSocketEnabled() ? [ExampleRealtimeModule] : []),
+    ...(isBackgroundJobsEnabled()
+      ? [
+          BackgroundJobsModule.forRootAsync({
+            registerWorker: process.env.BACKGROUND_WORKER_ENABLED === 'true',
+          }),
+          ExampleJobsModule,
+        ]
+      : []),
     FeatureFlagModule,
     WinstonModule.forRoot(winstonConfig),
     CacheModule.forRootAsync({

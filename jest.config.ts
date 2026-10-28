@@ -20,7 +20,7 @@ const config: Config = {
     ],
   },
   transformIgnorePatterns: [
-    String.raw`/node_modules/(?!.*(?:sanitize-html|htmlparser2|entities|domelementtype|domhandler|domutils|dom-serializer|escape-string-regexp|is-plain-object)(?:/|$))`,
+    String.raw`/node_modules/(?!.*(?:sanitize-html|htmlparser2|entities|domelementtype|domhandler|domutils|dom-serializer|escape-string-regexp|is-plain-object|@nestjs/bullmq|@nestjs/bull-shared|bullmq|msgpackr)(?:/|$))`,
   ],
   collectCoverageFrom: ['src/core/http-client/**/*.(t|j)s'],
   coverageDirectory: './coverage',

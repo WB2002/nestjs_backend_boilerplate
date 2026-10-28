@@ -37,6 +37,7 @@ Overview of capabilities in `nestjs_backend_boilerplate`. **Implementation statu
 | Feature flags | `/feature-flags` | Done | [feature_flag.feature.md](./feature_flag.feature.md) |
 | Country access (geo allow/block) | Global guard | Done | [country_access.feature.md](./country_access.feature.md) |
 | WebSockets (Socket.IO) | `/realtime` namespace | Done | [websocket.feature.md](./websocket.feature.md) |
+| Background jobs (BullMQ) | `/example/jobs` | Done | [background_jobs.feature.md](./background_jobs.feature.md) |
 | Environment validation | Boot | Done | — (`src/common/config/`) |
 | Input sanitization | Global pipe | Done | — (`src/common/sanitization/`) |
 | Global exception handler | APP_FILTER | Done | — (`src/common/filters/`) |
@@ -115,7 +116,7 @@ Last reviewed against the boilerplate roadmap (code audit, not task status).
 | Config hot-reload | **Missing** | Boot-time env only |
 | DB migrations via CLI | **Partial** | SQL under `migrations/postgres/`; manual `psql` |
 | Database seeding | **Missing** | — |
-| Background jobs (BullMQ / Celery / Oban) | **Missing** | — |
+| Background jobs (BullMQ + Postgres SKIP LOCKED) | **Done** | [background_jobs.feature.md](./background_jobs.feature.md) |
 
 ### Caching & integrations
 
@@ -167,9 +168,13 @@ Code: `src/core/rate-limiter/`.
 
 ### Request deadline
 
-Per-request timeout via middleware and ALS; exposes abort `signal` and `x-request-deadline`. Outbound HTTP does not automatically inherit the inbound deadline.
+Per-request timeout via middleware and ALS; exposes abort `signal` and `x-request-deadline`. Outbound `HttpClient` merges inbound deadline signal and remaining budget.
 
 Code: `src/core/request-deadline/`.
+
+### Background jobs
+
+Postgres ledger + BullMQ + `FOR UPDATE SKIP LOCKED` claims. See [background_jobs.feature.md](./background_jobs.feature.md).
 
 ### Cache
 

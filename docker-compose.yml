@@ -13,8 +13,11 @@ services:
       - .env
     depends_on:
       - mongo
+      - redis
     networks:
       - backend-network
+    # Background jobs (optional): BACKGROUND_JOBS_ENABLED=true, BACKGROUND_WORKER_ENABLED=true,
+    # POSTGRES_* pointing at postgres service below.
 
   # If Mongo exits with code 62 (Wrong mongod version), the volume was created by an older
   # major version (e.g. 6.x). Either: docker compose down -v && docker compose up -d (fresh 8.0),
