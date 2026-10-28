@@ -17,7 +17,8 @@ We **do not** deploy Nginx or Envoy sidecars by default. Inbound protection live
 | **WAF / ALB** | Volumetric abuse, geo blocks, IP reputation, TLS | AWS WAF rate-based rules; ALB connection idle timeout | Connection drop / WAF block (403) |
 | **`RateLimitGuard`** | Product / tenant quotas, authenticated fairness | `@RateLimit()`, `RateLimitIdentifier.UserId`, Redis backend (`RATE_LIMIT_STORAGE`) | **429** + `Retry-After` |
 | **`@fastify/under-pressure`** | Process health (event loop / heap) | `UNDER_PRESSURE_*` in `main.ts` | **503** + `Retry-After` |
-| **Inbound bulkhead** | Per-VM in-flight cap (fail-fast) | `INBOUND_MAX_IN_FLIGHT`, `InboundBulkheadMiddleware` | **503** + `Retry-After` |
+| **Inbound bulkhead** | Per-VM in-flight cap (fail-fast) | `INBOUND_MAX_IN_FLIGHT`, `InboundPriorityBulkheadGuard` | **503** + `Retry-After` |
+| **API priority shed** | Shed lower-priority routes before hard cap | `@ApiPriority()`, `INBOUND_PRIORITY_SHEDDING_*` | **503** + `Retry-After` |
 | **GraphQL concurrency** | Per-subject in-flight GraphQL (cluster Redis) | `ComplexityPlugin`, `GQL_MAX_CONCURRENCY` | **503** + `Retry-After` (overload) |
 | **Outbound HttpClient** | Protect downstreams from this service | `.addConcurrencyLimit()`, optional `mode: 'adaptive'` | Client-side queue or `AdaptiveLimitExceededError` |
 
@@ -33,7 +34,8 @@ We **do not** deploy Nginx or Envoy sidecars by default. Inbound protection live
 | ------- | --------- | ---- | ------------- |
 | Quota exceeded (policy) | `RateLimitGuard` | **429** | Back off per `Retry-After`; reduce call rate |
 | Server overloaded (health) | `@fastify/under-pressure` | **503** | Retry with backoff |
-| Too many concurrent inbound HTTP requests (this VM) | Inbound bulkhead | **503** | Retry; ALB should route to other tasks |
+| Too many concurrent inbound HTTP requests (this VM) | Inbound bulkhead (hard cap) | **503** | Retry; ALB should route to other tasks |
+| Low-priority API shed under load (before hard cap) | API priority shedding | **503** | Retry; defer batch/export traffic |
 | Too many concurrent GraphQL ops (cluster) | GraphQL Redis concurrency | **503** | Retry; not a “quota” violation |
 | Dependency unhealthy | Terminus `/health` | **503** | ALB marks target unhealthy |
 

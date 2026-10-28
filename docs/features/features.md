@@ -62,12 +62,12 @@ Last reviewed against the boilerplate roadmap (code audit, not task status).
 | ↳ Guest ID (public API) | **Done** | `GuestIdMiddleware` + cookie |
 | External + internal HTTP client | **Done** | `HttpClient.internal()` / `.external()` |
 | Exponential backoff with jitter | **Done** | Strategy helpers + tests |
-| Backpressure | **Partial** | Under-pressure + inbound bulkhead + GraphQL Redis concurrency + HttpClient limits — see [edge vs app rate limits](./operations/edge-vs-app-rate-limits.md); API priority queues still missing |
+| Backpressure | **Done** | Under-pressure + inbound bulkhead + API priority shedding + GraphQL Redis concurrency + HttpClient limits — see [edge vs app rate limits](./operations/edge-vs-app-rate-limits.md) |
 | Circuit breaker | **Done** | Per logical client |
 | Deadline propagation | **Done** | Inbound ALS; outbound `HttpClient` inherits signal + caps timeouts by `remainingMs()` — optional `x-request-deadline` header to downstreams not wired |
 | Request coalescing | **Done** | HTTP client; cache layer single-flight |
-| Load shedding + `Retry-After` | **Partial** | **429** rate limit; **503** overload (pressure, bulkhead, GraphQL concurrency) — see ops doc |
-| API priority + load shedding | **Missing** | — |
+| Load shedding + `Retry-After` | **Done** | **429** rate limit; **503** overload (pressure, bulkhead, priority shed, GraphQL concurrency) — see ops doc |
+| API priority + load shedding | **Done** | `@ApiPriority`, `InboundPriorityBulkheadGuard`, EMF `Reason=api_priority_shed` |
 | Queue-based load leveling | **Missing** | — |
 | Streaming responses | **Partial** | Client `responseType: 'stream'`; no Nest SSE/stream endpoints |
 | Graceful degradation | **Partial** | Lazy Mongo, soft health, fail-open notifications — no unified framework |
