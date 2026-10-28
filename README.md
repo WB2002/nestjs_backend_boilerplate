@@ -42,6 +42,11 @@ $ brew install gitleaks
 
 See [docs/security/git_hooks.md](docs/security/git_hooks.md) for details.
 
+## Runtime
+
+- **Local dev and tests:** Node **24.9+** (see `.nvmrc`). Required for Jest loading Nest 12 ESM packages.
+- **Production:** Node **20.19+** or **22.12+** minimum; this repo’s Docker image uses Node 24.
+
 ## Running the app
 
 ```bash
