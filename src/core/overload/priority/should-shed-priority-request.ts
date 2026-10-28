@@ -21,6 +21,9 @@ export function shouldShedPriorityRequest(options: {
   priority: ApiPriorityLevel;
   thresholds: PrioritySheddingThresholds;
 }): boolean {
+  if (options.active >= options.maxInFlight) {
+    return false;
+  }
   const utilization = computeInboundUtilization(options.active, options.maxInFlight);
   const key = THRESHOLD_BY_PRIORITY[options.priority];
   const maxAllowed = options.thresholds[key];

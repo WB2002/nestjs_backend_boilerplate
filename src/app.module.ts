@@ -65,7 +65,7 @@ import { ExampleModule } from './example/example.module';
 import { ExampleJobsModule } from './example/example-jobs.module';
 import { FeatureFlagModule } from './feature-flag';
 import {
-  InboundBulkheadMiddleware,
+  InboundPriorityBulkheadGuard,
   OverloadModule,
 } from './core/overload';
 import {
@@ -218,6 +218,10 @@ import { parseCsvPaths } from './core/csrf/helpers/parse-csv-paths';
     },
     {
       provide: APP_GUARD,
+      useClass: InboundPriorityBulkheadGuard,
+    },
+    {
+      provide: APP_GUARD,
       useClass: JwtAuthGuard,
     },
     {
@@ -256,7 +260,6 @@ export class AppModule implements NestModule {
         LoggerMiddleware,
         GuestIdMiddleware,
         CsrfMiddleware,
-        InboundBulkheadMiddleware,
         RequestDeadlineMiddleware,
       )
       .forRoutes({ path: '*', method: RequestMethod.ALL });
