@@ -1,0 +1,11 @@
+{
+  "type": "object",
+  "required": ["status"],
+  "properties": {
+    "status": { "type": "string" },
+    "info": { "type": "object" },
+    "error": { "type": "object" },
+    "details": { "type": "object" }
+  },
+  "additionalProperties": true
+}

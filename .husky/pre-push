@@ -1,0 +1,3 @@
+pnpm quality:lint
+pnpm quality:types
+pnpm quality:unit

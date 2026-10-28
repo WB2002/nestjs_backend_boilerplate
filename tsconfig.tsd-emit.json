@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "outDir": ".tsd-emit",
+    "rootDir": "src"
+  },
+  "files": [
+    "src/core/overload/priority/api-priority-level.enum.ts",
+    "src/core/overload/priority/priority-shedding.types.ts",
+    "src/core/overload/priority/should-shed-priority-request.ts"
+  ]
+}

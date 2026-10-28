@@ -6,6 +6,13 @@
     "noEmit": true,
     "isolatedModules": true
   },
-  "include": ["src/**/*", "jest.config.ts", "jest.integration.config.ts"],
+  "include": [
+    "src/**/*",
+    "test/**/*",
+    "jest.config.ts",
+    "jest.integration.config.ts",
+    "jest.property.config.ts",
+    "jest.contract.config.ts"
+  ],
   "exclude": ["node_modules", "dist"]
 }
