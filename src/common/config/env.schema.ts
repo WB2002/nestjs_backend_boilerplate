@@ -46,6 +46,12 @@ export const envSchema = {
   // Inbound fail-fast bulkhead (per VM)
   INBOUND_BULKHEAD_ENABLED: { required: false },
   INBOUND_MAX_IN_FLIGHT: { required: false },
+  INBOUND_PRIORITY_SHEDDING_ENABLED: { required: false },
+  INBOUND_DEFAULT_API_PRIORITY: { required: false },
+  INBOUND_PRIORITY_SHED_CRITICAL_AT: { required: false },
+  INBOUND_PRIORITY_SHED_HIGH_AT: { required: false },
+  INBOUND_PRIORITY_SHED_NORMAL_AT: { required: false },
+  INBOUND_PRIORITY_SHED_LOW_AT: { required: false },
 
   // Graceful shutdown
   SHUTDOWN_DRAIN_MS: { required: false },
