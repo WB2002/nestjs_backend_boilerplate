@@ -39,6 +39,10 @@ export const envSchema = {
   UNDER_PRESSURE_EXPOSE_STATUS_ROUTE: { required: false },
   OVERLOAD_RETRY_AFTER_SEC: { required: false },
 
+  // Inbound fail-fast bulkhead (per VM)
+  INBOUND_BULKHEAD_ENABLED: { required: false },
+  INBOUND_MAX_IN_FLIGHT: { required: false },
+
   // Graceful shutdown
   SHUTDOWN_DRAIN_MS: { required: false },
   SHUTDOWN_FORCE_MS: { required: false },

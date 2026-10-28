@@ -1,5 +1,5 @@
-import { createPressureHandler } from './create-pressure-handler';
-import { UnderPressureConfig } from './overload.types';
+import { createPressureHandler } from '../create-pressure-handler';
+import { UnderPressureConfig } from '../overload.types';
 
 describe('createPressureHandler', () => {
   const config: UnderPressureConfig = {

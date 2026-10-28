@@ -1,4 +1,4 @@
-import { buildOverloadErrorResponse } from './build-overload-error-response';
+import { buildOverloadErrorResponse } from '../build-overload-error-response';
 
 describe('buildOverloadErrorResponse', () => {
   it('matches AllExceptionsFilter JSON shape', () => {

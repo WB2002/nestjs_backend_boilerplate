@@ -55,7 +55,7 @@ Last reviewed against the boilerplate roadmap (code audit, not task status).
 | ↳ Guest ID (public API) | **Done** | `GuestIdMiddleware` + cookie |
 | External + internal HTTP client | **Done** | `HttpClient.internal()` / `.external()` |
 | Exponential backoff with jitter | **Done** | Strategy helpers + tests |
-| Backpressure | **Partial** | `@fastify/under-pressure` (503 + Retry-After, health exempt); outbound concurrency + GraphQL Redis concurrency — inbound fail-fast bulkhead still missing |
+| Backpressure | **Partial** | `@fastify/under-pressure` + inbound fail-fast bulkhead (`INBOUND_MAX_IN_FLIGHT`, 503 + Retry-After); outbound concurrency + GraphQL Redis concurrency — API priority queues still missing |
 | Circuit breaker | **Done** | Per logical client |
 | Deadline propagation | **Partial** | Inbound ALS + `x-request-deadline`; **not** wired to outbound `HttpClient` |
 | Request coalescing | **Done** | HTTP client; cache layer single-flight |

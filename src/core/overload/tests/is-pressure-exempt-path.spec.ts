@@ -1,4 +1,7 @@
-import { isPressureExemptPath, normalizeRequestPath } from './is-pressure-exempt-path';
+import {
+  isPressureExemptPath,
+  normalizeRequestPath,
+} from '../is-pressure-exempt-path';
 
 describe('normalizeRequestPath', () => {
   it('strips query string and trailing slash', () => {

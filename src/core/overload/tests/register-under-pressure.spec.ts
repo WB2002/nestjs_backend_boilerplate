@@ -1,6 +1,6 @@
 import { FastifyAdapter } from '@nestjs/platform-fastify';
-import { registerUnderPressure } from './register-under-pressure';
-import { UnderPressureConfig } from './overload.types';
+import { registerUnderPressure } from '../register-under-pressure';
+import { UnderPressureConfig } from '../overload.types';
 
 describe('registerUnderPressure', () => {
   const enabledConfig: UnderPressureConfig = {
