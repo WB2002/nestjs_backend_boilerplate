@@ -24,4 +24,10 @@ export type ClaimJobInput = {
   leaseSec: number;
 };
 
+export type ReclaimedLeaseRow = {
+  id: string;
+  status: BackgroundJobStatus;
+  maxAttempts: number;
+};
+
 export { BackgroundJobStatus };

@@ -86,3 +86,37 @@ SELECT status::text AS status
 FROM background_jobs
 WHERE id = $1::uuid;
 `;
+
+export const RECLAIM_EXPIRED_LEASES_SQL = `
+WITH picked AS (
+  SELECT id, attempts, max_attempts
+  FROM background_jobs
+  WHERE status = 'processing'::background_job_status
+    AND lease_until IS NOT NULL
+    AND lease_until < NOW()
+  ORDER BY lease_until ASC
+  LIMIT $1::int
+  FOR UPDATE SKIP LOCKED
+)
+UPDATE background_jobs AS j
+SET
+  status = CASE
+    WHEN picked.attempts >= picked.max_attempts THEN 'failed'::background_job_status
+    ELSE 'pending'::background_job_status
+  END,
+  updated_at = NOW(),
+  last_error = $2,
+  lease_until = NULL,
+  locked_by = NULL,
+  locked_at = NULL,
+  run_at = CASE
+    WHEN picked.attempts >= picked.max_attempts THEN j.run_at
+    ELSE NOW()
+  END
+FROM picked
+WHERE j.id = picked.id
+RETURNING
+  j.id,
+  j.status::text AS status,
+  j.max_attempts;
+`;

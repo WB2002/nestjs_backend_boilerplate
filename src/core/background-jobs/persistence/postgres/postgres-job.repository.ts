@@ -6,14 +6,19 @@ import {
   type BackgroundJobRow,
   type ClaimJobInput,
   type InsertPendingJobInput,
+  type ReclaimedLeaseRow,
 } from '../../types/background-job.types';
-import { BACKGROUND_JOBS_POSTGRES_POOL } from '../../constants/background-jobs.constants';
+import {
+  BACKGROUND_JOBS_LEASE_EXPIRED_MESSAGE,
+  BACKGROUND_JOBS_POSTGRES_POOL,
+} from '../../constants/background-jobs.constants';
 import {
   CLAIM_JOB_BY_ID_SQL,
   GET_JOB_STATUS_SQL,
   INSERT_PENDING_JOB_SQL,
   MARK_JOB_COMPLETED_SQL,
   MARK_JOB_FAILED_SQL,
+  RECLAIM_EXPIRED_LEASES_SQL,
   REQUEUE_JOB_FOR_RETRY_SQL,
 } from './sql/claim-job.sql';
 
@@ -77,6 +82,30 @@ export class PostgresJobRepository {
 
   async markCompleted(id: string): Promise<void> {
     await this.pool.query(MARK_JOB_COMPLETED_SQL, [id]);
+  }
+
+  async reclaimExpiredLeases(limit: number): Promise<ReclaimedLeaseRow[]> {
+    const result = await this.pool.query<{
+      id: string;
+      status: string;
+      max_attempts: number;
+    }>(RECLAIM_EXPIRED_LEASES_SQL, [
+      limit,
+      BACKGROUND_JOBS_LEASE_EXPIRED_MESSAGE,
+    ]);
+    return result.rows.flatMap((row) => {
+      const status = parseBackgroundJobStatus(row.status);
+      if (!status) {
+        return [];
+      }
+      return [
+        {
+          id: row.id,
+          status,
+          maxAttempts: row.max_attempts,
+        },
+      ];
+    });
   }
 
   async markFailed(
