@@ -1,4 +1,4 @@
-import { MongoDBContainer } from '@testcontainers/mongodb';
+import { startMongoDBIntegrationContainer } from '@/testing/integration-containers';
 import mongoose, { Connection, Model } from 'mongoose';
 import {
   CountryAccessDocument,
@@ -11,13 +11,13 @@ const describeIntegration =
   process.env.SKIP_TESTCONTAINERS === 'true' ? describe.skip : describe;
 
 describeIntegration('MongoCountryAccessRepository (integration)', () => {
-  let container: Awaited<ReturnType<MongoDBContainer['start']>>;
+  let container: Awaited<ReturnType<typeof startMongoDBIntegrationContainer>>;
   let connection: Connection;
   let model: Model<CountryAccessDocument>;
   let repository: MongoCountryAccessRepository;
 
   beforeAll(async () => {
-    container = await new MongoDBContainer('mongo:8.0').start();
+    container = await startMongoDBIntegrationContainer();
     const uri = container.getConnectionString();
     await mongoose.connect(`${uri}?directConnection=true`);
     connection = mongoose.connection;

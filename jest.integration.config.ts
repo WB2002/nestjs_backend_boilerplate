@@ -1,6 +1,23 @@
+import { createRequire } from 'node:module';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { Config } from 'jest';
 
-/** Integration tests: real `pg` and `@nestjs/bullmq` (no unit-test shims). */
+const repoRoot = path.dirname(fileURLToPath(import.meta.url));
+const requireFromRepo = createRequire(path.join(repoRoot, 'package.json'));
+
+function resolveFromPackage(
+  parentPackageName: string,
+  packageName: string,
+): string {
+  const parentPkgJson = requireFromRepo.resolve(
+    `${parentPackageName}/package.json`,
+  );
+  const requireFromParent = createRequire(parentPkgJson);
+  return requireFromParent.resolve(packageName);
+}
+
+/** Integration tests: real `pg` and Testcontainers (no unit-test shims). */
 const config: Config = {
   moduleFileExtensions: ['js', 'json', 'ts'],
   rootDir: '.',
@@ -15,7 +32,7 @@ const config: Config = {
     '^.+\\.(t|j)s$': [
       'ts-jest',
       {
-        tsconfig: 'tsconfig.spec.json',
+        tsconfig: 'tsconfig.integration.json',
       },
     ],
   },
@@ -30,6 +47,8 @@ const config: Config = {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^sanitize-html$': '<rootDir>/jest/sanitize-html-shim.cjs',
     '^pg$': '<rootDir>/jest/pg-require.cjs',
+    '^pg-pool$': resolveFromPackage('pg', 'pg-pool'),
+    '^pg-connection-string$': resolveFromPackage('pg', 'pg-connection-string'),
   },
 };
 
