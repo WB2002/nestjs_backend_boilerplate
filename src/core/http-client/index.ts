@@ -16,6 +16,7 @@ export {
   resolveEffectiveMaxConcurrent,
   parseHttpClientInstanceCount,
   mergeInboundDeadlineWithPolicy,
+  AdaptiveLimitExceededError,
   sleep,
   sleepWithinBudget,
 } from './resilience';

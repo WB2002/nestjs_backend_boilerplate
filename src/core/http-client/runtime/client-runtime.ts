@@ -9,7 +9,7 @@ import {
 import { applyAuth, assertCompatibleAuth, OAuthTokenManager } from '../auth';
 import {
   CircuitBreaker,
-  ConcurrencyLimiter,
+  createConcurrencyGate,
   RequestCoalescer,
   computeBackoffDelayMs,
   createTimeoutBudget,
@@ -20,12 +20,12 @@ import {
   isBreakerFailure,
   resolveAttemptTimeoutMs,
   resolveIdempotencyKey,
-  resolveEffectiveMaxConcurrent,
-  parseHttpClientInstanceCount,
   mergeInboundDeadlineWithPolicy,
   sleep,
   sleepWithinBudget,
 } from '../resilience';
+import { NEVER_ABORTED_SIGNAL } from '../resilience/adaptive';
+import type { ConcurrencyGate } from '../resilience/concurrency-gate.types';
 import { AxiosTransport, ConnectionPoolRegistry } from '../transport';
 import {
   emitHttpMetrics,
@@ -50,7 +50,7 @@ export class ClientRuntime {
   private readonly transport: AxiosTransport;
   private readonly oauth?: OAuthTokenManager;
   private readonly breaker?: CircuitBreaker;
-  private readonly limiter?: ConcurrencyLimiter;
+  private readonly gate: ConcurrencyGate | undefined;
   private readonly coalescer = new RequestCoalescer();
   private readonly inflight = new Set<Promise<unknown>>();
   private closed = false;
@@ -82,13 +82,7 @@ export class ClientRuntime {
         policy.circuitBreaker.halfOpenMaxAttempts,
       );
     }
-    if (policy.concurrencyLimit) {
-      const effectiveMax = resolveEffectiveMaxConcurrent(
-        policy.concurrencyLimit,
-        parseHttpClientInstanceCount(),
-      );
-      this.limiter = new ConcurrencyLimiter(effectiveMax);
-    }
+    this.gate = createConcurrencyGate(policy.concurrencyLimit) ?? undefined;
   }
 
   async request<T = unknown>(input: HttpRequest): Promise<HttpResponse<T>> {
@@ -108,7 +102,7 @@ export class ClientRuntime {
   async close(graceMs: number): Promise<void> {
     this.closed = true;
     this.coalescer.clear();
-    this.limiter?.close(new ClientClosedError());
+    this.gate?.close(new ClientClosedError());
     this.oauth?.clear();
 
     if (this.inflight.size > 0) {
@@ -412,17 +406,14 @@ export class ClientRuntime {
       };
     }
 
-    const release = this.limiter
-      ? await this.limiter.acquire(authed.signal)
-      : undefined;
-    try {
+    const runAttempt = async (attemptSignal: AbortSignal) => {
       const response = await this.transport.request<T>(
-        authed,
+        { ...authed, signal: attemptSignal },
         withoutUndefined({
           baseUrl: this.policy.baseUrl,
           defaultHeaders: this.policy.defaultHeaders,
           timeoutMs: attemptContext.timeoutMs,
-          signal: authed.signal,
+          signal: attemptSignal,
         }),
       );
 
@@ -447,6 +438,13 @@ export class ClientRuntime {
 
       attemptTrace?.endSuccess(response);
       return response;
+    };
+
+    try {
+      if (this.gate) {
+        return await this.gate.run(authed.signal, runAttempt);
+      }
+      return await runAttempt(authed.signal ?? NEVER_ABORTED_SIGNAL);
     } catch (error) {
       attemptTrace?.endError(error);
       throw normalizeError(error, {
@@ -455,8 +453,6 @@ export class ClientRuntime {
         requestId: operation.requestId,
         attempt,
       });
-    } finally {
-      release?.();
     }
   }
 
@@ -528,8 +524,20 @@ function validatePolicy(policy: ClientPolicySnapshot): void {
   if (policy.retry && policy.retry.maxAttempts < 1) {
     throw new Error('maxAttempts must be >= 1');
   }
-  if (policy.concurrencyLimit && policy.concurrencyLimit.maxConcurrent < 1) {
-    throw new Error('maxConcurrent must be >= 1');
+  if (policy.concurrencyLimit) {
+    if (policy.concurrencyLimit.maxConcurrent < 1) {
+      throw new Error('maxConcurrent must be >= 1');
+    }
+    const mode = policy.concurrencyLimit.mode ?? 'fixed';
+    switch (mode) {
+      case 'fixed':
+      case 'adaptive':
+        break;
+      default: {
+        const _never: never = mode;
+        throw new Error(`Unknown concurrency mode: ${_never}`);
+      }
+    }
   }
 }
 
