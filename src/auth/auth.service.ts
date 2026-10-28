@@ -59,9 +59,9 @@ export class AuthService {
     if (user && user.isActive) {
       const isValid = await argon2.verify(user.passwordHash, pass);
       if (isValid) {
-        const result = user.toObject();
-        delete (result as { passwordHash?: string }).passwordHash;
-        return result;
+        const plain = user.toObject() as unknown as Record<string, unknown>;
+        delete plain.passwordHash;
+        return plain;
       }
     }
     return null;
