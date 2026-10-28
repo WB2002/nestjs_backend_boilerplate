@@ -23,7 +23,9 @@ import { ConfigService } from '@nestjs/config';
 import { AuthRequest } from './types/auth.types';
 import { CsrfTokenService } from '@/core/csrf/csrf-token.service';
 import { setCsrfCookie } from '@/core/csrf/helpers/set-csrf-cookie';
+import { ApiPriority, ApiPriorityLevel } from '@/core/overload';
 
+@ApiPriority(ApiPriorityLevel.Critical)
 @Controller('auth')
 export class AuthController {
   constructor(

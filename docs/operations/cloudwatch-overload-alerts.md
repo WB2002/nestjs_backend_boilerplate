@@ -16,7 +16,8 @@ Application code emits **Embedded Metric Format (EMF)** logs for service-unavail
 | Reason | Source |
 | ------ | ------ |
 | `under_pressure` | `@fastify/under-pressure` shedding |
-| `inbound_bulkhead` | `InboundBulkheadMiddleware` / `OverloadRejectedError` |
+| `inbound_bulkhead` | `InboundPriorityBulkheadGuard` hard cap / `OverloadRejectedError` |
+| `api_priority_shed` | `InboundPriorityBulkheadGuard` / `PriorityShedRejectedError` |
 | `graphql_concurrency` | GraphQL Redis concurrency deny |
 | `health_check` | Terminus `/health` or `/health/ready` **503** (metrics only — no X-Ray on probes) |
 | `dependency_unavailable` | DB connection errors mapped to **503** |
@@ -38,6 +39,12 @@ Create **one alarm per high-signal `Reason`**, plus optional ALB correlation.
 - **Metric:** same, `Reason=inbound_bulkhead`
 - **Threshold:** ≥ **1** for **5** consecutive periods (5 minutes)
 - **Action:** SNS `ops-warning` — scale out or raise `INBOUND_MAX_IN_FLIGHT`
+
+### API priority shed (warning)
+
+- **Metric:** same, `Reason=api_priority_shed`
+- **Threshold:** ≥ **20** for **5** consecutive periods (5 minutes)
+- **Action:** review `@ApiPriority` on batch/export routes and `INBOUND_PRIORITY_SHED_*_AT` thresholds
 
 ### GraphQL concurrency
 

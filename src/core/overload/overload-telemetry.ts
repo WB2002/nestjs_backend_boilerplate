@@ -23,6 +23,14 @@ export function recordInboundBulkhead503(path: string): void {
   });
 }
 
+export function recordApiPriorityShed503(path: string): void {
+  void emitServiceUnavailableMetric({
+    enabled: telemetryConfig.appMetricsEnabled,
+    reason: 'api_priority_shed',
+    path,
+  });
+}
+
 export function recordHealthCheck503(path: string): void {
   void emitServiceUnavailableMetric({
     enabled: telemetryConfig.appMetricsEnabled,

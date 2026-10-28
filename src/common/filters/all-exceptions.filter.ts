@@ -17,8 +17,10 @@ import {
   getDeadlineReason,
 } from '../../core/request-deadline';
 import { OverloadRejectedError } from '../../core/overload/errors/overload-rejected.error';
+import { PriorityShedRejectedError } from '../../core/overload/errors/priority-shed-rejected.error';
 import { resolveOverloadRetryAfterSec } from '../../core/overload/resolve-overload-retry-after-sec';
 import {
+  recordApiPriorityShed503,
   recordDependencyUnavailable503,
   recordHealthCheck503,
   recordInboundBulkhead503,
@@ -75,12 +77,20 @@ export class AllExceptionsFilter implements ExceptionFilter {
       message = deadlineMapped.message;
     }
 
-    const overloadMapped = this.mapOverloadException(exception);
-    if (overloadMapped) {
-      status = overloadMapped.status;
-      message = overloadMapped.message;
-      this.setRetryAfterHeader(response, overloadMapped.retryAfterSec);
-      recordInboundBulkhead503(httpAdapter.getRequestUrl(request));
+    const priorityShedMapped = this.mapPriorityShedException(exception);
+    if (priorityShedMapped) {
+      status = priorityShedMapped.status;
+      message = priorityShedMapped.message;
+      this.setRetryAfterHeader(response, priorityShedMapped.retryAfterSec);
+      recordApiPriorityShed503(httpAdapter.getRequestUrl(request));
+    } else {
+      const overloadMapped = this.mapOverloadException(exception);
+      if (overloadMapped) {
+        status = overloadMapped.status;
+        message = overloadMapped.message;
+        this.setRetryAfterHeader(response, overloadMapped.retryAfterSec);
+        recordInboundBulkhead503(httpAdapter.getRequestUrl(request));
+      }
     }
 
     const responseDestroyed =
@@ -182,6 +192,19 @@ export class AllExceptionsFilter implements ExceptionFilter {
     }
 
     return undefined;
+  }
+
+  private mapPriorityShedException(
+    exception: unknown,
+  ): { status: number; message: string; retryAfterSec: number } | undefined {
+    if (!(exception instanceof PriorityShedRejectedError)) {
+      return undefined;
+    }
+    return {
+      status: HttpStatus.SERVICE_UNAVAILABLE,
+      message: exception.message,
+      retryAfterSec: resolveOverloadRetryAfterSec(),
+    };
   }
 
   private mapOverloadException(
