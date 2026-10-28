@@ -49,6 +49,7 @@ export function buildConsumeContext(
   step: ScenarioStep,
   key: string,
 ): ConsumeContext {
+  const burst = step.input.burst ?? scenario.defaults.burst;
   return {
     algorithm: scenario.algorithm,
     key,
@@ -56,7 +57,7 @@ export function buildConsumeContext(
     durationMs: step.input.durationMs ?? scenario.defaults.durationMs,
     cost: step.input.cost ?? scenario.defaults.cost,
     nowMs: step.input.nowMs,
-    burst: step.input.burst ?? scenario.defaults.burst,
+    ...(burst !== undefined ? { burst } : {}),
   };
 }
 

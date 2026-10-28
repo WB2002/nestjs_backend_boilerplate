@@ -83,7 +83,11 @@ export class MemoryRateLimitBackend implements RateLimitBackend {
     );
     const toRemove = Math.max(1, Math.floor(this.maxKeys * MEMORY_EVICT_RATIO));
     for (let i = 0; i < toRemove && i < sorted.length; i++) {
-      const [key, info] = sorted[i];
+      const entry = sorted[i];
+      if (entry === undefined) {
+        continue;
+      }
+      const [key, info] = entry;
       this.deleteKey(key, info.store);
     }
   }

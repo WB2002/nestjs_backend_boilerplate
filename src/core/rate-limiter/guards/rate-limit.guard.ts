@@ -33,7 +33,6 @@ import {
   MissingFingerprintError,
   MissingGuestIdError,
 } from '../errors';
-import { getHttpRequest } from '../http';
 import { buildRateLimitKey, resolveRouteScope } from '../keys';
 import { resolveTracker } from '../trackers';
 
@@ -97,7 +96,7 @@ export class RateLimitGuard extends ThrottlerGuard {
         continue;
       }
 
-      const policy = method.policy ?? method.name;
+      const policy = method.policy ?? method.name ?? 'default';
       const algorithm =
         method.algorithm ??
         decoratorAlgorithm ??
@@ -115,13 +114,15 @@ export class RateLimitGuard extends ThrottlerGuard {
           tracker,
           routeScope,
           storage,
-          hashRouteScope: this.rateLimitOptions.hashRouteScope,
+          ...(this.rateLimitOptions.hashRouteScope !== undefined
+            ? { hashRouteScope: this.rateLimitOptions.hashRouteScope }
+            : {}),
         }),
         limit: method.limit,
         durationMs: method.duration,
         cost,
         nowMs,
-        burst: method.burst,
+        ...(method.burst !== undefined ? { burst: method.burst } : {}),
         policy,
       };
 

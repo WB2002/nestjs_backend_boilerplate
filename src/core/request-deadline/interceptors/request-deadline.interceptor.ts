@@ -76,12 +76,15 @@ export class RequestDeadlineInterceptor implements NestInterceptor {
       .getRequest<{ headers?: Record<string, unknown> }>();
     const headerMs = parseTimeoutHeader(req?.headers);
 
+    const resolvedRouteOverrideMs =
+      typeof routeOverrideMs === 'number' && routeOverrideMs > 0
+        ? routeOverrideMs
+        : undefined;
     const { timeoutMs } = resolveTimeoutMs({
-      headerMs,
-      routeOverrideMs:
-        typeof routeOverrideMs === 'number' && routeOverrideMs > 0
-          ? routeOverrideMs
-          : undefined,
+      ...(headerMs !== undefined ? { headerMs } : {}),
+      ...(resolvedRouteOverrideMs !== undefined
+        ? { routeOverrideMs: resolvedRouteOverrideMs }
+        : {}),
       defaultTimeoutMs: this.defaultTimeoutMs,
       maxTimeoutMs: this.maxTimeoutMs,
     });

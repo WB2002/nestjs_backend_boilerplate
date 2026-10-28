@@ -75,7 +75,7 @@ export class RequestDeadlineMiddleware implements NestMiddleware {
 
     const headerMs = parseTimeoutHeader(req.headers);
     const { timeoutMs } = resolveTimeoutMs({
-      headerMs,
+      ...(headerMs !== undefined ? { headerMs } : {}),
       defaultTimeoutMs: this.defaultTimeoutMs,
       maxTimeoutMs: this.maxTimeoutMs,
     });

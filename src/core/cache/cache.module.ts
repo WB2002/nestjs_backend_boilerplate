@@ -13,6 +13,7 @@ import Redis from 'ioredis';
 import {
   CACHE_BACKEND,
   CACHE_OPTIONS,
+  DEFAULT_CACHE_KEY_PREFIX,
   DEFAULT_CACHE_OPTIONS,
 } from './constants/cache.constants';
 import { CacheStorage } from './enums/cache-storage.enum';
@@ -47,10 +48,14 @@ class CacheBackendLifecycle implements OnModuleDestroy {
 @Module({})
 export class CacheModule {
   static forRoot(options: CacheModuleOptions = {}): DynamicModule {
+    const keyPrefix: string =
+      options.keyPrefix ??
+      DEFAULT_CACHE_OPTIONS.keyPrefix ??
+      DEFAULT_CACHE_KEY_PREFIX;
     const merged: CacheModuleOptions = {
       ...DEFAULT_CACHE_OPTIONS,
       ...options,
-      keyPrefix: options.keyPrefix ?? DEFAULT_CACHE_OPTIONS.keyPrefix,
+      keyPrefix,
     };
 
     return {
@@ -79,10 +84,14 @@ export class CacheModule {
       provide: CACHE_OPTIONS,
       useFactory: async (...args: unknown[]) => {
         const resolved = await options.useFactory(...args);
+        const keyPrefix: string =
+          resolved.keyPrefix ??
+          DEFAULT_CACHE_OPTIONS.keyPrefix ??
+          DEFAULT_CACHE_KEY_PREFIX;
         return {
           ...DEFAULT_CACHE_OPTIONS,
           ...resolved,
-          keyPrefix: resolved.keyPrefix ?? DEFAULT_CACHE_OPTIONS.keyPrefix,
+          keyPrefix,
         } satisfies CacheModuleOptions;
       },
       inject: (options.inject ?? []) as never[],

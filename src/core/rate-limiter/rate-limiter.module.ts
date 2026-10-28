@@ -49,10 +49,12 @@ class RateLimitBackendLifecycle implements OnModuleDestroy {
 @Module({})
 export class RateLimiterModule {
   static forRoot(options: RateLimiterModuleOptions = {}): DynamicModule {
+    const methods =
+      options.methods ?? DEFAULT_RATE_LIMITER_OPTIONS.methods ?? [];
     const merged: RateLimiterModuleOptions = {
       ...DEFAULT_RATE_LIMITER_OPTIONS,
       ...options,
-      methods: options.methods ?? DEFAULT_RATE_LIMITER_OPTIONS.methods,
+      methods,
       guestCookie: {
         ...DEFAULT_RATE_LIMITER_OPTIONS.guestCookie,
         ...options.guestCookie,
@@ -96,10 +98,12 @@ export class RateLimiterModule {
       provide: RATE_LIMIT_OPTIONS,
       useFactory: async (...args: unknown[]) => {
         const resolved = await options.useFactory(...args);
+        const methods =
+          resolved.methods ?? DEFAULT_RATE_LIMITER_OPTIONS.methods ?? [];
         return {
           ...DEFAULT_RATE_LIMITER_OPTIONS,
           ...resolved,
-          methods: resolved.methods ?? DEFAULT_RATE_LIMITER_OPTIONS.methods,
+          methods,
           guestCookie: {
             ...DEFAULT_RATE_LIMITER_OPTIONS.guestCookie,
             ...resolved.guestCookie,

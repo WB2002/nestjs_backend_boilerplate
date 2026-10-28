@@ -1,5 +1,4 @@
 import { Controller, Get } from '@nestjs/common';
-import { Throttle } from '@nestjs/throttler';
 import { AppService } from './app.service';
 import {
   RateLimit,

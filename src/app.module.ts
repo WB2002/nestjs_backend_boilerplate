@@ -48,8 +48,9 @@ import { ComplexityPlugin } from './common/plugins/complexity.plugin';
 import { SanitizationPipe } from './common/sanitization';
 import { validateEnv } from './common/config';
 import {
-  resolveCacheStorage,
-  resolveRateLimitStorage,
+  configServiceFromFactoryArgs,
+  resolveCacheStorageFromConfig,
+  resolveRateLimitStorageFromConfig,
 } from './common/config/resolve-coordination-storage';
 import { UploadsModule } from './uploads/uploads.module';
 import { CountryAccessModule, CountryAccessGuard } from './country-access';
@@ -72,13 +73,16 @@ import {
     ShutdownModule,
     OverloadModule.forRoot(),
     MongooseModule.forRootAsync({
-      useFactory: (configService: ConfigService) => ({
-        uri: configService.get<string>('MONGO_URI'),
-        lazyConnection: true, // Do not block startup if MongoDB is down; /health returns 503
-        // Fail fast on connect/selection so health checks and shutdown never hang.
-        serverSelectionTimeoutMS: 2_000,
-        connectTimeoutMS: 2_000,
-      }),
+      useFactory: (...args: unknown[]) => {
+        const configService = configServiceFromFactoryArgs(args);
+        return {
+          uri: configService.get<string>('MONGO_URI') as string,
+          lazyConnection: true, // Do not block startup if MongoDB is down; /health returns 503
+          // Fail fast on connect/selection so health checks and shutdown never hang.
+          serverSelectionTimeoutMS: 2_000,
+          connectTimeoutMS: 2_000,
+        };
+      },
       inject: [ConfigService],
     }),
     HealthModule,
@@ -95,39 +99,39 @@ import {
     WinstonModule.forRoot(winstonConfig),
     CacheModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        storage: resolveCacheStorage({
-          nodeEnv: configService.get<string>('NODE_ENV'),
-          cacheStorage: configService.get<string>('CACHE_STORAGE'),
-        }),
+      useFactory: (...args: unknown[]) => ({
+        storage: resolveCacheStorageFromConfig(
+          configServiceFromFactoryArgs(args),
+        ),
       }),
     }),
     RateLimiterModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        storage: resolveRateLimitStorage({
-          nodeEnv: configService.get<string>('NODE_ENV'),
-          rateLimitStorage: configService.get<string>('RATE_LIMIT_STORAGE'),
-        }),
-        algorithm: RateLimitAlgorithm.FixedWindowCounter,
-        guestCookie: {
-          secure: configService.get<string>('NODE_ENV') === 'production',
-        },
-        methods: [
-          {
-            name: 'global-ip',
-            identifier: RateLimitIdentifier.Ip,
-            duration: 60_000,
-            limit: 10,
-            cost: 1,
-            keyScope: 'global',
+      useFactory: (...args: unknown[]) => {
+        const configService = configServiceFromFactoryArgs(args);
+        return {
+          storage: resolveRateLimitStorageFromConfig(configService),
+          algorithm: RateLimitAlgorithm.FixedWindowCounter,
+          guestCookie: {
+            secure: configService.get<string>('NODE_ENV') === 'production',
           },
-        ],
-      }),
+          methods: [
+            {
+              name: 'global-ip',
+              identifier: RateLimitIdentifier.Ip,
+              duration: 60_000,
+              limit: 10,
+              cost: 1,
+              keyScope: 'global',
+            },
+          ],
+        };
+      },
     }),
     RequestDeadlineModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => {
+      useFactory: (...args: unknown[]) => {
+        const configService = configServiceFromFactoryArgs(args);
         const defaultTimeoutMs = parsePositiveTimeoutMs(
           configService.get('REQUEST_TIMEOUT_MS'),
           DEFAULT_REQUEST_TIMEOUT_MS,

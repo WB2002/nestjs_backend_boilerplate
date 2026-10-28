@@ -1,5 +1,32 @@
+import type { ConfigService } from '@nestjs/config';
 import { CacheStorage } from '../../core/cache/enums/cache-storage.enum';
 import { RateLimitStorage } from '../../core/rate-limiter/enums/rate-limit-storage.enum';
+
+export function configServiceFromFactoryArgs(args: unknown[]): ConfigService {
+  return args[0] as ConfigService;
+}
+
+export function resolveRateLimitStorageFromConfig(
+  configService: ConfigService,
+): RateLimitStorage {
+  const nodeEnv = configService.get<string>('NODE_ENV') ?? 'development';
+  const rateLimitStorage = configService.get<string>('RATE_LIMIT_STORAGE')?.trim();
+  return resolveRateLimitStorage({
+    nodeEnv,
+    ...(rateLimitStorage ? { rateLimitStorage } : {}),
+  });
+}
+
+export function resolveCacheStorageFromConfig(
+  configService: ConfigService,
+): CacheStorage {
+  const nodeEnv = configService.get<string>('NODE_ENV') ?? 'development';
+  const cacheStorage = configService.get<string>('CACHE_STORAGE')?.trim();
+  return resolveCacheStorage({
+    nodeEnv,
+    ...(cacheStorage ? { cacheStorage } : {}),
+  });
+}
 
 type StorageToken = 'memory' | 'redis';
 
