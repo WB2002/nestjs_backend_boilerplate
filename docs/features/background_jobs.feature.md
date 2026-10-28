@@ -74,7 +74,24 @@ BullMQ `jobId` equals the Postgres row `id`.
 
 Handler errors requeue the row to `pending` with delayed `run_at` when `attempts < max_attempts`. Terminal failure sets `failed`. BullMQ may redeliver; unclaimed or already-completed rows are skipped safely.
 
+## Lease reclaim
+
+When a worker dies or exceeds `BACKGROUND_JOBS_CLAIM_LEASE_SEC`, rows can remain in `processing` until the lease expires. `JobLeaseReclaimService` polls Postgres on an interval (all VMs with `BACKGROUND_JOBS_ENABLED=true` unless disabled below).
+
+| Variable | Default | Purpose |
+| -------- | ------- | ------- |
+| `BACKGROUND_JOBS_LEASE_RECLAIM_ENABLED` | `true` | Set `false` to disable the cron |
+| `BACKGROUND_JOBS_LEASE_RECLAIM_INTERVAL_MS` | `30000` | Poll interval |
+| `BACKGROUND_JOBS_LEASE_RECLAIM_BATCH_SIZE` | `100` | Max rows reclaimed per tick |
+
+Behavior:
+
+- `processing` + `lease_until < now()` → `pending` with `run_at = now`, then BullMQ job re-added (`jobId` = row id)
+- Same row but `attempts >= max_attempts` → terminal `failed` with lease-expired `last_error`
+- `attempts` is **not** incremented again on reclaim (already bumped at claim time)
+
+Set `BACKGROUND_JOBS_CLAIM_LEASE_SEC` above worst-case handler duration. Handlers do not verify lease ownership on completion; a zombie worker could still mark a row completed after reclaim.
+
 ## Follow-ups (not implemented)
 
-- Reclaim rows stuck in `processing` after `lease_until` expires
 - Priority queues / API load-shedding integration
