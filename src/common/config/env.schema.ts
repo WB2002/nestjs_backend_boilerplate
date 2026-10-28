@@ -31,6 +31,14 @@ export const envSchema = {
   REQUEST_TIMEOUT_MS: { required: false },
   REQUEST_TIMEOUT_MAX_MS: { required: false },
 
+  // Inbound overload (@fastify/under-pressure)
+  UNDER_PRESSURE_ENABLED: { required: false },
+  UNDER_PRESSURE_MAX_EVENT_LOOP_DELAY_MS: { required: false },
+  UNDER_PRESSURE_MAX_HEAP_USED_BYTES: { required: false },
+  UNDER_PRESSURE_MAX_RSS_BYTES: { required: false },
+  UNDER_PRESSURE_EXPOSE_STATUS_ROUTE: { required: false },
+  OVERLOAD_RETRY_AFTER_SEC: { required: false },
+
   // Graceful shutdown
   SHUTDOWN_DRAIN_MS: { required: false },
   SHUTDOWN_FORCE_MS: { required: false },

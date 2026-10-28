@@ -12,6 +12,10 @@ import fastifyCookie from '@fastify/cookie';
 import multipart from '@fastify/multipart';
 import compress from '@fastify/compress';
 import mongoose from 'mongoose';
+import {
+  parseUnderPressureConfig,
+  registerUnderPressure,
+} from './core/overload';
 
 const logger = new Logger('UnhandledRejection');
 
@@ -116,6 +120,8 @@ async function bootstrap() {
     encodings: ['br', 'gzip'],
     threshold: compressionThreshold,
   });
+
+  await registerUnderPressure(fastifyAdapter, parseUnderPressureConfig());
 
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
