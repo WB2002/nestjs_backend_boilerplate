@@ -19,42 +19,42 @@ Overview of capabilities in `nestjs_backend_boilerplate`. **Implementation statu
 
 ## Feature index
 
-| Feature                              | Route / scope                  | Status  | Detail doc                                                                                |
-| ------------------------------------ | ------------------------------ | ------- | ----------------------------------------------------------------------------------------- |
-| Authentication                       | `/auth`                        | Done    | [auth.feature.md](./auth.feature.md)                                                      |
-| Authorization (RBAC)                 | Feature-flag admin APIs        | Partial | [feature_flag.feature.md](./feature_flag.feature.md)                                      |
-| Health checks                        | `/health`, `/health/ready`     | Done    | —                                                                                         |
-| HTTP client (internal / external)    | Global provider                | Done    | [http_client.feature.md](./http_client.feature.md)                                        |
-| Rate limiting                        | Global guard                   | Done    | — (`src/core/rate-limiter/`)                                                              |
-| Inbound overload & priority shedding | Global guards / Fastify        | Done    | [edge vs app rate limits](./operations/edge-vs-app-rate-limits.md) — `src/core/overload/` |
-| Request deadline                     | Global middleware + HttpClient | Done    | — (`src/core/request-deadline/`) — internal HttpClient propagates `x-request-deadline`    |
-| Cache (SWR + resilience)             | Global module                  | Partial | `src/core/cache/` — core done; feature modules must opt in via `CacheService`             |
-| Graceful shutdown                    | Process signals                | Done    | — (`src/core/shutdown/`)                                                                  |
-| Response compression                 | Fastify plugin                 | Done    | —                                                                                         |
-| Logging & request ID                 | Global middleware              | Done    | — (`src/core/logger/`)                                                                    |
-| PII / log redaction                  | Winston + access logs + OTel   | Done    | [pii_log_redaction.feature.md](./pii_log_redaction.feature.md)                            |
-| Tracing & overload metrics           | Boot + filters                 | Done    | [observability.feature.md](./observability.feature.md) — `OTEL_ENABLED`, EMF 503 reasons  |
-| CSRF (cookie SPA flows)              | Global middleware              | Done    | [csrf.feature.md](./csrf.feature.md) — `GET /auth/csrf`                                   |
-| GraphQL                              | `/graphql`                     | Done    | — (`src/categories/`, `app.module.ts`)                                                    |
-| File uploads                         | `/uploads`                     | Done    | — (`src/uploads/`)                                                                        |
-| Captcha (hCaptcha)                   | `/example/captcha`             | Partial | [captcha.feature.md](./captcha.feature.md)                                                |
-| Notifications (Slack)                | `/example`                     | Done    | [notification.feature.md](./notification.feature.md)                                      |
-| Feature flags                        | `/feature-flags`               | Done    | [feature_flag.feature.md](./feature_flag.feature.md)                                      |
-| Country access (geo allow/block)     | Global guard                   | Done    | [country_access.feature.md](./country_access.feature.md)                                  |
-| WebSockets (Socket.IO)               | `/realtime` namespace          | Done    | [websocket.feature.md](./websocket.feature.md)                                            |
-| Background jobs (BullMQ)             | `/example/jobs`                | Done    | [background_jobs.feature.md](./background_jobs.feature.md)                                |
-| Environment validation               | Boot                           | Done    | — (`src/common/config/`)                                                                  |
-| Input sanitization                   | Global pipe                    | Done    | — (`src/common/sanitization/`)                                                            |
-| Global exception handler             | APP_FILTER                     | Done    | — (`src/common/filters/`)                                                                 |
-| ESLint + Husky + Gitleaks            | Git hooks                      | Done    | [../security/git_hooks.md](../security/git_hooks.md)                                      |
-| CORS & CSP (Helmet)                  | `main.ts`                      | Done    | —                                                                                         |
-| Cookies                              | Auth + rate-limit guest        | Done    | —                                                                                         |
+| Feature                              | Route / scope                  | Status  | Detail doc                                                                                                                                                                                   |
+| ------------------------------------ | ------------------------------ | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Authentication                       | `/auth`                        | Done    | [auth.feature.md](./auth.feature.md)                                                                                                                                                         |
+| Authorization (RBAC)                 | Feature-flag admin APIs        | Partial | [feature_flag.feature.md](./feature_flag.feature.md)                                                                                                                                         |
+| Health checks                        | `/health`, `/health/ready`     | Done    | —                                                                                                                                                                                            |
+| HTTP client (internal / external)    | Global provider                | Done    | [http_client.feature.md](./http_client.feature.md)                                                                                                                                           |
+| Rate limiting                        | Global guard                   | Done    | — (`src/core/rate-limiter/`)                                                                                                                                                                 |
+| Inbound overload & priority shedding | Global guards / Fastify        | Done    | [edge vs app rate limits](./operations/edge-vs-app-rate-limits.md) — under-pressure, bulkhead, optional HTTP load leveling (`INBOUND_LOAD_LEVELING_*`), priority shed — `src/core/overload/` |
+| Request deadline                     | Global middleware + HttpClient | Done    | — (`src/core/request-deadline/`) — internal HttpClient propagates `x-request-deadline`                                                                                                       |
+| Cache (SWR + resilience)             | Global module                  | Partial | `src/core/cache/` — core done; feature modules must opt in via `CacheService`                                                                                                                |
+| Graceful shutdown                    | Process signals                | Done    | — (`src/core/shutdown/`)                                                                                                                                                                     |
+| Response compression                 | Fastify plugin                 | Done    | —                                                                                                                                                                                            |
+| Logging & request ID                 | Global middleware              | Done    | — (`src/core/logger/`)                                                                                                                                                                       |
+| PII / log redaction                  | Winston + access logs + OTel   | Done    | [pii_log_redaction.feature.md](./pii_log_redaction.feature.md)                                                                                                                               |
+| Tracing & overload metrics           | Boot + filters                 | Done    | [observability.feature.md](./observability.feature.md) — `OTEL_ENABLED`, EMF 503 reasons                                                                                                     |
+| CSRF (cookie SPA flows)              | Global middleware              | Done    | [csrf.feature.md](./csrf.feature.md) — `GET /auth/csrf`                                                                                                                                      |
+| GraphQL                              | `/graphql`                     | Done    | — (`src/categories/`, `app.module.ts`)                                                                                                                                                       |
+| File uploads                         | `/uploads`                     | Done    | — (`src/uploads/`)                                                                                                                                                                           |
+| Captcha (hCaptcha)                   | `/example/captcha`             | Partial | [captcha.feature.md](./captcha.feature.md)                                                                                                                                                   |
+| Notifications (Slack)                | `/example`                     | Done    | [notification.feature.md](./notification.feature.md)                                                                                                                                         |
+| Feature flags                        | `/feature-flags`               | Done    | [feature_flag.feature.md](./feature_flag.feature.md)                                                                                                                                         |
+| Country access (geo allow/block)     | Global guard                   | Done    | [country_access.feature.md](./country_access.feature.md)                                                                                                                                     |
+| WebSockets (Socket.IO)               | `/realtime` namespace          | Done    | [websocket.feature.md](./websocket.feature.md)                                                                                                                                               |
+| Background jobs (BullMQ)             | `/example/jobs`                | Done    | [background_jobs.feature.md](./background_jobs.feature.md)                                                                                                                                   |
+| Environment validation               | Boot                           | Done    | — (`src/common/config/`)                                                                                                                                                                     |
+| Input sanitization                   | Global pipe                    | Done    | — (`src/common/sanitization/`)                                                                                                                                                               |
+| Global exception handler             | APP_FILTER                     | Done    | — (`src/common/filters/`)                                                                                                                                                                    |
+| ESLint + Husky + Gitleaks            | Git hooks                      | Done    | [../security/git_hooks.md](../security/git_hooks.md)                                                                                                                                         |
+| CORS & CSP (Helmet)                  | `main.ts`                      | Done    | —                                                                                                                                                                                            |
+| Cookies                              | Auth + rate-limit guest        | Done    | —                                                                                                                                                                                            |
 
 ---
 
 ## Implementation status (full checklist)
 
-Last reviewed against the boilerplate roadmap (code audit, not task status). Updated 2026-10-29.
+Last reviewed against the boilerplate roadmap (code audit, not task status). Updated 2026-10-29 (sync: load leveling EMF, HttpClient adaptive concurrency, cache resilience APIs, OTLP span redaction).
 
 ### Resilience & HTTP
 
@@ -65,13 +65,13 @@ Last reviewed against the boilerplate roadmap (code audit, not task status). Upd
 | ↳ userId                        | **Done**    | Tracker + tests; guard runs after JWT                                                                                                                                                                                                     |
 | ↳ Device fingerprint            | **Done**    | Header-based tracker                                                                                                                                                                                                                      |
 | ↳ Guest ID (public API)         | **Done**    | `GuestIdMiddleware` + cookie                                                                                                                                                                                                              |
-| External + internal HTTP client | **Done**    | `HttpClient.internal()` / `.external()`                                                                                                                                                                                                   |
+| External + internal HTTP client | **Done**    | `HttpClient.internal()` / `.external()`; fixed or **adaptive** concurrency (`.addConcurrencyLimit({ mode: 'adaptive' })`, vendored limiter under `resilience/adaptive/`)                                                                  |
 | Exponential backoff with jitter | **Done**    | Strategy helpers + tests                                                                                                                                                                                                                  |
-| Backpressure                    | **Done**    | Under-pressure + inbound bulkhead + API priority shedding + GraphQL Redis concurrency + HttpClient limits — see [edge vs app rate limits](./operations/edge-vs-app-rate-limits.md)                                                        |
+| Backpressure                    | **Done**    | Under-pressure + inbound bulkhead + optional HTTP load leveling queue + API priority shedding + GraphQL Redis concurrency + HttpClient limits — see [edge vs app rate limits](./operations/edge-vs-app-rate-limits.md)                    |
 | Circuit breaker                 | **Done**    | Per logical client                                                                                                                                                                                                                        |
 | Deadline propagation            | **Done**    | Inbound ALS; outbound signal + `remainingMs()` caps; `x-request-deadline` on internal HttpClient by default, external opt-in via `.addDeadlinePropagation()`                                                                              |
 | Request coalescing              | **Done**    | HTTP client; cache layer single-flight                                                                                                                                                                                                    |
-| Load shedding + `Retry-After`   | **Done**    | **429** rate limit; **503** overload (pressure, bulkhead, priority shed, GraphQL concurrency) — see ops doc                                                                                                                               |
+| Load shedding + `Retry-After`   | **Done**    | **429** rate limit; **503** overload (pressure, bulkhead, load-level queue full / wait timeout, priority shed, GraphQL concurrency) — see [ops doc](../operations/cloudwatch-overload-alerts.md)                                          |
 | API priority + load shedding    | **Done**    | `@ApiPriority`, `InboundPriorityBulkheadGuard`, EMF `Reason=api_priority_shed`                                                                                                                                                            |
 | Queue-based load leveling       | **Done**    | **Background:** BullMQ + Postgres ledger ([background_jobs.feature.md](./background_jobs.feature.md)). **HTTP:** optional bounded admission queue (`INBOUND_LOAD_LEVELING_ENABLED`, `InboundPriorityBulkheadGuard`) when bulkhead enabled |
 | Streaming responses             | **Partial** | Client `responseType: 'stream'`; no Nest SSE/stream endpoints                                                                                                                                                                             |
@@ -102,49 +102,49 @@ Last reviewed against the boilerplate roadmap (code audit, not task status). Upd
 | PII tagging / data masking        | **Done**    | App logs, HttpClient telemetry, OTLP span export — [pii_log_redaction.feature.md](./pii_log_redaction.feature.md) |
 | Row-level security                | **Missing** | Deferred                                                                                                          |
 | Cookies support                   | **Done**    | `@fastify/cookie`, session / access tokens                                                                        |
-| Stripe                            | **Missing** | Doc example only                                                                                                  |
+| Stripe                            | **Missing** | HttpClient doc example URL only; no payment module or webhooks                                                    |
 
 ### Observability & ops
 
-| Item                                            | Status      | Notes                                                                                                                                                            |
-| ----------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Logging                                         | **Done**    | Winston, middleware, interceptor                                                                                                                                 |
-| Tracing                                         | **Done**    | OTel SDK + HTTP instrumentation (`OTEL_ENABLED`); health probes excluded; HttpClient `.addTracing()` — [observability.feature.md](./observability.feature.md)    |
-| Metrics & alerts                                | **Done**    | App EMF `ServiceUnavailable` by overload reason + [CloudWatch alarm guide](../operations/cloudwatch-overload-alerts.md); HttpClient / feature-flag EMF unchanged |
-| Request / correlation ID                        | **Done**    | `x-request-id` middleware                                                                                                                                        |
-| Health checks                                   | **Done**    | Terminus: Mongo, memory, disk, Redis, Postgres, feature flags                                                                                                    |
-| Graceful shutdown                               | **Done**    | SIGTERM/SIGINT, readiness 503, drain                                                                                                                             |
-| Environment validation                          | **Done**    | `validateEnv` + `env.schema.ts`                                                                                                                                  |
-| ESLint + Husky                                  | **Done**    | lint-staged on pre-commit; pre-push lint/types/unit                                                                                                              |
-| Type tests (tsd)                                | **Done**    | `pnpm quality:types`                                                                                                                                             |
-| Property tests (fast-check)                     | **Done**    | `pnpm quality:property`                                                                                                                                          |
-| Mutation tests (Stryker)                        | **Done**    | Incremental on changed files — `pnpm quality:mutation`                                                                                                           |
-| Contract tests (REST + GraphQL)                 | **Done**    | `pnpm quality:contract`                                                                                                                                          |
-| Static analysis (CodeQL)                        | **Done**    | `.github/workflows/codeql.yml`                                                                                                                                   |
-| Global exception handler                        | **Done**    | `AllExceptionsFilter`                                                                                                                                            |
-| Response compression                            | **Done**    | Brotli + gzip                                                                                                                                                    |
-| CI/CD pipeline                                  | **Done**    | GitHub Actions quality + CodeQL — [quality README](../quality/README.md)                                                                                         |
-| Config hot-reload                               | **Missing** | Boot-time env only                                                                                                                                               |
-| DB migrations via CLI                           | **Partial** | SQL under `migrations/postgres/`; manual `psql`                                                                                                                  |
-| Database seeding                                | **Missing** | —                                                                                                                                                                |
-| Background jobs (BullMQ + Postgres SKIP LOCKED) | **Done**    | [background_jobs.feature.md](./background_jobs.feature.md)                                                                                                       |
+| Item                                            | Status      | Notes                                                                                                                                                                                                            |
+| ----------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Logging                                         | **Done**    | Winston, middleware, interceptor                                                                                                                                                                                 |
+| Tracing                                         | **Done**    | OTel SDK + HTTP instrumentation (`OTEL_ENABLED`); health probes excluded; OTLP export via `createRedactingSpanExporter`; HttpClient `.addTracing()` — [observability.feature.md](./observability.feature.md)     |
+| Metrics & alerts                                | **Done**    | App EMF `ServiceUnavailable` by `Reason` (incl. `inbound_load_level_*`, `api_priority_shed`, …) + [CloudWatch alarm guide](../operations/cloudwatch-overload-alerts.md); HttpClient / feature-flag EMF unchanged |
+| Request / correlation ID                        | **Done**    | `x-request-id` middleware                                                                                                                                                                                        |
+| Health checks                                   | **Done**    | Terminus: Mongo, memory, disk, Redis, Postgres, feature flags                                                                                                                                                    |
+| Graceful shutdown                               | **Done**    | SIGTERM/SIGINT, readiness 503, drain                                                                                                                                                                             |
+| Environment validation                          | **Done**    | `validateEnv` + `env.schema.ts`                                                                                                                                                                                  |
+| ESLint + Husky                                  | **Done**    | lint-staged on pre-commit; pre-push lint/types/unit                                                                                                                                                              |
+| Type tests (tsd)                                | **Done**    | `pnpm quality:types`                                                                                                                                                                                             |
+| Property tests (fast-check)                     | **Done**    | `pnpm quality:property`                                                                                                                                                                                          |
+| Mutation tests (Stryker)                        | **Done**    | Incremental on changed files — `pnpm quality:mutation`                                                                                                                                                           |
+| Contract tests (REST + GraphQL)                 | **Done**    | `pnpm quality:contract`                                                                                                                                                                                          |
+| Static analysis (CodeQL)                        | **Done**    | `.github/workflows/codeql.yml`                                                                                                                                                                                   |
+| Global exception handler                        | **Done**    | `AllExceptionsFilter`                                                                                                                                                                                            |
+| Response compression                            | **Done**    | Brotli + gzip                                                                                                                                                                                                    |
+| CI/CD pipeline                                  | **Done**    | GitHub Actions quality + CodeQL — [quality README](../quality/README.md)                                                                                                                                         |
+| Config hot-reload                               | **Missing** | Boot-time env only                                                                                                                                                                                               |
+| DB migrations via CLI                           | **Partial** | SQL under `migrations/postgres/`; manual `psql`                                                                                                                                                                  |
+| Database seeding                                | **Missing** | —                                                                                                                                                                                                                |
+| Background jobs (BullMQ + Postgres SKIP LOCKED) | **Done**    | [background_jobs.feature.md](./background_jobs.feature.md)                                                                                                                                                       |
 
 ### Caching & integrations
 
-| Item                               | Status          | Notes                                                                                                                                                     |
-| ---------------------------------- | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Cache stampede protection          | **Done** (core) | `CacheService.getOrSet` — SWR, in-process single-flight, Redis loader lock when `CACHE_STORAGE=redis`; feature modules opt in by injecting `CacheService` |
-| Cache penetration (negative cache) | **Partial**     | Opt-in `cacheNull: true` on `getOrSet`                                                                                                                    |
-| Cache avalanche (TTL jitter)       | **Partial**     | `CACHE_TTL_JITTER_RATIO` / `ttlJitterRatio` on writes                                                                                                     |
-| Feature flags                      | **Done**        | Redis + in-memory eval, Pub/Sub, reconcile                                                                                                                |
-| Slack integration                  | **Done**        | Webhook provider                                                                                                                                          |
-| Push notifications                 | **Missing**     | —                                                                                                                                                         |
-| Send email                         | **Missing**     | —                                                                                                                                                         |
-| WebSockets + Redis pub/sub         | **Done**        | [websocket.feature.md](./websocket.feature.md)                                                                                                            |
-| Server-Sent Events (SSE)           | **Missing**     | —                                                                                                                                                         |
-| GraphQL setup                      | **Done**        | Apollo, depth limit, complexity plugin                                                                                                                    |
-| gRPC setup                         | **Missing**     | `@nestjs/microservices` used for Redis health ping only                                                                                                   |
-| OWASP ZAP test                     | **Missing**     | —                                                                                                                                                         |
+| Item                               | Status            | Notes                                                                                                                                                     |
+| ---------------------------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Cache stampede protection          | **Done** (core)   | `CacheService.getOrSet` — SWR, in-process single-flight, Redis loader lock when `CACHE_STORAGE=redis`; feature modules opt in by injecting `CacheService` |
+| Cache penetration (negative cache) | **Done** (opt-in) | `getOrSet` + `cacheNull: true` / `negativeTtl`; no feature routes use it yet                                                                              |
+| Cache avalanche (TTL jitter)       | **Done** (opt-in) | Module `ttlJitterRatio` / `CACHE_TTL_JITTER_RATIO`; applied on cache writes via `applyTtlJitter`                                                          |
+| Feature flags                      | **Done**          | Redis + in-memory eval, Pub/Sub, reconcile                                                                                                                |
+| Slack integration                  | **Done**          | Webhook provider                                                                                                                                          |
+| Push notifications                 | **Missing**       | —                                                                                                                                                         |
+| Send email                         | **Missing**       | —                                                                                                                                                         |
+| WebSockets + Redis pub/sub         | **Done**          | [websocket.feature.md](./websocket.feature.md)                                                                                                            |
+| Server-Sent Events (SSE)           | **Missing**       | —                                                                                                                                                         |
+| GraphQL setup                      | **Done**          | Apollo, depth limit, complexity plugin                                                                                                                    |
+| gRPC setup                         | **Missing**       | `@nestjs/microservices` used for Redis health ping only                                                                                                   |
+| OWASP ZAP test                     | **Missing**       | —                                                                                                                                                         |
 
 ---
 
@@ -158,7 +158,7 @@ See [auth.feature.md](./auth.feature.md).
 
 ### Health check
 
-Public probes (no auth, no rate limit, no deadline, no country guard, CSRF-exempt, priority-shed exempt):
+Public probes (no auth, no rate limit, no deadline, no country guard, no inbound bulkhead, no distributed tracing, CSRF-exempt, priority-shed exempt):
 
 - `GET /health` — liveness-style check
 - `GET /health/ready` — returns 503 while shutting down
@@ -167,7 +167,7 @@ Checks include MongoDB, heap, disk, optional Redis/Postgres, and feature-flag he
 
 ### HTTP client
 
-Global provider under `src/core/http-client`: fluent `internal` / `external` clients, Axios transport, auth (API key, basic, bearer, OAuth client credentials, mTLS), retry with backoff/jitter, request coalescing, circuit breaker, concurrency limits, optional tracing/metrics, shutdown hooks.
+Global provider under `src/core/http-client`: fluent `internal` / `external` clients, Axios transport, auth (API key, basic, bearer, OAuth client credentials, mTLS), retry with backoff/jitter, request coalescing, circuit breaker, fixed or **adaptive** concurrency limits (`clusterAware` + `HTTP_CLIENT_INSTANCE_COUNT`), inbound deadline merge + optional `x-request-deadline` propagation, optional tracing/metrics, shutdown hooks.
 
 See [http_client.feature.md](./http_client.feature.md).
 
@@ -183,9 +183,9 @@ Per-request timeout via middleware and ALS; exposes abort `signal` and `x-reques
 
 Code: `src/core/request-deadline/`.
 
-### Inbound overload & API priority
+### Inbound overload, load leveling & API priority
 
-`@fastify/under-pressure`, inbound in-flight bulkhead, and optional **API priority shedding** (`@ApiPriority`, `InboundPriorityBulkheadGuard`) when `INBOUND_PRIORITY_SHEDDING_ENABLED=true`. Shedding returns **503** + `Retry-After`; EMF reason `api_priority_shed`. See [edge vs app rate limits](./operations/edge-vs-app-rate-limits.md).
+`@fastify/under-pressure`, inbound in-flight bulkhead (`InboundPriorityBulkheadGuard`), optional **HTTP load leveling** (`INBOUND_LOAD_LEVELING_ENABLED=true`: priority-aware bounded wait queue before hard cap; **503** + `Retry-After` on queue full or wait timeout; EMF `inbound_load_level_queue_full` / `inbound_load_level_wait_timeout`), and optional **API priority shedding** (`@ApiPriority`, `INBOUND_PRIORITY_SHEDDING_ENABLED=true`; EMF `api_priority_shed`). See [edge vs app rate limits](../operations/edge-vs-app-rate-limits.md).
 
 Code: `src/core/overload/`.
 
@@ -197,7 +197,7 @@ See [csrf.feature.md](./csrf.feature.md).
 
 ### Observability
 
-Optional app tracing via `instrumentation.ts` (`OTEL_ENABLED`). Overload paths emit CloudWatch EMF for 503s (including priority shed). HttpClient and feature flags retain opt-in telemetry.
+Optional app tracing via `instrumentation.ts` (`OTEL_ENABLED`); exported spans scrubbed when log redaction is enabled. Overload paths emit CloudWatch EMF for 503s (bulkhead, load leveling, priority shed, GraphQL concurrency, under-pressure, etc.). HttpClient and feature flags retain opt-in telemetry.
 
 See [observability.feature.md](./observability.feature.md) and [CloudWatch overload alerts](../operations/cloudwatch-overload-alerts.md).
 
@@ -266,7 +266,7 @@ Code: `src/uploads/`.
 - **Compression / security headers / CORS:** Registered in `src/main.ts`.
 - **Shutdown:** `registerGracefulShutdown` + `ShutdownState` (`src/core/shutdown/`).
 - **Env validation:** `src/common/config/validate-env.ts`.
-- **Overload admission:** Under-pressure + bulkhead middleware order in `app.module.ts`.
+- **Overload admission:** Under-pressure + bulkhead / load-level guard wiring in `app.module.ts` (`InboundPriorityBulkheadGuard` when bulkhead enabled).
 
 ---
 

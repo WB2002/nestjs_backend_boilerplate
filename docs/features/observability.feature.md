@@ -31,11 +31,11 @@ Alarm recipes: [cloudwatch-overload-alerts.md](../operations/cloudwatch-overload
 
 ## Log redaction
 
-Secrets and PII in Winston output and HTTP access logs: [pii_log_redaction.feature.md](./pii_log_redaction.feature.md). OpenTelemetry span attributes are not redacted yet.
+Secrets and PII in Winston output, HTTP access logs, HttpClient trace attributes, and **OTLP span export** (`createRedactingSpanExporter`, gated by `LOG_REDACTION_ENABLED`): [pii_log_redaction.feature.md](./pii_log_redaction.feature.md).
 
 ## Modules
 
 - `src/core/telemetry/` — config, EMF helpers, trace exempt paths, `@SkipTracing()`
-- `src/core/redaction/` — shared redaction helpers (logs + HttpClient telemetry)
+- `src/core/redaction/` — shared redaction helpers (logs, HttpClient telemetry, OTel attributes)
 - `src/instrumentation.ts` — OTel SDK preload entry
 - `src/core/overload/overload-telemetry.ts` — overload 503 metric hooks
