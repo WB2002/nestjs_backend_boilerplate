@@ -1,4 +1,8 @@
-import { startMongoDBIntegrationContainer } from '@/testing/integration-containers';
+import {
+  MONGO_INTEGRATION_BEFORE_ALL_MS,
+  mongoDirectConnectionUri,
+  startMongoDBIntegrationContainer,
+} from '@/testing/integration-containers';
 import mongoose, { Connection, Model } from 'mongoose';
 import {
   CountryAccessDocument,
@@ -19,12 +23,12 @@ describeIntegration('MongoCountryAccessRepository (integration)', () => {
   beforeAll(async () => {
     container = await startMongoDBIntegrationContainer();
     const uri = container.getConnectionString();
-    await mongoose.connect(`${uri}?directConnection=true`);
+    await mongoose.connect(mongoDirectConnectionUri(uri));
     connection = mongoose.connection;
     model = connection.model(CountryAccessDocument.name, CountryAccessSchema);
     repository = new MongoCountryAccessRepository(model);
     await repository.ensureIndexes();
-  }, 200_000);
+  }, MONGO_INTEGRATION_BEFORE_ALL_MS);
 
   afterAll(async () => {
     await mongoose.disconnect();

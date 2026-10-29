@@ -9,8 +9,17 @@ const MONGO_PORT = 27017;
 const MONGO_STARTUP_MS = 180_000;
 const MONGO_PRIMARY_POLL_MS = 250;
 
+/** Jest `beforeAll` budget: container wait + primary poll + mongoose connect. */
+export const MONGO_INTEGRATION_BEFORE_ALL_MS = MONGO_STARTUP_MS + 20_000;
+
+/** Append `directConnection=true` whether or not the URI already has query params. */
+export function mongoDirectConnectionUri(connectionString: string): string {
+  const separator = connectionString.includes('?') ? '&' : '?';
+  return `${connectionString}${separator}directConnection=true`;
+}
+
 /** Mongo on CI: log + port wait, then poll until rs0 has a writable primary. */
-export function createMongoDBIntegrationContainer(
+function createMongoDBIntegrationContainer(
   image = 'mongo:7.0',
 ): MongoDBContainer {
   return new MongoDBContainer(image)
