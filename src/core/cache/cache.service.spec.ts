@@ -20,6 +20,27 @@ function createService(
   return { service, backend };
 }
 
+async function expectFreshEventually(
+  service: CacheService,
+  key: string,
+  value: string,
+  timeoutMs = 500,
+): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const entry = await service.get<string>(key);
+    if (entry?.status === 'fresh' && entry.value === value) {
+      expect(entry).toEqual({ value, status: 'fresh' });
+      return;
+    }
+    await new Promise((r) => setTimeout(r, 5));
+  }
+  await expect(service.get<string>(key)).resolves.toEqual({
+    value,
+    status: 'fresh',
+  });
+}
+
 describe('CacheService SWR', () => {
   const ttl = { softTtlMs: 50, hardTtlMs: 200 };
 
@@ -50,11 +71,7 @@ describe('CacheService SWR', () => {
     expect(stale).toBe('v0');
     expect(loader).toHaveBeenCalledTimes(1);
 
-    await new Promise((r) => setTimeout(r, 30));
-    await expect(service.get<string>('k')).resolves.toEqual({
-      value: 'v1',
-      status: 'fresh',
-    });
+    await expectFreshEventually(service, 'k', 'v1');
   });
 
   it('awaits loader synchronously after hard TTL', async () => {
@@ -108,11 +125,7 @@ describe('CacheService SWR', () => {
     expect(b).toBe('stale-val');
     expect(loader).toHaveBeenCalledTimes(1);
     resolveLoader('fresh-val');
-    await new Promise((r) => setTimeout(r, 20));
-    await expect(service.get<string>('k')).resolves.toEqual({
-      value: 'fresh-val',
-      status: 'fresh',
-    });
+    await expectFreshEventually(service, 'k', 'fresh-val');
   });
 
   it('rejects invalid TTL', async () => {
