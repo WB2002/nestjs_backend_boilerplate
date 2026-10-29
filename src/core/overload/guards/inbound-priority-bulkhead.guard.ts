@@ -7,17 +7,22 @@ import {
 import { Reflector } from '@nestjs/core';
 import { get } from 'lodash';
 import type { ServerResponse } from 'http';
+import {
+  getRequestSignal,
+  remainingMs,
+} from '@/core/request-deadline/helpers/request-deadline.helpers';
 import { InboundBulkheadService } from '../inbound-bulkhead.service';
-import { OverloadRejectedError } from '../errors/overload-rejected.error';
-import { PriorityShedRejectedError } from '../errors/priority-shed-rejected.error';
 import { isPressureExemptPath } from '../is-pressure-exempt-path';
 import {
+  INBOUND_LOAD_LEVEL_OPTIONS,
   PRIORITY_SHEDDING_OPTIONS,
   SKIP_INBOUND_BULKHEAD_KEY,
 } from '../overload.constants';
 import { resolveApiPriority } from '../priority/resolve-api-priority';
 import { shouldShedPriorityRequest } from '../priority/should-shed-priority-request';
 import { PrioritySheddingConfig } from '../priority/priority-shedding.types';
+import { PriorityShedRejectedError } from '../errors/priority-shed-rejected.error';
+import { InboundLoadLevelConfig } from '../load-level/inbound-load-level.types';
 
 @Injectable()
 export class InboundPriorityBulkheadGuard implements CanActivate {
@@ -26,9 +31,11 @@ export class InboundPriorityBulkheadGuard implements CanActivate {
     private readonly reflector: Reflector,
     @Inject(PRIORITY_SHEDDING_OPTIONS)
     private readonly sheddingConfig: PrioritySheddingConfig,
+    @Inject(INBOUND_LOAD_LEVEL_OPTIONS)
+    private readonly loadLevelConfig: InboundLoadLevelConfig,
   ) {}
 
-  canActivate(context: ExecutionContext): boolean {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     if (context.getType() !== 'http') {
       return true;
     }
@@ -69,9 +76,16 @@ export class InboundPriorityBulkheadGuard implements CanActivate {
       throw new PriorityShedRejectedError();
     }
 
-    if (!this.bulkhead.tryAcquire()) {
-      throw new OverloadRejectedError();
-    }
+    const configuredWait = this.loadLevelConfig.maxWaitMs;
+    const budget = remainingMs();
+    const maxWaitMs =
+      budget === undefined ? configuredWait : Math.min(configuredWait, budget);
+
+    await this.bulkhead.acquire({
+      priority,
+      maxWaitMs,
+      signal: getRequestSignal(),
+    });
 
     this.attachRelease(context);
     return true;

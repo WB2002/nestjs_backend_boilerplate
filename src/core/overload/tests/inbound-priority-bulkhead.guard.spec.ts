@@ -6,6 +6,31 @@ import { ApiPriorityLevel } from '../priority/api-priority-level.enum';
 import { PriorityShedRejectedError } from '../errors/priority-shed-rejected.error';
 import { OverloadRejectedError } from '../errors/overload-rejected.error';
 import { API_PRIORITY_KEY } from '../overload.constants';
+import { InboundLoadLevelConfig } from '../load-level/inbound-load-level.types';
+
+jest.mock('@/core/request-deadline/helpers/request-deadline.helpers', () => ({
+  getRequestSignal: jest.fn(),
+  remainingMs: jest.fn(),
+}));
+
+import {
+  getRequestSignal,
+  remainingMs,
+} from '@/core/request-deadline/helpers/request-deadline.helpers';
+
+const disabledLoadLevel: InboundLoadLevelConfig = {
+  enabled: false,
+  maxQueue: 100,
+  maxWaitMs: 2_000,
+  pollIntervalMs: 25,
+};
+
+const enabledLoadLevel: InboundLoadLevelConfig = {
+  enabled: true,
+  maxQueue: 10,
+  maxWaitMs: 500,
+  pollIntervalMs: 5,
+};
 
 function mockContext(
   url: string,
@@ -50,42 +75,63 @@ describe('InboundPriorityBulkheadGuard', () => {
     },
   };
 
+  function createGuard(
+    bulkhead: InboundBulkheadService,
+    loadLevel: InboundLoadLevelConfig = disabledLoadLevel,
+    shedding = sheddingConfig,
+  ) {
+    return new InboundPriorityBulkheadGuard(
+      bulkhead,
+      new Reflector(),
+      shedding,
+      loadLevel,
+    );
+  }
+
   it('sheds low priority before hard cap', () => {
-    const bulkhead = new InboundBulkheadService({
-      enabled: true,
-      maxInFlight: 100,
-    });
+    const bulkhead = new InboundBulkheadService(
+      { enabled: true, maxInFlight: 100 },
+      disabledLoadLevel,
+    );
     for (let i = 0; i < 70; i += 1) {
       bulkhead.tryAcquire();
     }
-    const reflector = new Reflector();
-    const guard = new InboundPriorityBulkheadGuard(
-      bulkhead,
-      reflector,
-      sheddingConfig,
-    );
-    expect(() =>
+    const guard = createGuard(bulkhead);
+    return expect(
       guard.canActivate(mockContext('/export', ApiPriorityLevel.Low)),
-    ).toThrow(PriorityShedRejectedError);
+    ).rejects.toBeInstanceOf(PriorityShedRejectedError);
   });
 
-  it('throws OverloadRejectedError at hard cap for critical', () => {
-    const bulkhead = new InboundBulkheadService({
-      enabled: true,
-      maxInFlight: 2,
-    });
-    bulkhead.tryAcquire();
-    bulkhead.tryAcquire();
-    const reflector = new Reflector();
-    const guard = new InboundPriorityBulkheadGuard(
-      bulkhead,
-      reflector,
-      sheddingConfig,
+  it('throws OverloadRejectedError at hard cap for critical when leveling off', async () => {
+    const bulkhead = new InboundBulkheadService(
+      { enabled: true, maxInFlight: 2 },
+      disabledLoadLevel,
     );
-    expect(() =>
+    bulkhead.tryAcquire();
+    bulkhead.tryAcquire();
+    const guard = createGuard(bulkhead);
+    await expect(
       guard.canActivate(
         mockContext('/auth/refresh', ApiPriorityLevel.Critical),
       ),
-    ).toThrow(OverloadRejectedError);
+    ).rejects.toBeInstanceOf(OverloadRejectedError);
+  });
+
+  it('waits for slot when load leveling enabled', async () => {
+    jest.mocked(remainingMs).mockReturnValue(undefined);
+    jest.mocked(getRequestSignal).mockReturnValue(undefined);
+    const bulkhead = new InboundBulkheadService(
+      { enabled: true, maxInFlight: 1 },
+      enabledLoadLevel,
+    );
+    bulkhead.tryAcquire();
+    const ctx = mockContext('/api/work', ApiPriorityLevel.Normal);
+    const guard = createGuard(bulkhead, enabledLoadLevel, {
+      ...sheddingConfig,
+      enabled: false,
+    });
+    const pending = guard.canActivate(ctx);
+    bulkhead.release();
+    await expect(pending).resolves.toBe(true);
   });
 });
