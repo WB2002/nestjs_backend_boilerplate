@@ -4,23 +4,25 @@ Application code emits **Embedded Metric Format (EMF)** logs for service-unavail
 
 ## Metric shape
 
-| Field | Value |
-| ----- | ----- |
-| Namespace | `Application` |
+| Field       | Value                |
+| ----------- | -------------------- |
+| Namespace   | `Application`        |
 | Metric name | `ServiceUnavailable` |
-| Unit | Count |
-| Dimension | `Reason` |
+| Unit        | Count                |
+| Dimension   | `Reason`             |
 
 ### `Reason` values
 
-| Reason | Source |
-| ------ | ------ |
-| `under_pressure` | `@fastify/under-pressure` shedding |
-| `inbound_bulkhead` | `InboundPriorityBulkheadGuard` hard cap / `OverloadRejectedError` |
-| `api_priority_shed` | `InboundPriorityBulkheadGuard` / `PriorityShedRejectedError` |
-| `graphql_concurrency` | GraphQL Redis concurrency deny |
-| `health_check` | Terminus `/health` or `/health/ready` **503** (metrics only — no X-Ray on probes) |
-| `dependency_unavailable` | DB connection errors mapped to **503** |
+| Reason                            | Source                                                                            |
+| --------------------------------- | --------------------------------------------------------------------------------- |
+| `under_pressure`                  | `@fastify/under-pressure` shedding                                                |
+| `inbound_bulkhead`                | `InboundPriorityBulkheadGuard` hard cap / `OverloadRejectedError`                 |
+| `inbound_load_level_queue_full`   | Load leveling wait queue at `INBOUND_LOAD_LEVEL_MAX_QUEUE`                        |
+| `inbound_load_level_wait_timeout` | Wait exceeded `INBOUND_LOAD_LEVEL_MAX_WAIT_MS` (or inbound deadline budget)       |
+| `api_priority_shed`               | `InboundPriorityBulkheadGuard` / `PriorityShedRejectedError`                      |
+| `graphql_concurrency`             | GraphQL Redis concurrency deny                                                    |
+| `health_check`                    | Terminus `/health` or `/health/ready` **503** (metrics only — no X-Ray on probes) |
+| `dependency_unavailable`          | DB connection errors mapped to **503**                                            |
 
 Properties (not dimensions): `Path`, `PressureType` (under-pressure only).
 

@@ -7,6 +7,8 @@ import {
   RequestDeadlineExceededError,
 } from '../../core/request-deadline';
 import { OverloadRejectedError } from '../../core/overload/errors/overload-rejected.error';
+import { LoadLevelQueueFullError } from '../../core/overload/errors/load-level-queue-full.error';
+import { LoadLevelWaitTimeoutError } from '../../core/overload/errors/load-level-wait-timeout.error';
 import { PriorityShedRejectedError } from '../../core/overload/errors/priority-shed-rejected.error';
 
 jest.mock('@/core/telemetry/service-unavailable.metrics', () => ({
@@ -130,6 +132,54 @@ describe('AllExceptionsFilter deadline mapping', () => {
     );
     expect(emitServiceUnavailableMetric).toHaveBeenCalledWith(
       expect.objectContaining({ reason: 'inbound_bulkhead' }),
+    );
+  });
+
+  it('maps LoadLevelQueueFullError to 503 with Retry-After', () => {
+    const response = {
+      raw: { destroyed: false, writableEnded: false },
+      header: jest.fn(),
+    };
+    const host503 = {
+      getType: () => 'http',
+      switchToHttp: () => ({
+        getRequest: () => ({ headers: {} }),
+        getResponse: () => response,
+      }),
+    };
+    const filter = new AllExceptionsFilter(httpAdapterHost);
+    filter.catch(new LoadLevelQueueFullError(), host503 as never);
+
+    expect(response.header).toHaveBeenCalledWith(
+      'Retry-After',
+      expect.any(String),
+    );
+    expect(emitServiceUnavailableMetric).toHaveBeenCalledWith(
+      expect.objectContaining({ reason: 'inbound_load_level_queue_full' }),
+    );
+  });
+
+  it('maps LoadLevelWaitTimeoutError to 503 with Retry-After', () => {
+    const response = {
+      raw: { destroyed: false, writableEnded: false },
+      header: jest.fn(),
+    };
+    const host503 = {
+      getType: () => 'http',
+      switchToHttp: () => ({
+        getRequest: () => ({ headers: {} }),
+        getResponse: () => response,
+      }),
+    };
+    const filter = new AllExceptionsFilter(httpAdapterHost);
+    filter.catch(new LoadLevelWaitTimeoutError(), host503 as never);
+
+    expect(response.header).toHaveBeenCalledWith(
+      'Retry-After',
+      expect.any(String),
+    );
+    expect(emitServiceUnavailableMetric).toHaveBeenCalledWith(
+      expect.objectContaining({ reason: 'inbound_load_level_wait_timeout' }),
     );
   });
 

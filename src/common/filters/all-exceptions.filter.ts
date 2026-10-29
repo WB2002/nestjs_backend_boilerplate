@@ -17,6 +17,8 @@ import {
   getDeadlineReason,
 } from '../../core/request-deadline';
 import { OverloadRejectedError } from '../../core/overload/errors/overload-rejected.error';
+import { LoadLevelQueueFullError } from '../../core/overload/errors/load-level-queue-full.error';
+import { LoadLevelWaitTimeoutError } from '../../core/overload/errors/load-level-wait-timeout.error';
 import { PriorityShedRejectedError } from '../../core/overload/errors/priority-shed-rejected.error';
 import { resolveOverloadRetryAfterSec } from '../../core/overload/resolve-overload-retry-after-sec';
 import {
@@ -24,6 +26,8 @@ import {
   recordDependencyUnavailable503,
   recordHealthCheck503,
   recordInboundBulkhead503,
+  recordInboundLoadLevelQueueFull503,
+  recordInboundLoadLevelWaitTimeout503,
 } from '../../core/overload/overload-telemetry';
 
 @Catch()
@@ -84,12 +88,38 @@ export class AllExceptionsFilter implements ExceptionFilter {
       this.setRetryAfterHeader(response, priorityShedMapped.retryAfterSec);
       recordApiPriorityShed503(httpAdapter.getRequestUrl(request));
     } else {
-      const overloadMapped = this.mapOverloadException(exception);
-      if (overloadMapped) {
-        status = overloadMapped.status;
-        message = overloadMapped.message;
-        this.setRetryAfterHeader(response, overloadMapped.retryAfterSec);
-        recordInboundBulkhead503(httpAdapter.getRequestUrl(request));
+      const loadLevelQueueFullMapped =
+        this.mapLoadLevelQueueFullException(exception);
+      if (loadLevelQueueFullMapped) {
+        status = loadLevelQueueFullMapped.status;
+        message = loadLevelQueueFullMapped.message;
+        this.setRetryAfterHeader(
+          response,
+          loadLevelQueueFullMapped.retryAfterSec,
+        );
+        recordInboundLoadLevelQueueFull503(httpAdapter.getRequestUrl(request));
+      } else {
+        const loadLevelTimeoutMapped =
+          this.mapLoadLevelWaitTimeoutException(exception);
+        if (loadLevelTimeoutMapped) {
+          status = loadLevelTimeoutMapped.status;
+          message = loadLevelTimeoutMapped.message;
+          this.setRetryAfterHeader(
+            response,
+            loadLevelTimeoutMapped.retryAfterSec,
+          );
+          recordInboundLoadLevelWaitTimeout503(
+            httpAdapter.getRequestUrl(request),
+          );
+        } else {
+          const overloadMapped = this.mapOverloadException(exception);
+          if (overloadMapped) {
+            status = overloadMapped.status;
+            message = overloadMapped.message;
+            this.setRetryAfterHeader(response, overloadMapped.retryAfterSec);
+            recordInboundBulkhead503(httpAdapter.getRequestUrl(request));
+          }
+        }
       }
     }
 
@@ -198,6 +228,32 @@ export class AllExceptionsFilter implements ExceptionFilter {
     exception: unknown,
   ): { status: number; message: string; retryAfterSec: number } | undefined {
     if (!(exception instanceof PriorityShedRejectedError)) {
+      return undefined;
+    }
+    return {
+      status: HttpStatus.SERVICE_UNAVAILABLE,
+      message: exception.message,
+      retryAfterSec: resolveOverloadRetryAfterSec(),
+    };
+  }
+
+  private mapLoadLevelQueueFullException(
+    exception: unknown,
+  ): { status: number; message: string; retryAfterSec: number } | undefined {
+    if (!(exception instanceof LoadLevelQueueFullError)) {
+      return undefined;
+    }
+    return {
+      status: HttpStatus.SERVICE_UNAVAILABLE,
+      message: exception.message,
+      retryAfterSec: resolveOverloadRetryAfterSec(),
+    };
+  }
+
+  private mapLoadLevelWaitTimeoutException(
+    exception: unknown,
+  ): { status: number; message: string; retryAfterSec: number } | undefined {
+    if (!(exception instanceof LoadLevelWaitTimeoutError)) {
       return undefined;
     }
     return {

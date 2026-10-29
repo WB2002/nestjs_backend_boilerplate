@@ -46,3 +46,19 @@ export function recordDependencyUnavailable503(path: string): void {
     path,
   });
 }
+
+export function recordInboundLoadLevelQueueFull503(path: string): void {
+  void emitServiceUnavailableMetric({
+    enabled: telemetryConfig.appMetricsEnabled,
+    reason: 'inbound_load_level_queue_full',
+    path,
+  });
+}
+
+export function recordInboundLoadLevelWaitTimeout503(path: string): void {
+  void emitServiceUnavailableMetric({
+    enabled: telemetryConfig.appMetricsEnabled,
+    reason: 'inbound_load_level_wait_timeout',
+    path,
+  });
+}
