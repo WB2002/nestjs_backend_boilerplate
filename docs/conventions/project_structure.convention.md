@@ -55,7 +55,7 @@ src/
 - `main.ts` — bootstrap only: `NestFactory.create`, global pipes, filters, middleware, and `app.listen`. No business logic.
 - `app.module.ts` — imports feature modules and global providers (e.g. `MongooseModule.forRoot`, `ConfigModule`). No route handlers.
 - `app.controller.ts` / `app.service.ts` — use only for application-level concerns that do not belong to any feature module. Keep minimal.
-- `core/` — cross-cutting platform clients and providers that are not feature business logic (e.g. `http-client`). Prefer `common/` for filters/guards/logger utilities.
+- `core/` — cross-cutting platform clients and providers that are not feature business logic (e.g. `http-client`, `logger`). Prefer `common/` for filters, guards, and shared config utilities.
 - New features always get their own module directory — never add feature routes to `app.controller.ts`.
 
 ---
@@ -149,14 +149,6 @@ src/common/
 ├── filters/
 │   ├── all-exceptions.filter.ts  # Global exception filter — formats all error responses
 │   └── index.ts
-├── logger/
-│   ├── logger.config.ts        # Pino/Winston logger configuration
-│   ├── logger.context.ts       # Request-scoped logger context
-│   ├── logger.middleware.ts    # HTTP request logging middleware
-│   ├── logging.interceptor.ts  # Response logging interceptor
-│   ├── trace.decorator.ts      # @Trace() method-level tracing decorator
-│   ├── tracing.interceptor.ts  # Distributed tracing interceptor
-│   └── index.ts
 └── util/
     ├── cookie.util.ts          # Cookie read/write helpers
     └── index.ts
@@ -167,7 +159,28 @@ src/common/
 - Never import a feature module from `common/` — `common/` is a leaf in the dependency graph.
 - All exports must go through the directory's `index.ts`.
 - Adding a new shared utility, decorator, filter, or constant always goes here.
-- The logger in `src/common/logger/` is the only permitted logging mechanism — no `console.log` anywhere in the project.
+
+---
+
+## Logger — `src/core/logger/`
+
+Winston configuration, request logging middleware, access-log interceptor, tracing interceptor, and request-scoped `LoggerContext`. Wired globally from `app.module.ts` and `main.ts`.
+
+```
+src/core/logger/
+├── logger.config.ts            # Winston configuration (incl. redaction)
+├── logger.context.ts           # Request-scoped logger context (AsyncLocalStorage)
+├── logger.middleware.ts        # HTTP request logging middleware
+├── logging.interceptor.ts      # Response / access logging interceptor
+├── trace.decorator.ts          # @Trace() method-level tracing decorator
+├── tracing.interceptor.ts      # Distributed tracing interceptor
+└── index.ts
+```
+
+**Rules:**
+
+- The logger in `src/core/logger/` is the only permitted logging mechanism — no `console.log` anywhere in the project.
+- Feature and core services use Nest `Logger` from `@nestjs/common`; output goes through the Winston pipeline configured here.
 
 ---
 

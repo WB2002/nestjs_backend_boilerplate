@@ -68,11 +68,11 @@ enum UserRole {
 ```ts
 // correct
 import { CreateProductDto } from './dto';
-import { AppLogger } from '../common/logger';
+import { LoggerContext } from '@/core/logger';
 
 // incorrect
 import { CreateProductDto } from './dto/product.dto';
-import { AppLogger } from '../common/logger/logger.context';
+import { LoggerContext } from '@/core/logger/logger.context';
 ```
 
 - Group imports in this order, separated by a blank line:
@@ -140,7 +140,7 @@ try {
 
 ## Logging
 
-- The project logger from `src/common/logger/` is the only permitted logging mechanism.
+- The project logger from `src/core/logger/` is the only permitted logging mechanism.
 - `console.log`, `console.error`, and `console.warn` are forbidden everywhere in `src/`.
 - Inject the logger via the constructor — never instantiate it directly.
 - Use the correct log level:

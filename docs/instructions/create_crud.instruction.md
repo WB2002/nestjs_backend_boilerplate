@@ -182,7 +182,7 @@ export class Update<Resource>Dto extends PartialType(Create<Resource>Dto) {}
 - Return plain objects or mapped `<Resource>Response` types — never return raw Mongoose documents.
 - Use `async/await` throughout; no `.then()` chains.
 - Throw `NotFoundException` from `@nestjs/common` when a document is not found.
-- Use the logger from `src/common/logger/` for error and info logging.
+- Use Nest `Logger` from `@nestjs/common` for error and info logging (Winston pipeline in `src/core/logger/`).
 
 ```ts
 import { Injectable, NotFoundException } from '@nestjs/common';
@@ -323,7 +323,7 @@ export class AppModule {}
 
 **Error handling** — throw `NotFoundException` when a document lookup by ID returns null. Do not swallow errors silently; let the global exception filter in `src/common/filters/all-exceptions.filter.ts` handle formatting.
 
-**Logging** — use the project logger from `src/common/logger/` for service-level logging. Do not use `console.log`.
+**Logging** — use Nest `Logger` for service-level logging (configured via `src/core/logger/`). Do not use `console.log`.
 
 **Index files** — always create `dto/index.ts` and `types/index.ts` that re-export everything. Import from the index, not the file directly, when consuming from outside the folder.
 
