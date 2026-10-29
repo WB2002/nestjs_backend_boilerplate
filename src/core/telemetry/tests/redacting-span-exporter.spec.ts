@@ -1,8 +1,4 @@
-import type {
-  ExportResult,
-  ReadableSpan,
-  SpanExporter,
-} from '@opentelemetry/sdk-trace-base';
+import type { ReadableSpan, SpanExporter } from '@opentelemetry/sdk-trace-base';
 import { createRedactingSpanExporter } from '../redacting-span-exporter';
 
 function makeSpan(attributes: Record<string, unknown>): ReadableSpan {
@@ -29,7 +25,7 @@ describe('createRedactingSpanExporter', () => {
     const delegate: SpanExporter = {
       export(spans, cb) {
         exported.push(...spans);
-        cb({ code: 0 } as ExportResult);
+        cb({ code: 0 });
       },
       shutdown: async () => undefined,
     };
@@ -48,7 +44,7 @@ describe('createRedactingSpanExporter', () => {
     const delegate: SpanExporter = {
       export(spans, cb) {
         exported.push(...spans);
-        cb({ code: 0 } as ExportResult);
+        cb({ code: 0 });
       },
       shutdown: async () => undefined,
     };

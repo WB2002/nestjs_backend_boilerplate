@@ -1,9 +1,12 @@
-import type {
-  ExportResult,
-  ReadableSpan,
-  SpanExporter,
-} from '@opentelemetry/sdk-trace-base';
+import type { Attributes } from '@opentelemetry/api';
+import type { ReadableSpan, SpanExporter } from '@opentelemetry/sdk-trace-base';
 import { redactOtelAttributes } from '@/core/redaction/redact-otel-attributes';
+
+type SpanExportResult = Parameters<SpanExporter['export']>[1] extends (
+  result: infer R,
+) => void
+  ? R
+  : never;
 
 export type RedactingSpanExporterOptions = {
   enabled?: boolean;
@@ -12,13 +15,18 @@ export type RedactingSpanExporterOptions = {
 function redactSpan(span: ReadableSpan): ReadableSpan {
   const attributes = redactOtelAttributes(
     span.attributes as Record<string, unknown>,
-  );
-  const events = span.events.map((event) => ({
-    ...event,
-    attributes: event.attributes
-      ? redactOtelAttributes(event.attributes as Record<string, unknown>)
-      : event.attributes,
-  }));
+  ) as Attributes;
+  const events = span.events.map((event) => {
+    if (event.attributes === undefined) {
+      return event;
+    }
+    return {
+      ...event,
+      attributes: redactOtelAttributes(
+        event.attributes as Record<string, unknown>,
+      ) as Attributes,
+    };
+  });
   return { ...span, attributes, events };
 }
 
@@ -30,7 +38,7 @@ export function createRedactingSpanExporter(
   return {
     export(
       spans: ReadableSpan[],
-      resultCallback: (result: ExportResult) => void,
+      resultCallback: (result: SpanExportResult) => void,
     ): void {
       const payload = enabled ? spans.map(redactSpan) : spans;
       delegate.export(payload, resultCallback);
@@ -38,8 +46,8 @@ export function createRedactingSpanExporter(
     shutdown(): Promise<void> {
       return delegate.shutdown();
     },
-    forceFlush(): Promise<void> | undefined {
-      return delegate.forceFlush?.();
+    forceFlush(): Promise<void> {
+      return delegate.forceFlush?.() ?? Promise.resolve();
     },
   };
 }
