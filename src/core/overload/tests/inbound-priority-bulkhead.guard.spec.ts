@@ -5,7 +5,10 @@ import { InboundBulkheadService } from '../inbound-bulkhead.service';
 import { ApiPriorityLevel } from '../priority/api-priority-level.enum';
 import { PriorityShedRejectedError } from '../errors/priority-shed-rejected.error';
 import { OverloadRejectedError } from '../errors/overload-rejected.error';
-import { API_PRIORITY_KEY } from '../overload.constants';
+import {
+  API_PRIORITY_KEY,
+  SKIP_INBOUND_BULKHEAD_KEY,
+} from '../overload.constants';
 import { InboundLoadLevelConfig } from '../load-level/inbound-load-level.types';
 
 jest.mock('@/core/request-deadline', () => ({
@@ -33,6 +36,7 @@ const enabledLoadLevel: InboundLoadLevelConfig = {
 function mockContext(
   url: string,
   priority?: ApiPriorityLevel,
+  options?: { skipBulkhead?: boolean; type?: string },
 ): ExecutionContext {
   const finishHandlers: Array<() => void> = [];
   const res = {
@@ -50,8 +54,11 @@ function mockContext(
   if (priority !== undefined) {
     Reflect.defineMetadata(API_PRIORITY_KEY, priority, handler);
   }
+  if (options?.skipBulkhead) {
+    Reflect.defineMetadata(SKIP_INBOUND_BULKHEAD_KEY, true, handler);
+  }
   return {
-    getType: () => 'http',
+    getType: () => options?.type ?? 'http',
     getHandler: () => handler,
     getClass: () => MockController,
     switchToHttp: () => ({
@@ -113,6 +120,108 @@ describe('InboundPriorityBulkheadGuard', () => {
         mockContext('/auth/refresh', ApiPriorityLevel.Critical),
       ),
     ).rejects.toBeInstanceOf(OverloadRejectedError);
+  });
+
+  it('allows non-http contexts without acquiring', async () => {
+    const bulkhead = new InboundBulkheadService(
+      { enabled: true, maxInFlight: 1 },
+      disabledLoadLevel,
+    );
+    bulkhead.tryAcquire();
+    const guard = createGuard(bulkhead);
+    await expect(
+      guard.canActivate(mockContext('/api', undefined, { type: 'rpc' })),
+    ).resolves.toBe(true);
+    expect(bulkhead.activeCount).toBe(1);
+  });
+
+  it('allows when bulkhead disabled', async () => {
+    const bulkhead = new InboundBulkheadService(
+      { enabled: false, maxInFlight: 1 },
+      disabledLoadLevel,
+    );
+    const guard = createGuard(bulkhead);
+    await expect(guard.canActivate(mockContext('/api'))).resolves.toBe(true);
+    expect(bulkhead.activeCount).toBe(0);
+  });
+
+  it('allows skip-inbound-bulkhead metadata', async () => {
+    const bulkhead = new InboundBulkheadService(
+      { enabled: true, maxInFlight: 1 },
+      disabledLoadLevel,
+    );
+    bulkhead.tryAcquire();
+    const guard = createGuard(bulkhead);
+    await expect(
+      guard.canActivate(mockContext('/api', undefined, { skipBulkhead: true })),
+    ).resolves.toBe(true);
+    expect(bulkhead.activeCount).toBe(1);
+  });
+
+  it('allows pressure-exempt paths', async () => {
+    const bulkhead = new InboundBulkheadService(
+      { enabled: true, maxInFlight: 1 },
+      disabledLoadLevel,
+    );
+    bulkhead.tryAcquire();
+    const guard = createGuard(bulkhead);
+    await expect(guard.canActivate(mockContext('/health/ready'))).resolves.toBe(
+      true,
+    );
+    expect(bulkhead.activeCount).toBe(1);
+  });
+
+  it('caps maxWaitMs by remaining request budget', async () => {
+    jest.mocked(remainingMs).mockReturnValue(100);
+    jest.mocked(getRequestSignal).mockReturnValue(undefined);
+    const bulkhead = new InboundBulkheadService(
+      { enabled: true, maxInFlight: 1 },
+      enabledLoadLevel,
+    );
+    const acquireSpy = jest.spyOn(bulkhead, 'acquire');
+    const guard = createGuard(bulkhead, enabledLoadLevel, {
+      ...sheddingConfig,
+      enabled: false,
+    });
+    await guard.canActivate(mockContext('/api/work'));
+    expect(acquireSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ maxWaitMs: 100 }),
+    );
+  });
+
+  it('passes abort signal to acquire when present', async () => {
+    jest.mocked(remainingMs).mockReturnValue(undefined);
+    const signal = new AbortController().signal;
+    jest.mocked(getRequestSignal).mockReturnValue(signal);
+    const bulkhead = new InboundBulkheadService(
+      { enabled: true, maxInFlight: 2 },
+      disabledLoadLevel,
+    );
+    const acquireSpy = jest.spyOn(bulkhead, 'acquire');
+    const guard = createGuard(bulkhead);
+    await guard.canActivate(mockContext('/api/work', ApiPriorityLevel.Normal));
+    expect(acquireSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ signal }),
+    );
+  });
+
+  it('releases slot when response finishes', async () => {
+    jest.mocked(remainingMs).mockReturnValue(undefined);
+    jest.mocked(getRequestSignal).mockReturnValue(undefined);
+    const bulkhead = new InboundBulkheadService(
+      { enabled: true, maxInFlight: 1 },
+      disabledLoadLevel,
+    );
+    const ctx = mockContext('/api/work');
+    const guard = createGuard(bulkhead, disabledLoadLevel, {
+      ...sheddingConfig,
+      enabled: false,
+    });
+    await guard.canActivate(ctx);
+    expect(bulkhead.activeCount).toBe(1);
+    const res = ctx.switchToHttp().getResponse() as { emitFinish: () => void };
+    res.emitFinish();
+    expect(bulkhead.activeCount).toBe(0);
   });
 
   it('waits for slot when load leveling enabled', async () => {

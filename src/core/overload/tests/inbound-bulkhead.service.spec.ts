@@ -35,4 +35,19 @@ describe('InboundBulkheadService', () => {
     service.release();
     expect(service.activeCount).toBe(0);
   });
+
+  it('release is a no-op when bulkhead disabled', () => {
+    const service = createService({ enabled: false, maxInFlight: 5 });
+    expect(() => service.release()).not.toThrow();
+    expect(service.activeCount).toBe(0);
+  });
+
+  it('does not decrement active below zero on extra release', () => {
+    const service = createService({ enabled: true, maxInFlight: 1 });
+    service.tryAcquire();
+    service.release();
+    expect(service.activeCount).toBe(0);
+    service.release();
+    expect(service.activeCount).toBe(0);
+  });
 });

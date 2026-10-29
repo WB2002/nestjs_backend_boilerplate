@@ -44,4 +44,20 @@ describe('InboundBulkheadService load leveling', () => {
     await expect(admitted).resolves.toBeUndefined();
     expect(service.activeCount).toBe(1);
   });
+
+  it('release with load leveling off does not throw when queue is empty', () => {
+    const service = createService(disabledLoadLevel);
+    service.tryAcquire();
+    expect(() => service.release()).not.toThrow();
+    expect(service.activeCount).toBe(0);
+    expect(() => service.release()).not.toThrow();
+    expect(service.activeCount).toBe(0);
+  });
+
+  it('release with no waiters keeps active at zero', () => {
+    const service = createService(enabledLoadLevel);
+    service.tryAcquire();
+    service.release();
+    expect(service.activeCount).toBe(0);
+  });
 });
