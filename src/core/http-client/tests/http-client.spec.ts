@@ -818,6 +818,10 @@ describe('HttpClient', () => {
     let aAttempts = 0;
     let aInRetryBackoff = false;
     let bServedDuringABackoff = false;
+    let notifyAInBackoff: (() => void) | undefined;
+    const aEnteredBackoff = new Promise<void>((resolve) => {
+      notifyAInBackoff = resolve;
+    });
     const { server, baseUrl } = await listen(async (req, res) => {
       const path = req.url ?? '';
       if (path.includes('/b') && aInRetryBackoff) {
@@ -833,11 +837,13 @@ describe('HttpClient', () => {
         aAttempts += 1;
         if (aAttempts <= 2) {
           aInRetryBackoff = true;
+          notifyAInBackoff?.();
+          notifyAInBackoff = undefined;
           res.statusCode = 503;
           res.end('down');
           setTimeout(() => {
             aInRetryBackoff = false;
-          }, 50);
+          }, 200);
           return;
         }
       }
@@ -857,7 +863,7 @@ describe('HttpClient', () => {
         });
 
       const slow = client.get('/a');
-      await new Promise((resolve) => setTimeout(resolve, 20));
+      await aEnteredBackoff;
       const other = client.get('/b');
       await Promise.all([slow, other]);
       expect(bServedDuringABackoff).toBe(true);
