@@ -8,7 +8,7 @@ import {
 } from '@opentelemetry/api';
 import { getAwsXrayPropagator } from '@/core/telemetry/xray-propagation';
 import type { ClientIdentity, HttpRequest, HttpResponse } from '../types';
-import { redactHeaders, redactUrl } from './redaction';
+import { redactOtelAttributes } from '@/core/redaction/redact-otel-attributes';
 
 const tracer = trace.getTracer('core.http-client');
 
@@ -30,12 +30,12 @@ export function startLogicalTrace(
 
   const span = tracer.startSpan(`HTTP ${request.method}`, {
     kind: SpanKind.CLIENT,
-    attributes: {
+    attributes: redactOtelAttributes({
       'http.method': request.method,
-      'http.url': redactUrl(request.url),
+      'http.url': request.url,
       'peer.service': identity.serviceName,
       'http.client.kind': identity.kind,
-    },
+    }),
   });
 
   return createTraceHandles(span, true);
@@ -60,14 +60,14 @@ export function startAttemptTrace(
     `HTTP ${request.method} attempt`,
     {
       kind: SpanKind.CLIENT,
-      attributes: {
+      attributes: redactOtelAttributes({
         'http.method': request.method,
-        'http.url': redactUrl(request.url),
+        'http.url': request.url,
         'peer.service': identity.serviceName,
         'http.client.kind': identity.kind,
         'http.request.attempt': attempt,
-        'http.request.headers': JSON.stringify(redactHeaders(request.headers)),
-      },
+        'http.request.headers': JSON.stringify(request.headers ?? {}),
+      }),
     },
     parentCtx,
   );

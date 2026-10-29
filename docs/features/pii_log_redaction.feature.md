@@ -5,12 +5,13 @@
 - **Winston logs** (all levels): metadata fields and message/stack strings pass through `createRedactionFormat` in `src/core/logger/logger.config.ts`.
 - **HTTP access lines** from `LoggingInterceptor`: request URLs run through `redactUrl`.
 - **HttpClient telemetry**: URL, header, and query redaction via `src/core/http-client/telemetry/redaction.ts` (re-exports `src/core/redaction/`).
+- **OpenTelemetry spans**: OTLP export runs through `createRedactingSpanExporter` (`src/core/telemetry/redacting-span-exporter.ts`); HttpClient trace spans use `redactOtelAttributes` in `src/core/http-client/telemetry/tracing.ts`.
 
 ## Configuration
 
-| Env                     | Default          | Purpose                                                            |
-| ----------------------- | ---------------- | ------------------------------------------------------------------ |
-| `LOG_REDACTION_ENABLED` | enabled (`true`) | Set to `false` to disable app log redaction (local debugging only) |
+| Env                     | Default          | Purpose                                                                                |
+| ----------------------- | ---------------- | -------------------------------------------------------------------------------------- |
+| `LOG_REDACTION_ENABLED` | enabled (`true`) | Set to `false` to disable log and OTLP span attribute redaction (local debugging only) |
 
 ## Behavior
 
@@ -20,7 +21,6 @@
 
 ## Out of scope (for now)
 
-- OpenTelemetry span attributes
 - API JSON response bodies
 - Persistent storage (Mongo/Postgres)
 

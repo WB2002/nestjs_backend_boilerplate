@@ -4,8 +4,10 @@ import { resourceFromAttributes } from '@opentelemetry/resources';
 import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import { AWSXRayIdGenerator } from '@opentelemetry/id-generator-aws-xray';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
+import { parseLogRedactionConfig } from './core/redaction/parse-log-redaction-config';
 import { parseTelemetryConfig } from './core/telemetry/parse-telemetry-config';
 import { isTraceExemptPath } from './core/telemetry/is-trace-exempt-path';
+import { createRedactingSpanExporter } from './core/telemetry/redacting-span-exporter';
 
 let sdk: NodeSDK | undefined;
 
@@ -42,8 +44,12 @@ export async function registerInstrumentation(): Promise<void> {
   };
 
   if (config.otlpEndpoint) {
-    sdkOptions.traceExporter = new OTLPTraceExporter({
+    const baseExporter = new OTLPTraceExporter({
       url: `${config.otlpEndpoint}/v1/traces`,
+    });
+    const redaction = parseLogRedactionConfig(process.env);
+    sdkOptions.traceExporter = createRedactingSpanExporter(baseExporter, {
+      enabled: redaction.enabled,
     });
   }
 

@@ -32,7 +32,7 @@ Overview of capabilities in `nestjs_backend_boilerplate`. **Implementation statu
 | Graceful shutdown                    | Process signals                | Done    | — (`src/core/shutdown/`)                                                                  |
 | Response compression                 | Fastify plugin                 | Done    | —                                                                                         |
 | Logging & request ID                 | Global middleware              | Done    | — (`src/core/logger/`)                                                                    |
-| PII / log redaction                  | Winston + access logs          | Partial | [pii_log_redaction.feature.md](./pii_log_redaction.feature.md) — OTel span attrs not yet  |
+| PII / log redaction                  | Winston + access logs + OTel   | Done    | [pii_log_redaction.feature.md](./pii_log_redaction.feature.md)                            |
 | Tracing & overload metrics           | Boot + filters                 | Done    | [observability.feature.md](./observability.feature.md) — `OTEL_ENABLED`, EMF 503 reasons  |
 | CSRF (cookie SPA flows)              | Global middleware              | Done    | [csrf.feature.md](./csrf.feature.md) — `GET /auth/csrf`                                   |
 | GraphQL                              | `/graphql`                     | Done    | — (`src/categories/`, `app.module.ts`)                                                    |
@@ -80,29 +80,29 @@ Last reviewed against the boilerplate roadmap (code audit, not task status). Upd
 
 ### Security, auth, data
 
-| Item                              | Status      | Notes                                                                                                                     |
-| --------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------- |
-| Google Tink / AWS Encryption SDK  | **Missing** | —                                                                                                                         |
-| Encryption & hashing              | **Partial** | Argon2 passwords, RS256 JWT, SHA for keys/fingerprints                                                                    |
-| Authentication                    | **Done**    | Register, login, refresh, logout, sessions                                                                                |
-| Authorization                     | **Partial** | JWT default-deny + `@Public()`; RBAC on feature-flag APIs only                                                            |
-| Audit logs table                  | **Partial** | Mongo `feature_flag_audits` only                                                                                          |
-| IP geographic allow/block         | **Done**    | MaxMind + global guard                                                                                                    |
-| HCaptcha / reCAPTCHA              | **Partial** | hCaptcha only                                                                                                             |
-| CSRF                              | **Done**    | Double-submit cookie; see [csrf.feature.md](./csrf.feature.md)                                                            |
-| CSP headers                       | **Done**    | `@fastify/helmet`                                                                                                         |
-| CORS                              | **Done**    | `enableCors` in `main.ts`                                                                                                 |
-| Input sanitization                | **Done**    | Global `SanitizationPipe`                                                                                                 |
-| Max payload size                  | **Done**    | Multipart limits, upload caps, default JSON body cap                                                                      |
-| File upload + type validation     | **Done**    | Magic bytes, optional ClamAV                                                                                              |
-| Bot detection (beyond CAPTCHA)    | **Missing** | —                                                                                                                         |
-| Secrets scanning (git hooks)      | **Done**    | Gitleaks pre-commit                                                                                                       |
-| Dependency vulnerability scanning | **Done**    | `pnpm audit`, OSV-Scanner, Trivy, Dependency Review; Dependabot — [quality README](../quality/README.md)                  |
-| App-source security (Semgrep)     | **Done**    | Obfuscation/exfil heuristics on `src/`/`test/`/`scripts/` — [quality README](../quality/README.md)                        |
-| PII tagging / data masking        | **Partial** | App logs + HttpClient telemetry — [pii_log_redaction.feature.md](./pii_log_redaction.feature.md); OTel attrs not redacted |
-| Row-level security                | **Missing** | Deferred                                                                                                                  |
-| Cookies support                   | **Done**    | `@fastify/cookie`, session / access tokens                                                                                |
-| Stripe                            | **Missing** | Doc example only                                                                                                          |
+| Item                              | Status      | Notes                                                                                                             |
+| --------------------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------- |
+| Google Tink / AWS Encryption SDK  | **Missing** | —                                                                                                                 |
+| Encryption & hashing              | **Partial** | Argon2 passwords, RS256 JWT, SHA for keys/fingerprints                                                            |
+| Authentication                    | **Done**    | Register, login, refresh, logout, sessions                                                                        |
+| Authorization                     | **Partial** | JWT default-deny + `@Public()`; RBAC on feature-flag APIs only                                                    |
+| Audit logs table                  | **Partial** | Mongo `feature_flag_audits` only                                                                                  |
+| IP geographic allow/block         | **Done**    | MaxMind + global guard                                                                                            |
+| HCaptcha / reCAPTCHA              | **Partial** | hCaptcha only                                                                                                     |
+| CSRF                              | **Done**    | Double-submit cookie; see [csrf.feature.md](./csrf.feature.md)                                                    |
+| CSP headers                       | **Done**    | `@fastify/helmet`                                                                                                 |
+| CORS                              | **Done**    | `enableCors` in `main.ts`                                                                                         |
+| Input sanitization                | **Done**    | Global `SanitizationPipe`                                                                                         |
+| Max payload size                  | **Done**    | Multipart limits, upload caps, default JSON body cap                                                              |
+| File upload + type validation     | **Done**    | Magic bytes, optional ClamAV                                                                                      |
+| Bot detection (beyond CAPTCHA)    | **Missing** | —                                                                                                                 |
+| Secrets scanning (git hooks)      | **Done**    | Gitleaks pre-commit                                                                                               |
+| Dependency vulnerability scanning | **Done**    | `pnpm audit`, OSV-Scanner, Trivy, Dependency Review; Dependabot — [quality README](../quality/README.md)          |
+| App-source security (Semgrep)     | **Done**    | Obfuscation/exfil heuristics on `src/`/`test/`/`scripts/` — [quality README](../quality/README.md)                |
+| PII tagging / data masking        | **Done**    | App logs, HttpClient telemetry, OTLP span export — [pii_log_redaction.feature.md](./pii_log_redaction.feature.md) |
+| Row-level security                | **Missing** | Deferred                                                                                                          |
+| Cookies support                   | **Done**    | `@fastify/cookie`, session / access tokens                                                                        |
+| Stripe                            | **Missing** | Doc example only                                                                                                  |
 
 ### Observability & ops
 
