@@ -124,6 +124,9 @@ export const envSchema = {
   FEATURE_FLAG_ADMIN_EMAILS: { required: false },
   FEATURE_FLAG_METRICS: { required: false },
 
+  // Logging
+  LOG_REDACTION_ENABLED: { required: false },
+
   // OpenTelemetry / app EMF metrics
   OTEL_ENABLED: { required: false },
   OTEL_SERVICE_NAME: { required: false },

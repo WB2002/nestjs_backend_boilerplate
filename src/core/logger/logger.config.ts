@@ -2,8 +2,35 @@ import * as winston from 'winston';
 import { isString, isObject, get } from 'lodash';
 import { LoggerContext } from './logger.context';
 import { LOG_COLOR_MAPPER } from '@/common/constants';
+import { parseLogRedactionConfig } from '@/core/redaction/parse-log-redaction-config';
+import { redactForLog } from '@/core/redaction/redact-deep';
+import { redactLogMessage } from '@/core/redaction/redact-log-message';
+import type { LogRedactionConfig } from '@/core/redaction/parse-log-redaction-config';
 
 const { combine, timestamp, printf, json, colorize } = winston.format;
+
+const WINSTON_RESERVED = new Set(['level', 'message', 'timestamp', 'stack']);
+
+export function createRedactionFormat(config: LogRedactionConfig) {
+  return winston.format((info) => {
+    if (!config.enabled) {
+      return info;
+    }
+    if (typeof info.message === 'string') {
+      info.message = redactLogMessage(info.message);
+    }
+    if (typeof info.stack === 'string') {
+      info.stack = redactLogMessage(info.stack);
+    }
+    for (const key of Object.keys(info)) {
+      if (WINSTON_RESERVED.has(key)) {
+        continue;
+      }
+      info[key] = redactForLog(info[key]);
+    }
+    return info;
+  });
+}
 
 const contextFormatter = winston.format((info) => {
   const storageContext = LoggerContext.get();
@@ -12,8 +39,12 @@ const contextFormatter = winston.format((info) => {
   return { ...info, ...storageContext };
 });
 
+const logRedactionConfig = parseLogRedactionConfig(process.env);
+const redactionFormat = createRedactionFormat(logRedactionConfig);
+
 const devFormat = combine(
   timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+  redactionFormat(),
   contextFormatter(),
   colorize(),
   printf(({ timestamp, level, message, context, method, stack, ...meta }) => {
@@ -32,7 +63,10 @@ const devFormat = combine(
       ? ` ${LOG_COLOR_MAPPER.context}[${label}]${LOG_COLOR_MAPPER.reset}`
       : '';
 
-    const { requestId, userId, ...remainingMeta } = meta as any;
+    const { requestId, userId, ...remainingMeta } = meta as Record<
+      string,
+      unknown
+    >;
     const tracingInfo = [
       requestId
         ? `${LOG_COLOR_MAPPER.requestId}requestId: ${LOG_COLOR_MAPPER.reset}${requestId}`
@@ -53,7 +87,12 @@ const devFormat = combine(
   }),
 );
 
-const prodFormat = combine(timestamp(), contextFormatter(), json());
+const prodFormat = combine(
+  timestamp(),
+  redactionFormat(),
+  contextFormatter(),
+  json(),
+);
 
 export const winstonConfig = {
   transports: [
