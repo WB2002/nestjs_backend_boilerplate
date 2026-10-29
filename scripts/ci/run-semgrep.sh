@@ -34,8 +34,10 @@ for f in "${TARGETS[@]}"; do
 done
 TARGETS=("${FILTERED[@]}")
 
+SEMGREP_LOCAL_CONFIG="${ROOT_DIR}/semgrep/rules/obfuscated-exfil.yaml"
+
 run_semgrep() {
-  semgrep scan --error --config semgrep/config.yaml \
+  semgrep scan --error --config "${SEMGREP_LOCAL_CONFIG}" \
     --config p/javascript --config p/nodejs \
     "${INCLUDE_ARGS[@]}" "$@"
 }
@@ -47,7 +49,7 @@ fi
 
 if command -v docker >/dev/null 2>&1; then
   docker run --rm -v "${ROOT_DIR}:/src" -w /src returntocorp/semgrep \
-    semgrep scan --error --config semgrep/config.yaml \
+    semgrep scan --error --config semgrep/rules/obfuscated-exfil.yaml \
     --config p/javascript --config p/nodejs \
     "${INCLUDE_ARGS[@]}" "${TARGETS[@]}"
   exit 0
