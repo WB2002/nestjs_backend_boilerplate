@@ -52,6 +52,10 @@ export const envSchema = {
   INBOUND_PRIORITY_SHED_HIGH_AT: { required: false },
   INBOUND_PRIORITY_SHED_NORMAL_AT: { required: false },
   INBOUND_PRIORITY_SHED_LOW_AT: { required: false },
+  INBOUND_LOAD_LEVELING_ENABLED: { required: false },
+  INBOUND_LOAD_LEVEL_MAX_QUEUE: { required: false },
+  INBOUND_LOAD_LEVEL_MAX_WAIT_MS: { required: false },
+  INBOUND_LOAD_LEVEL_POLL_MS: { required: false },
 
   // Graceful shutdown
   SHUTDOWN_DRAIN_MS: { required: false },
