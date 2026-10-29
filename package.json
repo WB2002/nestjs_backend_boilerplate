@@ -32,7 +32,9 @@
     "quality:app-security": "./scripts/ci/run-semgrep.sh && ./scripts/ci/scan-long-base64-literals.sh",
     "quality:app-security:changed": "SEMGREP_SCOPE=changed ./scripts/ci/run-semgrep.sh && ./scripts/ci/scan-long-base64-literals.sh",
     "quality:contract:update-snapshot": "./scripts/ci/merge-graphql-sdl.sh > test/contracts/graphql/schema.snapshot.graphql",
-    "quality:supply-chain": "pnpm install --frozen-lockfile && ./scripts/ci/run-pnpm-audit.sh && ./scripts/ci/run-osv-scanner.sh && ./scripts/ci/run-trivy.sh && ./scripts/ci/run-trivy-app-secrets.sh"
+    "quality:osv": "./scripts/ci/run-osv-scanner.sh",
+    "quality:supply-chain": "pnpm install --frozen-lockfile && ./scripts/ci/run-pnpm-audit.sh && ./scripts/ci/run-osv-scanner.sh && ./scripts/ci/run-trivy.sh && ./scripts/ci/run-trivy-app-secrets.sh",
+    "quality:supply-chain:check": "./scripts/ci/run-pnpm-audit.sh && ./scripts/ci/run-osv-scanner.sh"
   },
   "dependencies": {
     "@apollo/server": "^5.5.0",

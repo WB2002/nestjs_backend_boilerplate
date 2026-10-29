@@ -17,6 +17,8 @@ Deterministic checks run locally via `pnpm quality:*` and in GitHub Actions (`.g
 | `pnpm quality:app-security`             | Semgrep (local rules + OSS registry) + long-base64 heuristic on `src/`, `test/`, `scripts/` |
 | `pnpm quality:app-security:changed`     | Same as app-security but Semgrep only on changed app paths                                  |
 | `pnpm quality:supply-chain`             | Frozen lockfile, `pnpm audit`, OSV-Scanner, Trivy vuln + secrets on app paths               |
+| `pnpm quality:osv`                      | OSV-Scanner only (CVSS ≥ 7 gate; matches CI supply-chain)                                   |
+| `pnpm quality:supply-chain:check`       | `pnpm audit` + OSV without reinstall/Trivy                                                  |
 | `pnpm quality:contract:update-snapshot` | Regenerate GraphQL SDL snapshot after schema changes                                        |
 
 ## Hooks
@@ -44,7 +46,8 @@ Scans **your** TypeScript and shell under `src/`, `test/`, and `scripts/`—not 
 Local tooling (or use Docker images referenced in `scripts/ci/*.sh`):
 
 ```bash
-brew install semgrep osv-scanner trivy
+brew install semgrep osv-scanner trivy jq
+pnpm quality:osv
 pip install semgrep   # alternative Semgrep install
 pnpm quality:app-security
 ```

@@ -17,36 +17,73 @@ case "${AUDIT_LEVEL}" in
     ;;
 esac
 
-OUTPUT="$(mktemp)"
-trap 'rm -f "${OUTPUT}"' EXIT
+OUTPUT="${ROOT_DIR}/.osv-scan-output.json"
 
-scan_json() {
-  osv-scanner scan source -L pnpm-lock.yaml -f json --output-file "${OUTPUT}"
+run_json_scan() {
+  if command -v osv-scanner >/dev/null 2>&1; then
+    osv-scanner scan source -L pnpm-lock.yaml -f json --output-file "${OUTPUT}" \
+      >/dev/null 2>&1 || true
+    return 0
+  fi
+
+  if command -v docker >/dev/null 2>&1; then
+    rm -f "${OUTPUT}" 2>/dev/null || true
+    # Scanner prints "Exit code: 1" to stderr when vulns exist; gate is applied below via jq.
+    docker run --rm \
+      -v "${ROOT_DIR}:/repo" \
+      -w /repo \
+      ghcr.io/google/osv-scanner-action:v2.7.0 \
+      scan source -L pnpm-lock.yaml -f json --output-file /repo/.osv-scan-output.json \
+      >/dev/null 2>&1 || true
+    return 0
+  fi
+
+  echo "osv-scanner: install osv-scanner CLI (brew install osv-scanner) or Docker" >&2
+  exit 1
 }
 
-scan_table() {
-  osv-scanner scan source -L pnpm-lock.yaml -f table
-}
-
-if command -v osv-scanner >/dev/null 2>&1; then
-  scan_json || true
-  scan_table || true
-elif command -v docker >/dev/null 2>&1; then
-  JSON_OUT="${ROOT_DIR}/.osv-scan-output.json"
-  rm -f "${JSON_OUT}"
-  docker run --rm -v "${ROOT_DIR}:/repo" -w /repo ghcr.io/google/osv-scanner-action:v2.7.0 \
-    scan source -L pnpm-lock.yaml -f json --output-file /repo/.osv-scan-output.json || true
-  mv "${JSON_OUT}" "${OUTPUT}"
-  docker run --rm -v "${ROOT_DIR}:/repo" -w /repo ghcr.io/google/osv-scanner-action:v2.7.0 \
-    scan source -L pnpm-lock.yaml -f table || true
-else
-  echo "osv-scanner: install osv-scanner CLI or Docker to run locally" >&2
+if ! command -v jq >/dev/null 2>&1; then
+  echo "osv-scanner: jq required to apply audit-level=${AUDIT_LEVEL} (brew install jq)" >&2
   exit 1
 fi
 
-if ! command -v jq >/dev/null 2>&1; then
-  echo "osv-scanner: jq required to apply audit-level=${AUDIT_LEVEL}" >&2
+run_json_scan
+
+if [ ! -s "${OUTPUT}" ]; then
+  echo "osv-scanner: no scan output (empty ${OUTPUT})" >&2
   exit 1
+fi
+
+VULN_PKG_COUNT="$(
+  jq '[.results[]?.packages[]?] | length' "${OUTPUT}" 2>/dev/null || echo 0
+)"
+echo "Scanned pnpm-lock.yaml (${VULN_PKG_COUNT} vulnerable package(s) in OSV report)"
+
+FINDING_ROWS="$(
+  jq -r '
+    .results[]?.packages[]?
+    | . as $pkg
+    | .groups[]?
+    | [
+        (.ids[0] // "unknown"),
+        (.max_severity // "?"),
+        $pkg.package.ecosystem,
+        $pkg.package.name,
+        $pkg.package.version
+      ]
+    | @tsv
+  ' "${OUTPUT}" 2>/dev/null || true
+)"
+
+if [ -n "${FINDING_ROWS}" ]; then
+  echo ""
+  echo "OSV findings (job fails only when CVSS >= ${MIN_CVSS}, audit-level=${AUDIT_LEVEL}):"
+  printf '%s\n' "ID	MAX_CVSS	ECOSYSTEM	PACKAGE	VERSION"
+  printf '%s\n' "${FINDING_ROWS}" | while IFS=$'\t' read -r id cvss eco pkg ver; do
+    printf '%s\n' "${id}	${cvss}	${eco}	${pkg}	${ver}"
+  done
+else
+  echo "osv-scanner: no vulnerabilities reported in lockfile"
 fi
 
 FAIL_COUNT="$(
@@ -64,5 +101,5 @@ if [ "${FAIL_COUNT}" -gt 0 ]; then
   exit 1
 fi
 
-echo "osv-scanner: ok (no findings at or above ${AUDIT_LEVEL}; lower-severity issues may still be listed above)"
+echo "osv-scanner: ok (no findings at or above ${AUDIT_LEVEL})"
 exit 0
