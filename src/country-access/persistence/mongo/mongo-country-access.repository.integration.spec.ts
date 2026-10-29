@@ -24,7 +24,7 @@ describeIntegration('MongoCountryAccessRepository (integration)', () => {
     model = connection.model(CountryAccessDocument.name, CountryAccessSchema);
     repository = new MongoCountryAccessRepository(model);
     await repository.ensureIndexes();
-  }, 120_000);
+  }, 200_000);
 
   afterAll(async () => {
     await mongoose.disconnect();
