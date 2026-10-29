@@ -14,3 +14,7 @@ export {
   parseLogRedactionConfig,
   type LogRedactionConfig,
 } from './parse-log-redaction-config';
+export {
+  redactOtelAttributeValue,
+  redactOtelAttributes,
+} from './redact-otel-attributes';
