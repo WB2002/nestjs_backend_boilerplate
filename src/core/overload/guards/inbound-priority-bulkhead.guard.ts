@@ -7,10 +7,7 @@ import {
 import { Reflector } from '@nestjs/core';
 import { get } from 'lodash';
 import type { ServerResponse } from 'http';
-import {
-  getRequestSignal,
-  remainingMs,
-} from '@/core/request-deadline/helpers/request-deadline.helpers';
+import { getRequestSignal, remainingMs } from '@/core/request-deadline';
 import { InboundBulkheadService } from '../inbound-bulkhead.service';
 import { isPressureExemptPath } from '../is-pressure-exempt-path';
 import {
