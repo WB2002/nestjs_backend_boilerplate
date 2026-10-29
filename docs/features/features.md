@@ -36,7 +36,7 @@ Overview of capabilities in `nestjs_backend_boilerplate`. **Implementation statu
 | Tracing & overload metrics           | Boot + filters                 | Done    | [observability.feature.md](./observability.feature.md) — `OTEL_ENABLED`, EMF 503 reasons                                                                                                     |
 | CSRF (cookie SPA flows)              | Global middleware              | Done    | [csrf.feature.md](./csrf.feature.md) — `GET /auth/csrf`                                                                                                                                      |
 | GraphQL                              | `/graphql`                     | Done    | — (`src/categories/`, `app.module.ts`)                                                                                                                                                       |
-| File uploads                         | `/uploads`                     | Done    | — (`src/uploads/`)                                                                                                                                                                           |
+| File uploads                         | `/uploads`                     | Done    | — (`src/common/uploads/`)                                                                                                                                                                    |
 | Captcha (hCaptcha)                   | `/example/captcha`             | Partial | [captcha.feature.md](./captcha.feature.md)                                                                                                                                                   |
 | Notifications (Slack)                | `/example`                     | Done    | [notification.feature.md](./notification.feature.md)                                                                                                                                         |
 | Feature flags                        | `/feature-flags`               | Done    | [feature_flag.feature.md](./feature_flag.feature.md)                                                                                                                                         |
@@ -255,7 +255,7 @@ Apollo on Fastify, schema via `*.graphql`, sample `CategoriesModule`, depth limi
 
 Multipart uploads with count/size/total limits, extension + magic-byte validation, optional ClamAV scan.
 
-Code: `src/uploads/`.
+Code: `src/common/uploads/`.
 
 ### Cross-cutting (no separate feature doc)
 

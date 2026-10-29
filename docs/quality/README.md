@@ -95,4 +95,4 @@ Until `CODEQL_UPLOAD` is `true`, the workflow analyzes code but skips SARIF uplo
 
 Enable [Cursor Bugbot](https://cursor.com/docs/bugbot) or CodeRabbit on the repository. The `AI Review (optional)` workflow does not fail merges.
 
-Design specs: [quality toolchain](../superpowers/specs/2026-10-29-quality-toolchain-design.md), [source security CI layering](../superpowers/specs/2026-10-29-source-security-ci-layering-design.md)
+Design specs: [quality toolchain](../intent/quality-toolchain/spec.md), [source security CI layering](../intent/source-security-ci-layering/spec.md)

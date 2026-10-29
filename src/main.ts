@@ -6,7 +6,7 @@ import { AppModule } from './app.module';
 import { WinstonModule } from 'nest-winston';
 import { winstonConfig } from './core/logger/logger.config';
 import { registerGracefulShutdown, ShutdownState } from './core/shutdown';
-import { parseTrustProxy } from './country-access';
+import { parseTrustProxy } from './common/country-access';
 import helmet from '@fastify/helmet';
 import fastifyCookie from '@fastify/cookie';
 import multipart from '@fastify/multipart';

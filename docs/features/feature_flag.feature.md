@@ -11,10 +11,14 @@ Redis-backed feature flags with an in-memory snapshot per application instance. 
 Business modules inject `FeatureFlagService` only:
 
 ```ts
-featureFlags.isEnabled('new-checkout', {
-  userId: user.id,
-  organizationId: organization.id,
-}, { defaultValue: false });
+featureFlags.isEnabled(
+  'new-checkout',
+  {
+    userId: user.id,
+    organizationId: organization.id,
+  },
+  { defaultValue: false },
+);
 ```
 
 - **Boolean:** `enabled` maps directly to on/off.
@@ -25,11 +29,11 @@ featureFlags.isEnabled('new-checkout', {
 
 ## Redis layout
 
-| Purpose | Key / channel |
-|---|---|
+| Purpose   | Key / channel               |
+| --------- | --------------------------- |
 | Flag JSON | `feature_flags:{env}:{key}` |
 | Index SET | `feature_flags:index:{env}` |
-| Pub/Sub | `feature_flags:events` |
+| Pub/Sub   | `feature_flags:events`      |
 
 `env` comes from `FEATURE_FLAG_ENV`, then `NODE_ENV`, then `development`.
 
@@ -43,12 +47,12 @@ All routes require JWT authentication. Admins (`User.role = admin`) receive perm
 
 Emails listed in `FEATURE_FLAG_ADMIN_EMAILS` are promoted to admin on register/login.
 
-| Method | Path | Permission |
-|---|---|---|
-| GET | `/feature-flags` | `flag:read` |
-| GET | `/feature-flags/:key` | `flag:read` |
-| POST | `/feature-flags` | `flag:create` |
-| PUT | `/feature-flags/:key` | `flag:update` (`expectedVersion` required) |
+| Method | Path                  | Permission                                 |
+| ------ | --------------------- | ------------------------------------------ |
+| GET    | `/feature-flags`      | `flag:read`                                |
+| GET    | `/feature-flags/:key` | `flag:read`                                |
+| POST   | `/feature-flags`      | `flag:create`                              |
+| PUT    | `/feature-flags/:key` | `flag:update` (`expectedVersion` required) |
 | DELETE | `/feature-flags/:key` | `flag:delete` (`expectedVersion` required) |
 
 Audit records are appended to MongoDB collection `feature_flag_audits`.
@@ -74,4 +78,4 @@ Audit records are appended to MongoDB collection `feature_flag_audits`.
 
 ## Module location
 
-`src/feature-flag/` — export surface is `FeatureFlagModule` and `FeatureFlagService`.
+`src/core/feature-flag/` — export surface is `FeatureFlagModule` and `FeatureFlagService`.

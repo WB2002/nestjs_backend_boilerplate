@@ -31,7 +31,7 @@ const ACTIVE_PERSISTENCE_PROVIDER = 'postgres';
 
 To use MongoDB, change that one `useExisting` target to `MongoCountryAccessRepository`
 (and set `ACTIVE_PERSISTENCE_PROVIDER` to `'mongodb'`) in
-`src/country-access/country-access.module.ts`. Do not duplicate business logic.
+`src/common/country-access/country-access.module.ts`. Do not duplicate business logic.
 
 ## PostgreSQL migration
 
@@ -93,14 +93,14 @@ Update monthly — MaxMind rotates GeoLite2 databases regularly.
 
 ## Configuration
 
-| Variable | Default | Purpose |
-| --- | --- | --- |
-| `GEOIP_DATABASE_PATH` | required | Path to GeoLite2-Country.mmdb |
-| `COUNTRY_ACCESS_REFRESH_INTERVAL_MS` | `60000` | Snapshot refresh interval |
-| `COUNTRY_ACCESS_UNKNOWN_COUNTRY_POLICY` | `block` | `block` or `allow` when GeoIP fails |
-| `COUNTRY_ACCESS_BYPASS_PATHS` | `/health,/health/ready` | Comma-separated bypass paths |
-| `TRUST_PROXY` | `false` | `true`, `false`, or CIDR/IP list |
-| `POSTGRES_*` | see `.env.example` | Default repository connection |
+| Variable                                | Default                 | Purpose                             |
+| --------------------------------------- | ----------------------- | ----------------------------------- |
+| `GEOIP_DATABASE_PATH`                   | required                | Path to GeoLite2-Country.mmdb       |
+| `COUNTRY_ACCESS_REFRESH_INTERVAL_MS`    | `60000`                 | Snapshot refresh interval           |
+| `COUNTRY_ACCESS_UNKNOWN_COUNTRY_POLICY` | `block`                 | `block` or `allow` when GeoIP fails |
+| `COUNTRY_ACCESS_BYPASS_PATHS`           | `/health,/health/ready` | Comma-separated bypass paths        |
+| `TRUST_PROXY`                           | `false`                 | `true`, `false`, or CIDR/IP list    |
+| `POSTGRES_*`                            | see `.env.example`      | Default repository connection       |
 
 There is no `DATABASE_TYPE` switch; swap the repository `useExisting` target (and `ACTIVE_PERSISTENCE_PROVIDER`) manually.
 

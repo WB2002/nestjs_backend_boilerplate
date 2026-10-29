@@ -1,0 +1,86 @@
+name: AI-SDLC
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-sdlc-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  guardrail-notice:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Notice guardrail changes
+        run: |
+          set -euo pipefail
+          base="${{ github.event.pull_request.base.sha }}"
+          echo "Guardrail paths in this pull request:"
+          git diff --name-only "$base"...HEAD | grep -E '(^|/)\.cursor/hooks\.json$|(^|/)\.cursor/hooks/|(^|/)\.cursor/BUGBOT\.md$|(^|/)\.cursorignore$|(^|/)scripts/verify[^/]*\.sh$|(^|/)scripts/ratchet\.sh$|(^|/)quality/|(^|/)\.github/|(^|/)CODEOWNERS$' || echo "(none)"
+
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Full verification (no integration on CI)
+        env:
+          SKIP_INTEGRATION: '1'
+        run: scripts/verify-full.sh
+
+  docs-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Docs check
+        env:
+          GITHUB_EVENT_PATH: ${{ github.event_path }}
+        run: scripts/check-docs.sh
+
+  pr-size:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Pull request size
+        env:
+          GITHUB_EVENT_PATH: ${{ github.event_path }}
+        run: |
+          set -euo pipefail
+          if jq -e '.pull_request.labels[]? | select(.name=="large-change-approved")' "$GITHUB_EVENT_PATH" >/dev/null; then
+            echo "large-change-approved present"
+            exit 0
+          fi
+          base=$(jq -r '.pull_request.base.sha // empty' "$GITHUB_EVENT_PATH")
+          if [ -z "$base" ]; then
+            echo "PR base SHA missing"
+            exit 1
+          fi
+          lines=$(git diff --numstat "$base"...HEAD | awk '{s+=$1+$2} END {print s+0}')
+          echo "changed lines: $lines"
+          if [ "$lines" -gt 400 ]; then
+            echo "PR exceeds 400 changed lines (add large-change-approved label to override)"
+            exit 1
+          fi
+
+  agent-evals:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run eval scaffold
+        run: evals/run.sh

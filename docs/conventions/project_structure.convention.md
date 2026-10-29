@@ -200,10 +200,10 @@ src/types/
 
 ---
 
-## Health Module — `src/health/`
+## Health Module — `src/core/health/`
 
 ```
-src/health/
+src/core/health/
 ├── health.controller.ts        # GET /health endpoint
 └── health.module.ts
 ```

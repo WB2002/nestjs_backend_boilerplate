@@ -1,0 +1,15 @@
+{
+  "note": "Initial baseline at AI-SDLC integration. Tighten after docs/adr/0001-stack.md is accepted.",
+  "metrics": {
+    "test_coverage": 0,
+    "lint_warnings": 100,
+    "type_escape_hatches": 0,
+    "duplication": 0,
+    "max_complexity": 29,
+    "dead_code": 0,
+    "dependency_count": 200,
+    "mutation_score": null,
+    "bundle_size": null
+  },
+  "optional": ["mutation_score", "bundle_size"]
+}

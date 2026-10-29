@@ -15,9 +15,9 @@ import {
 import { Test } from '@nestjs/testing';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { FeatureFlagHealthIndicator } from '../../../src/feature-flag';
+import { FeatureFlagHealthIndicator } from '@/core/feature-flag';
 import { ShutdownModule } from '../../../src/core/shutdown';
-import { HealthController } from '../../../src/health/health.controller';
+import { HealthController } from '@/core/health/health.controller';
 
 describe('REST contract: GET /health/ready', () => {
   let app: NestFastifyApplication;

@@ -14,7 +14,7 @@ import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { join } from 'path';
 import depthLimit = require('graphql-depth-limit'); // eslint-disable-line @typescript-eslint/no-require-imports
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { HealthModule } from './health/health.module';
+import { HealthModule } from './core/health/health.module';
 import { RedisModule } from './common/redis/redis.module';
 import { HttpClientModule } from './core/http-client';
 import { AppController } from './app.controller';
@@ -57,13 +57,16 @@ import {
   resolveCacheStorageFromConfig,
   resolveRateLimitStorageFromConfig,
 } from './common/config/resolve-coordination-storage';
-import { UploadsModule } from './uploads/uploads.module';
-import { CountryAccessModule, CountryAccessGuard } from './country-access';
+import { UploadsModule } from './common/uploads/uploads.module';
+import {
+  CountryAccessModule,
+  CountryAccessGuard,
+} from './common/country-access';
 import { CaptchaModule } from './core/captcha';
 import { NotificationModule } from './core/notification';
 import { ExampleModule } from './example/example.module';
 import { ExampleJobsModule } from './example/example-jobs.module';
-import { FeatureFlagModule } from './feature-flag';
+import { FeatureFlagModule } from './core/feature-flag';
 import { InboundPriorityBulkheadGuard, OverloadModule } from './core/overload';
 import {
   CsrfModule,
