@@ -60,24 +60,23 @@ rules:
         - test/
         - scripts/
 
-  - id: nestjs.obfuscated-exfil.env-keys-to-fetch
-    message: Sending process.env keys/values to fetch (possible exfil).
+  - id: nestjs.obfuscated-exfil.env-to-fetch
+    message: Sending process.env to fetch (possible exfil).
     severity: ERROR
     languages: [javascript, typescript]
-    patterns:
-      - pattern-either:
-          - pattern: |
-              fetch($URL, {..., body: JSON.stringify(process.env), ...})
-          - pattern: |
-              fetch($URL, {..., body: JSON.stringify(Object.keys(process.env)), ...})
-          - pattern: |
-              fetch($URL, {..., body: $BODY, ...})
-          - metavariable-pattern:
-              metavariable: $BODY
-              patterns:
-                - pattern-either:
-                    - pattern: process.env
-                    - pattern: Object.keys(process.env)
+    pattern: |
+      fetch($URL, {..., body: JSON.stringify(process.env), ...})
+    paths:
+      include:
+        - src/
+        - scripts/
+
+  - id: nestjs.obfuscated-exfil.env-keys-to-fetch
+    message: Sending process.env keys to fetch (possible exfil).
+    severity: ERROR
+    languages: [javascript, typescript]
+    pattern: |
+      fetch($URL, {..., body: JSON.stringify(Object.keys(process.env)), ...})
     paths:
       include:
         - src/
