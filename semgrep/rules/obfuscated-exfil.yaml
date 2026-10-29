@@ -1,0 +1,84 @@
+rules:
+  - id: nestjs.obfuscated-exfil.eval-call
+    message: Avoid eval(); common in obfuscated exfil malware.
+    severity: ERROR
+    languages: [javascript, typescript]
+    patterns:
+      - pattern-either:
+          - pattern: eval($X)
+          - pattern: eval($X, ...)
+    tests:
+      - match: eval('1')
+      - no-match: redis.eval('script', 1, 'key')
+    paths:
+      include:
+        - src/
+        - test/
+        - scripts/
+
+  - id: nestjs.obfuscated-exfil.new-function
+    message: Avoid new Function(); common in obfuscated exfil malware.
+    severity: ERROR
+    languages: [javascript, typescript]
+    patterns:
+      - pattern: new Function(...)
+    paths:
+      include:
+        - src/
+        - test/
+        - scripts/
+
+  - id: nestjs.obfuscated-exfil.vm-runInThisContext
+    message: Avoid vm.runInThisContext with dynamic input.
+    severity: ERROR
+    languages: [javascript, typescript]
+    patterns:
+      - pattern-either:
+          - pattern: vm.runInThisContext($CODE, ...)
+          - pattern: runInThisContext($CODE, ...)
+    paths:
+      include:
+        - src/
+        - test/
+        - scripts/
+
+  - id: nestjs.obfuscated-exfil.base64-to-eval
+    message: Base64 decode chained to eval/Function (obfuscation pattern).
+    severity: ERROR
+    languages: [javascript, typescript]
+    pattern-either:
+      - pattern: eval(Buffer.from($PAYLOAD, 'base64').toString(...))
+      - pattern: eval(atob($PAYLOAD))
+      - pattern: new Function(Buffer.from($PAYLOAD, 'base64').toString(...))
+      - pattern: new Function(atob($PAYLOAD))
+    tests:
+      - match: eval(Buffer.from('YWRtaW4=', 'base64').toString('utf8'))
+      - no-match: Buffer.from('YWRtaW4=', 'base64').toString('utf8')
+    paths:
+      include:
+        - src/
+        - test/
+        - scripts/
+
+  - id: nestjs.obfuscated-exfil.env-keys-to-fetch
+    message: Sending process.env keys/values to fetch (possible exfil).
+    severity: ERROR
+    languages: [javascript, typescript]
+    patterns:
+      - pattern-either:
+          - pattern: |
+              fetch($URL, {..., body: JSON.stringify(process.env), ...})
+          - pattern: |
+              fetch($URL, {..., body: JSON.stringify(Object.keys(process.env)), ...})
+          - pattern: |
+              fetch($URL, {..., body: $BODY, ...})
+          - metavariable-pattern:
+              metavariable: $BODY
+              patterns:
+                - pattern-either:
+                    - pattern: process.env
+                    - pattern: Object.keys(process.env)
+    paths:
+      include:
+        - src/
+        - scripts/

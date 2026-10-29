@@ -59,6 +59,38 @@ export default tseslint.config(
     },
   },
   {
+    files: ['src/**/*.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "CallExpression[callee.name='eval']",
+          message:
+            'eval() is forbidden in application code (obfuscation/exfil risk).',
+        },
+        {
+          selector: "NewExpression[callee.name='Function']",
+          message: 'new Function() is forbidden in application code.',
+        },
+      ],
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'node:vm',
+              message: 'Dynamic vm execution is forbidden in application code.',
+            },
+            {
+              name: 'vm',
+              message: 'Dynamic vm execution is forbidden in application code.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ['**/*.spec.ts', '**/*.integration.spec.ts'],
     rules: {
       'sonarjs/no-clear-text-protocols': 'off',
@@ -67,6 +99,14 @@ export default tseslint.config(
       'sonarjs/no-alphabetical-sort': 'off',
       'sonarjs/no-unused-vars': 'off',
       '@typescript-eslint/no-require-imports': 'off',
+    },
+  },
+  {
+    files: ['test/security/semgrep-fixtures/**/*.ts'],
+    rules: {
+      'no-restricted-syntax': 'off',
+      'sonarjs/code-eval': 'off',
+      'security/detect-eval-with-expression': 'off',
     },
   },
   {

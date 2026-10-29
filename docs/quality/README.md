@@ -4,18 +4,20 @@ Deterministic checks run locally via `pnpm quality:*` and in GitHub Actions (`.g
 
 ## Commands
 
-| Script                                  | Purpose                                              |
-| --------------------------------------- | ---------------------------------------------------- |
-| `pnpm quality`                          | Full sequential run (slow; use before opening a PR)  |
-| `pnpm quality:lint`                     | ESLint without `--fix`                               |
-| `pnpm quality:types`                    | `tsc --noEmit` + `tsd` type tests                    |
-| `pnpm quality:unit`                     | Jest unit tests                                      |
-| `pnpm quality:integration`              | Jest + Testcontainers (requires Docker)              |
-| `pnpm quality:property`                 | fast-check property suite                            |
-| `pnpm quality:contract`                 | REST JSON Schema + GraphQL SDL snapshot              |
-| `pnpm quality:mutation`                 | Stryker on changed `src/**/*.ts` files               |
-| `pnpm quality:supply-chain`             | Frozen lockfile, `pnpm audit`, Trivy filesystem scan |
-| `pnpm quality:contract:update-snapshot` | Regenerate GraphQL SDL snapshot after schema changes |
+| Script                                  | Purpose                                                                                     |
+| --------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `pnpm quality`                          | Full sequential run (slow; use before opening a PR)                                         |
+| `pnpm quality:lint`                     | ESLint without `--fix`                                                                      |
+| `pnpm quality:types`                    | `tsc --noEmit` + `tsd` type tests                                                           |
+| `pnpm quality:unit`                     | Jest unit tests                                                                             |
+| `pnpm quality:integration`              | Jest + Testcontainers (requires Docker)                                                     |
+| `pnpm quality:property`                 | fast-check property suite                                                                   |
+| `pnpm quality:contract`                 | REST JSON Schema + GraphQL SDL snapshot                                                     |
+| `pnpm quality:mutation`                 | Stryker on changed `src/**/*.ts` files                                                      |
+| `pnpm quality:app-security`             | Semgrep (local rules + OSS registry) + long-base64 heuristic on `src/`, `test/`, `scripts/` |
+| `pnpm quality:app-security:changed`     | Same as app-security but Semgrep only on changed app paths                                  |
+| `pnpm quality:supply-chain`             | Frozen lockfile, `pnpm audit`, OSV-Scanner, Trivy vuln + secrets on app paths               |
+| `pnpm quality:contract:update-snapshot` | Regenerate GraphQL SDL snapshot after schema changes                                        |
 
 ## Hooks
 
@@ -26,14 +28,38 @@ Deterministic checks run locally via `pnpm quality:*` and in GitHub Actions (`.g
 
 Require these status checks on `main` / `master`:
 
-- `lint`, `types`, `supply-chain`, `unit`, `integration`, `property`, `contract`, `mutation`, `secrets`
+- `lint`, `types`, `app-security`, `supply-chain`, `unit`, `integration`, `property`, `contract`, `mutation`, `secrets`
+- `dependency-review` (pull requests) from `.github/workflows/dependency-review.yml`
 - CodeQL `Analyze` job from `.github/workflows/codeql.yml`
+
+## App security (first-party code)
+
+Scans **your** TypeScript and shell under `src/`, `test/`, and `scripts/`—not `node_modules`.
+
+- **Semgrep:** custom rules in `semgrep/rules/obfuscated-exfil.yaml` (eval/Function/vm, base64→execute, env→fetch) plus OSS configs `p/javascript` and `p/nodejs`. CI runs `semgrep --test` on those rules before scanning.
+- **Long-base64 heuristic:** `scripts/ci/scan-long-base64-literals.sh` flags very long base64-like string literals (tune with `BASE64_LITERAL_MIN_LEN`).
+- **ESLint:** `src/**/*.ts` forbids global `eval`, `new Function`, and `node:vm` imports.
+- **Fixture:** `test/security/semgrep-fixtures/` holds intentional bad samples for rule tests; excluded from CI scans.
+
+Local tooling (or use Docker images referenced in `scripts/ci/*.sh`):
+
+```bash
+brew install semgrep osv-scanner trivy
+pip install semgrep   # alternative Semgrep install
+pnpm quality:app-security
+```
 
 ## Supply chain
 
 - **`pnpm audit`:** fails on high/critical advisories; use `pnpm.overrides` in `package.json` when patches exist.
-- **Trivy:** install CLI locally or use Docker (`scripts/ci/run-trivy.sh`); CI uses `aquasecurity/trivy-action`.
+- **OSV-Scanner:** `scripts/ci/run-osv-scanner.sh` against `pnpm-lock.yaml`.
+- **Trivy:** `run-trivy.sh` (vulns, skips `node_modules`) and `run-trivy-app-secrets.sh` (secrets on `src`, `test`, `scripts` only). CI installs Trivy via `aquasecurity/setup-trivy`.
+- **Dependency Review:** GitHub Action on pull requests (`.github/workflows/dependency-review.yml`).
 - **Dependabot:** weekly npm and GitHub Actions PRs (`.github/dependabot.yml`).
+
+## Open-source only
+
+This toolchain uses **Semgrep**, **OSV-Scanner**, **Trivy**, **Gitleaks**, **CodeQL**, **pnpm audit**, and **GitHub Dependency Review**—not commercial scanners (e.g. Socket or Snyk paid tiers).
 
 ## Mutation testing
 
@@ -66,4 +92,4 @@ Until `CODEQL_UPLOAD` is `true`, the workflow analyzes code but skips SARIF uplo
 
 Enable [Cursor Bugbot](https://cursor.com/docs/bugbot) or CodeRabbit on the repository. The `AI Review (optional)` workflow does not fail merges.
 
-Design spec: [../superpowers/specs/2026-10-29-quality-toolchain-design.md](../superpowers/specs/2026-10-29-quality-toolchain-design.md)
+Design specs: [quality toolchain](../superpowers/specs/2026-10-29-quality-toolchain-design.md), [source security CI layering](../superpowers/specs/2026-10-29-source-security-ci-layering-design.md)

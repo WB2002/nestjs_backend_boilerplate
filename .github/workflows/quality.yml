@@ -34,6 +34,27 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm quality:types
 
+  app-security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Semgrep
+        run: pip install semgrep
+      - name: Semgrep rule tests
+        run: semgrep --config semgrep/rules/obfuscated-exfil.yaml --test semgrep/rules/obfuscated-exfil.yaml
+      - run: pnpm quality:app-security
+
   supply-chain:
     runs-on: ubuntu-latest
     steps:
@@ -43,14 +64,15 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: pnpm
+      - uses: aquasecurity/setup-trivy@v0.2.0
       - run: pnpm install --frozen-lockfile && ./scripts/ci/run-pnpm-audit.sh
-      - name: Trivy scan
-        uses: aquasecurity/trivy-action@v0.36.0
+      - name: OSV-Scanner
+        uses: google/osv-scanner-action@v2
         with:
-          scan-type: fs
-          scan-ref: .
-          severity: HIGH,CRITICAL
-          exit-code: 1
+          scan-args: |-
+            --lockfile=pnpm-lock.yaml
+      - run: ./scripts/ci/run-trivy.sh
+      - run: ./scripts/ci/run-trivy-app-secrets.sh
 
   unit:
     runs-on: ubuntu-latest

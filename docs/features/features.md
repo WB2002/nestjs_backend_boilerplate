@@ -97,7 +97,8 @@ Last reviewed against the boilerplate roadmap (code audit, not task status). Upd
 | File upload + type validation     | **Done**    | Magic bytes, optional ClamAV                                                                                              |
 | Bot detection (beyond CAPTCHA)    | **Missing** | —                                                                                                                         |
 | Secrets scanning (git hooks)      | **Done**    | Gitleaks pre-commit                                                                                                       |
-| Dependency vulnerability scanning | **Done**    | `pnpm audit` + Trivy in CI; Dependabot — [quality README](../quality/README.md)                                           |
+| Dependency vulnerability scanning | **Done**    | `pnpm audit`, OSV-Scanner, Trivy, Dependency Review; Dependabot — [quality README](../quality/README.md)                  |
+| App-source security (Semgrep)     | **Done**    | Obfuscation/exfil heuristics on `src/`/`test/`/`scripts/` — [quality README](../quality/README.md)                        |
 | PII tagging / data masking        | **Partial** | App logs + HttpClient telemetry — [pii_log_redaction.feature.md](./pii_log_redaction.feature.md); OTel attrs not redacted |
 | Row-level security                | **Missing** | Deferred                                                                                                                  |
 | Cookies support                   | **Done**    | `@fastify/cookie`, session / access tokens                                                                                |

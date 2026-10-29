@@ -21,7 +21,7 @@
     "test:integration": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --watchman=false --runInBand --config jest.integration.config.ts --testPathPatterns=integration.spec",
     "smoke:shutdown": "./scripts/smoke-graceful-shutdown.sh",
     "prepare": "husky",
-    "quality": "pnpm quality:lint && pnpm quality:types && pnpm quality:unit && pnpm quality:integration && pnpm quality:property && pnpm quality:contract && pnpm quality:mutation && pnpm quality:supply-chain",
+    "quality": "pnpm quality:lint && pnpm quality:types && pnpm quality:unit && pnpm quality:integration && pnpm quality:property && pnpm quality:contract && pnpm quality:mutation && pnpm quality:app-security && pnpm quality:supply-chain",
     "quality:lint": "eslint \"{src,apps,libs}/**/*.ts\"",
     "quality:types": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.tsd-emit.json && tsd --files test/type/overload-utilization.test-d.ts --typings .tsd-emit/core/overload/priority/should-shed-priority-request.d.ts",
     "quality:unit": "pnpm test:unit",
@@ -29,8 +29,10 @@
     "quality:property": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --watchman=false -c jest.property.config.ts",
     "quality:contract": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --watchman=false -c jest.contract.config.ts",
     "quality:mutation": "./scripts/ci/run-mutation.sh",
+    "quality:app-security": "./scripts/ci/run-semgrep.sh && ./scripts/ci/scan-long-base64-literals.sh",
+    "quality:app-security:changed": "SEMGREP_SCOPE=changed ./scripts/ci/run-semgrep.sh && ./scripts/ci/scan-long-base64-literals.sh",
     "quality:contract:update-snapshot": "./scripts/ci/merge-graphql-sdl.sh > test/contracts/graphql/schema.snapshot.graphql",
-    "quality:supply-chain": "pnpm install --frozen-lockfile && ./scripts/ci/run-pnpm-audit.sh && ./scripts/ci/run-trivy.sh"
+    "quality:supply-chain": "pnpm install --frozen-lockfile && ./scripts/ci/run-pnpm-audit.sh && ./scripts/ci/run-osv-scanner.sh && ./scripts/ci/run-trivy.sh && ./scripts/ci/run-trivy-app-secrets.sh"
   },
   "dependencies": {
     "@apollo/server": "^5.5.0",
