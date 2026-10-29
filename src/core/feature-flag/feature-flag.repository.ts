@@ -39,13 +39,13 @@ export class FeatureFlagRepository {
 
   async ping(): Promise<boolean> {
     try {
-      const result = await Promise.race([
+      const casResponse = await Promise.race([
         this.redis.ping(),
         new Promise<string>((_, reject) => {
           setTimeout(() => reject(new Error('Redis ping timeout')), 2_000);
         }),
       ]);
-      return result === 'PONG';
+      return casResponse === 'PONG';
     } catch {
       return false;
     }
@@ -109,7 +109,7 @@ export class FeatureFlagRepository {
       featureFlagEventsChannel(),
     ];
 
-    let result: unknown;
+    let casResponse: unknown;
     try {
       if (!this.scriptSha) {
         await this.ensureScriptLoaded();
@@ -118,7 +118,12 @@ export class FeatureFlagRepository {
       if (!sha) {
         throw new Error('Feature flag CAS script failed to load');
       }
-      result = await this.redis.evalsha(sha, keys.length, ...keys, ...args);
+      casResponse = await this.redis.evalsha(
+        sha,
+        keys.length,
+        ...keys,
+        ...args,
+      );
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       if (message.includes('NOSCRIPT')) {
@@ -128,13 +133,18 @@ export class FeatureFlagRepository {
         if (!sha) {
           throw new Error('Feature flag CAS script failed to reload');
         }
-        result = await this.redis.evalsha(sha, keys.length, ...keys, ...args);
+        casResponse = await this.redis.evalsha(
+          sha,
+          keys.length,
+          ...keys,
+          ...args,
+        );
       } else {
         throw error;
       }
     }
 
-    return this.parseCasResult(result);
+    return this.parseCasResult(casResponse);
   }
 
   private async ensureScriptLoaded(): Promise<void> {
@@ -164,13 +174,13 @@ export class FeatureFlagRepository {
     }
   }
 
-  private parseCasResult(result: unknown): IFeatureFlagCasResult {
-    if (!Array.isArray(result) || result.length < 3) {
+  private parseCasResult(casResponse: unknown): IFeatureFlagCasResult {
+    if (!Array.isArray(casResponse) || casResponse.length < 3) {
       throw new Error('Unexpected CAS script response');
     }
-    const status = String(result[0]) as FeatureFlagCasStatus;
-    const version = Number(result[1]);
-    const currentJson = String(result[2] ?? '');
+    const status = String(casResponse[0]) as FeatureFlagCasStatus;
+    const version = Number(casResponse[1]);
+    const currentJson = String(casResponse[2] ?? '');
     return {
       status,
       version: Number.isFinite(version) ? version : 0,

@@ -21,8 +21,9 @@ export class FeatureFlagReconciler {
   private timer: NodeJS.Timeout | null = null;
   private environment = '';
   private cache: FeatureFlagCache | null = null;
-  private onResult: ((result: IFeatureFlagReconcileResult) => void) | null =
-    null;
+  private onResult:
+    | ((reconcileResult: IFeatureFlagReconcileResult) => void)
+    | null = null;
 
   constructor(
     private readonly repository: FeatureFlagRepository,
@@ -32,7 +33,7 @@ export class FeatureFlagReconciler {
   start(params: {
     environment: string;
     cache: FeatureFlagCache;
-    onResult: (result: IFeatureFlagReconcileResult) => void;
+    onResult: (reconcileResult: IFeatureFlagReconcileResult) => void;
   }): void {
     this.environment = params.environment;
     this.cache = params.cache;
@@ -66,22 +67,22 @@ export class FeatureFlagReconciler {
 
     try {
       const flags = await this.repository.loadAllFlags(this.environment);
-      const skipped = this.cache.replaceAll(flags);
-      const result: IFeatureFlagReconcileResult = {
+      const skippedInvalidFlags = this.cache.replaceAll(flags);
+      const reconcileResult: IFeatureFlagReconcileResult = {
         success: true,
         flagCount: this.cache.size(),
-        skipped,
+        skipped: skippedInvalidFlags,
         error: null,
       };
       this.logger.log(
-        `${FeatureFlagLogEvent.RECONCILIATION} count=${result.flagCount} skipped=${skipped}`,
+        `${FeatureFlagLogEvent.RECONCILIATION} count=${reconcileResult.flagCount} skipped=${skippedInvalidFlags}`,
       );
       void emitFeatureFlagMetrics({
         enabled: this.metricsEnabled(),
         name: 'feature_flag_reconciliation_total',
       });
-      this.onResult?.(result);
-      return result;
+      this.onResult?.(reconcileResult);
+      return reconcileResult;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       this.logger.warn(
@@ -91,14 +92,14 @@ export class FeatureFlagReconciler {
         enabled: this.metricsEnabled(),
         name: 'feature_flag_redis_errors',
       });
-      const result: IFeatureFlagReconcileResult = {
+      const reconcileResult: IFeatureFlagReconcileResult = {
         success: false,
         flagCount: this.cache.size(),
         skipped: 0,
         error: message,
       };
-      this.onResult?.(result);
-      return result;
+      this.onResult?.(reconcileResult);
+      return reconcileResult;
     }
   }
 

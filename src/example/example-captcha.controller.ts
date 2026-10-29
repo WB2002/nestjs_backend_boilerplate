@@ -36,11 +36,14 @@ export class ExampleCaptchaController {
     @Req() req: FastifyRequest,
   ): Promise<{ message: string }> {
     try {
-      const result = await this.captchaService.verify(dto.captchaToken, {
-        remoteIp: req.ip,
-      });
+      const verificationResult = await this.captchaService.verify(
+        dto.captchaToken,
+        {
+          remoteIp: req.ip,
+        },
+      );
 
-      if (!result.success) {
+      if (!verificationResult.success) {
         throw new BadRequestException('Captcha verification failed');
       }
 

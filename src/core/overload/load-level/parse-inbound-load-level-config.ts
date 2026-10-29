@@ -4,9 +4,12 @@ export const DEFAULT_INBOUND_LOAD_LEVEL_MAX_QUEUE = 100;
 export const DEFAULT_INBOUND_LOAD_LEVEL_MAX_WAIT_MS = 2_000;
 export const DEFAULT_INBOUND_LOAD_LEVEL_POLL_MS = 25;
 
-function parseBoolean(value: string | undefined, fallback: boolean): boolean {
+function parseBoolean(
+  value: string | undefined,
+  isDefaultOn: boolean,
+): boolean {
   if (value === undefined || value.trim() === '') {
-    return fallback;
+    return isDefaultOn;
   }
   const normalized = value.trim().toLowerCase();
   if (normalized === 'true' || normalized === '1' || normalized === 'yes') {
@@ -15,7 +18,7 @@ function parseBoolean(value: string | undefined, fallback: boolean): boolean {
   if (normalized === 'false' || normalized === '0' || normalized === 'no') {
     return false;
   }
-  return fallback;
+  return isDefaultOn;
 }
 
 function parsePositiveInt(value: string | undefined, fallback: number): number {

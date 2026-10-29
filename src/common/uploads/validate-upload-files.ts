@@ -127,7 +127,7 @@ export async function validateUploadFiles(
       storedName: `${id}${extension}`,
       mimeType: detected.mime,
       size: file.buffer.length,
-      scanned: scanner.performsScan,
+      scanned: scanner.isScanningEnabled,
     });
   }
 

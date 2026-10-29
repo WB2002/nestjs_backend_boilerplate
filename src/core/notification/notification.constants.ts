@@ -13,7 +13,7 @@ export const NOTIFICATION_PREFERRED_METADATA_KEYS = [
   'operationId',
   'userId',
   'durationMs',
-  'result',
+  'operationStatus',
 ] as const;
 
 export const NOTIFICATION_MAX_METADATA_STRING_LENGTH = 200;

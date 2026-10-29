@@ -47,11 +47,11 @@ export class RateLimitGuard extends ThrottlerGuard {
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const skip = this.reflector.getAllAndOverride<boolean>(
+    const shouldSkip = this.reflector.getAllAndOverride<boolean>(
       SKIP_RATE_LIMIT_KEY,
       [context.getHandler(), context.getClass()],
     );
-    if (skip) {
+    if (shouldSkip) {
       return true;
     }
 
@@ -130,24 +130,24 @@ export class RateLimitGuard extends ThrottlerGuard {
         policy,
       };
 
-      const result = await this.backend.consume(consumeContext);
+      const consumeResult = await this.backend.consume(consumeContext);
 
       if (this.rateLimitOptions.onDecision) {
-        await this.rateLimitOptions.onDecision(consumeContext, result);
+        await this.rateLimitOptions.onDecision(consumeContext, consumeResult);
       }
 
       this.setRateLimitHeaders(
         res,
         method.limit,
-        result.remaining,
+        consumeResult.remaining,
         nowMs,
-        result.resetMs,
+        consumeResult.resetMs,
       );
 
-      if (!result.allowed) {
+      if (!consumeResult.allowed) {
         const retryAfterSec = Math.max(
           1,
-          Math.ceil(result.retryAfterMs / 1000),
+          Math.ceil(consumeResult.retryAfterMs / 1000),
         );
         if (typeof res.header === 'function') {
           res.header('Retry-After', String(retryAfterSec));
@@ -158,7 +158,7 @@ export class RateLimitGuard extends ThrottlerGuard {
           {
             statusCode: HttpStatus.TOO_MANY_REQUESTS,
             message: 'Too Many Requests',
-            retryAfterMs: result.retryAfterMs,
+            retryAfterMs: consumeResult.retryAfterMs,
             policy,
           },
           HttpStatus.TOO_MANY_REQUESTS,

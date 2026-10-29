@@ -118,15 +118,15 @@ export class CountryAccessService
   private async doRefresh(): Promise<void> {
     try {
       const configs = await this.repository.getAll();
-      const enabled = new Set<string>();
+      const enabledCountryCodes = new Set<string>();
       for (const config of configs) {
         const code = assertCountryCode(config.countryCode);
         if (config.enabled) {
-          enabled.add(code);
+          enabledCountryCodes.add(code);
         }
       }
 
-      const newSnapshot: ReadonlySet<string> = enabled;
+      const newSnapshot: ReadonlySet<string> = enabledCountryCodes;
       this.allowedCountries = newSnapshot;
       this.snapshotVersion += 1;
       this.lastSuccessfulRefreshAt = new Date();

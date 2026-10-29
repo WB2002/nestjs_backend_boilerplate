@@ -43,9 +43,9 @@ export class WsConnectionLimiterService implements OnModuleDestroy {
     }
     for (let i = 0; i < members.length; i += 1) {
       const entry = existsResults[i];
-      const exists = entry?.[1] === 1;
+      const isAliveKeyPresent = entry?.[1] === 1;
       const socketId = members[i];
-      if (!exists && socketId) {
+      if (!isAliveKeyPresent && socketId) {
         await client.srem(setKey, socketId);
       }
     }

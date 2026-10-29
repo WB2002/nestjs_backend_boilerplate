@@ -40,10 +40,15 @@ export class DnsCache {
       hints: lookupOptions?.hints ?? this.options.hints,
       all: false,
     })
-      .then((result) => {
-        const address = typeof result === 'string' ? result : result.address;
+      .then((resolvedAddresses) => {
+        const address =
+          typeof resolvedAddresses === 'string'
+            ? resolvedAddresses
+            : resolvedAddresses.address;
         const resultFamily =
-          typeof result === 'string' ? family || 4 : result.family;
+          typeof resolvedAddresses === 'string'
+            ? family || 4
+            : resolvedAddresses.family;
         this.cache.set(key, {
           address,
           family: resultFamily,

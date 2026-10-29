@@ -64,7 +64,7 @@ export class ClientRuntime {
   private readonly gate: ConcurrencyGate | undefined;
   private readonly coalescer = new RequestCoalescer();
   private readonly inflight = new Set<Promise<unknown>>();
-  private closed = false;
+  private isClosed = false;
 
   constructor(
     private readonly policy: ClientPolicySnapshot,
@@ -97,7 +97,7 @@ export class ClientRuntime {
   }
 
   async request<T = unknown>(input: HttpRequest): Promise<HttpResponse<T>> {
-    if (this.closed) {
+    if (this.isClosed) {
       throw new ClientClosedError();
     }
 
@@ -111,7 +111,7 @@ export class ClientRuntime {
   }
 
   async close(graceMs: number): Promise<void> {
-    this.closed = true;
+    this.isClosed = true;
     this.coalescer.clear();
     this.gate?.close(new ClientClosedError());
     this.oauth?.clear();
@@ -175,12 +175,12 @@ export class ClientRuntime {
       timeoutMs: deadlineMerge.timeoutMs,
     });
 
-    const propagateHeader =
+    const shouldPropagateHeader =
       this.policy.deadlinePropagation?.propagateHeader ??
       defaultPropagateDeadlineHeader(this.policy.identity.kind);
     const deadlineHeaders = resolveOutboundDeadlineHeaders(
       withoutUndefined({
-        propagate: propagateHeader,
+        propagate: shouldPropagateHeader,
         inboundDeadlineAt: getDeadlineAt(),
         existingHeaders: request.headers as Record<string, string | undefined>,
       }),
@@ -238,13 +238,13 @@ export class ClientRuntime {
           return response;
         } catch (error) {
           if (this.breaker) {
-            const halfOpen = this.breaker.getState() === 'half_open';
+            const isHalfOpen = this.breaker.getState() === 'half_open';
             const isCircuitOpenError =
               error instanceof CircuitOpenError ||
               (error instanceof Error && error.name === 'CircuitOpenError');
             const isFailure = isCircuitOpenError
               ? false
-              : halfOpen
+              : isHalfOpen
                 ? true
                 : isBreakerFailure(
                     error,
@@ -345,7 +345,7 @@ export class ClientRuntime {
     const retryPolicy = this.policy.retry;
     const maxAttempts = retryPolicy?.maxAttempts ?? 1;
     const hasIdempotencyKey = Boolean(operation.idempotencyKey);
-    const retryAllowed =
+    const isRetryAllowed =
       !retryPolicy || isRetryEligible(request, retryPolicy, hasIdempotencyKey);
 
     let lastError: unknown;
@@ -382,7 +382,7 @@ export class ClientRuntime {
           : defaultIsTransient(error);
 
         if (
-          !retryAllowed ||
+          !isRetryAllowed ||
           !retryPolicy ||
           attempt >= maxAttempts ||
           !isTransient

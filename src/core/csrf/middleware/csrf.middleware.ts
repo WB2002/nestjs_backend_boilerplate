@@ -20,7 +20,7 @@ import { CsrfModuleOptions } from '../types/csrf.types';
 
 @Injectable()
 export class CsrfMiddleware implements NestMiddleware, OnModuleInit {
-  private hookRegistered = false;
+  private isHookRegistered = false;
   private readonly options: Required<CsrfModuleOptions>;
 
   constructor(
@@ -37,7 +37,7 @@ export class CsrfMiddleware implements NestMiddleware, OnModuleInit {
   }
 
   onModuleInit(): void {
-    if (this.hookRegistered) {
+    if (this.isHookRegistered) {
       return;
     }
     const instance =
@@ -45,7 +45,7 @@ export class CsrfMiddleware implements NestMiddleware, OnModuleInit {
     instance.addHook('onRequest', async (req, reply) => {
       this.enforceOnRequest(req, reply);
     });
-    this.hookRegistered = true;
+    this.isHookRegistered = true;
   }
 
   /** Nest wiring only — validation runs on Fastify `onRequest` after cookies parse. */

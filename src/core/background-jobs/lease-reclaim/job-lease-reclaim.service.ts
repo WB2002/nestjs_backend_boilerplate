@@ -15,7 +15,7 @@ import { BackgroundJobStatus } from '../types/background-job.types';
 export class JobLeaseReclaimService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(JobLeaseReclaimService.name);
   private timer: NodeJS.Timeout | null = null;
-  private tickInFlight = false;
+  private isTickInFlight = false;
 
   constructor(
     private readonly repo: PostgresJobRepository,
@@ -54,10 +54,10 @@ export class JobLeaseReclaimService implements OnModuleInit, OnModuleDestroy {
   }
 
   async tick(): Promise<void> {
-    if (this.tickInFlight) {
+    if (this.isTickInFlight) {
       return;
     }
-    this.tickInFlight = true;
+    this.isTickInFlight = true;
     try {
       const rows = await this.repo.reclaimExpiredLeases(
         this.config.leaseReclaimBatchSize,
@@ -77,7 +77,7 @@ export class JobLeaseReclaimService implements OnModuleInit, OnModuleDestroy {
         `Lease reclaim tick failed: ${err instanceof Error ? err.message : err}`,
       );
     } finally {
-      this.tickInFlight = false;
+      this.isTickInFlight = false;
     }
   }
 }

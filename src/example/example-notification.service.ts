@@ -39,7 +39,7 @@ export class ExampleNotificationService {
       completedAt: new Date().toISOString(),
     };
 
-    let notificationSent = false;
+    let isNotificationSent = false;
     try {
       await this.notificationService.send({
         title: 'Operation Completed',
@@ -47,10 +47,10 @@ export class ExampleNotificationService {
         metadata: {
           ...dto.metadata,
           operationId,
-          result: 'success',
+          operationStatus: 'success',
         },
       });
-      notificationSent = true;
+      isNotificationSent = true;
     } catch (error) {
       this.logger.error({
         message: 'notification failed after successful operation',
@@ -66,7 +66,7 @@ export class ExampleNotificationService {
     return {
       status: 'success',
       operationId: operationResult.operationId,
-      notificationSent,
+      notificationSent: isNotificationSent,
     };
   }
 }

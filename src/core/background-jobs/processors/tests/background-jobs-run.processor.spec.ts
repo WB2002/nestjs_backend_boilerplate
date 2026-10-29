@@ -21,6 +21,8 @@ describe('BackgroundJobsRunProcessor', () => {
 
     const processor = new BackgroundJobsRunProcessor(repo, registry, config);
     await processor.process({
+      // BullMQ Job payload field
+      // eslint-disable-next-line id-denylist -- BullMQ Job shape
       data: { jobRowId: 'id-1' },
     } as Job<{ jobRowId: string }>);
 
@@ -46,6 +48,8 @@ describe('BackgroundJobsRunProcessor', () => {
 
     const processor = new BackgroundJobsRunProcessor(repo, registry, config);
     await processor.process({
+      // BullMQ Job payload field
+      // eslint-disable-next-line id-denylist -- BullMQ Job shape
       data: { jobRowId: 'id-1' },
     } as Job<{ jobRowId: string }>);
 

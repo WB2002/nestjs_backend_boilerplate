@@ -71,7 +71,7 @@ export class RequestDeadlineMiddleware implements NestMiddleware {
   ): void {
     const controller = new AbortController();
     let timer: ReturnType<typeof setTimeout> | undefined;
-    let finished = false;
+    let hasRequestFinished = false;
 
     const headerMs = parseTimeoutHeader(req.headers);
     const { timeoutMs } = resolveTimeoutMs({
@@ -118,7 +118,7 @@ export class RequestDeadlineMiddleware implements NestMiddleware {
      * Never extends an already-tighter deadlineAt.
      */
     const rescheduleFromStart = (timeoutMsFromStart: number): void => {
-      if (controller.signal.aborted || finished) {
+      if (controller.signal.aborted || hasRequestFinished) {
         return;
       }
       const ms = Math.max(1, Math.min(timeoutMsFromStart, this.maxTimeoutMs));
@@ -146,7 +146,7 @@ export class RequestDeadlineMiddleware implements NestMiddleware {
     }
 
     const onClientClose = (): void => {
-      if (finished) {
+      if (hasRequestFinished) {
         return;
       }
       if (res.raw?.writableEnded) {
@@ -156,7 +156,7 @@ export class RequestDeadlineMiddleware implements NestMiddleware {
     };
 
     const onFinish = (): void => {
-      finished = true;
+      hasRequestFinished = true;
       clearTimer();
       const raw = req.raw;
       if (raw?.off) {

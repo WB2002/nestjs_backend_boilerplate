@@ -16,12 +16,12 @@ import {
 
 export class RuntimeRegistry {
   private readonly runtimes = new Map<string, ClientRuntime>();
-  private closed = false;
+  private isClosed = false;
 
   constructor(private readonly poolRegistry: ConnectionPoolRegistry) {}
 
   getOrCreate(policy: ClientPolicySnapshot): ClientRuntime {
-    if (this.closed) {
+    if (this.isClosed) {
       throw new Error('Runtime registry is closed');
     }
     const key = runtimeKey(policy.identity, policy);
@@ -35,7 +35,7 @@ export class RuntimeRegistry {
   }
 
   async close(graceMs: number): Promise<void> {
-    this.closed = true;
+    this.isClosed = true;
     const closing = [...this.runtimes.values()].map((runtime) =>
       runtime.close(graceMs),
     );

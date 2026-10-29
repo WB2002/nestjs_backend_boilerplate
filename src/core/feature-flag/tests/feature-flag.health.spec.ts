@@ -40,12 +40,12 @@ describe('FeatureFlagHealthIndicator', () => {
       healthIndicatorService,
     );
 
-    const result = await indicator.isHealthy('feature_flags');
+    const outcome = await indicator.isHealthy('feature_flags');
 
     expect(featureFlagService.getHealthStatus).toHaveBeenCalled();
     expect(healthIndicatorService.check).toHaveBeenCalledWith('feature_flags');
-    expect(result.feature_flags?.status).toBe('up');
-    expect(result.feature_flags).toMatchObject({
+    expect(outcome.feature_flags?.status).toBe('up');
+    expect(outcome.feature_flags).toMatchObject({
       stale: false,
       redisAvailable: false,
     });

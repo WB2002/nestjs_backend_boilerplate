@@ -13,6 +13,7 @@ describe('WsRolesGuard', () => {
 
   const contextWithRole = (role: string | undefined): ExecutionContext => {
     const client = {
+      // eslint-disable-next-line id-denylist -- Socket.IO API
       data: { user: role ? { role } : undefined },
     } as AuthenticatedSocket;
     return {

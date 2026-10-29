@@ -23,7 +23,7 @@ import { RateLimiterModuleOptions } from '../types/rate-limit.types';
  */
 @Injectable()
 export class GuestIdMiddleware implements NestMiddleware, OnModuleInit {
-  private hookRegistered = false;
+  private isHookRegistered = false;
 
   constructor(
     private readonly httpAdapterHost: HttpAdapterHost,
@@ -32,7 +32,7 @@ export class GuestIdMiddleware implements NestMiddleware, OnModuleInit {
   ) {}
 
   onModuleInit(): void {
-    if (this.hookRegistered) {
+    if (this.isHookRegistered) {
       return;
     }
     const instance =
@@ -40,7 +40,7 @@ export class GuestIdMiddleware implements NestMiddleware, OnModuleInit {
     instance.addHook('onRequest', async (req, reply) => {
       this.ensureGuestId(req, reply);
     });
-    this.hookRegistered = true;
+    this.isHookRegistered = true;
   }
 
   /** Nest wiring only — cookie work is in the Fastify onRequest hook. */
@@ -96,13 +96,13 @@ export class GuestIdMiddleware implements NestMiddleware, OnModuleInit {
       this.options.guestCookie?.maxAge ?? DEFAULT_GUEST_COOKIE_MAX_AGE;
     const sameSite = this.options.guestCookie?.sameSite ?? 'lax';
     // Spec: Secure by default; override with guestCookie.secure: false for local HTTP.
-    const secure = this.options.guestCookie?.secure ?? true;
-    const httpOnly = this.options.guestCookie?.httpOnly ?? true;
+    const isSecure = this.options.guestCookie?.secure ?? true;
+    const isHttpOnly = this.options.guestCookie?.httpOnly ?? true;
     const path = this.options.guestCookie?.path ?? '/';
 
     reply.setCookie(cookieName, guestId, {
-      httpOnly,
-      secure,
+      httpOnly: isHttpOnly,
+      secure: isSecure,
       sameSite,
       path,
       maxAge,

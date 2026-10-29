@@ -50,11 +50,11 @@ export function evaluateFeatureFlag(
   context: IFeatureFlagContext,
   options: IFeatureFlagEvaluationOptions = {},
 ): IFeatureFlagEvaluationResult {
-  const defaultValue = options.defaultValue ?? false;
+  const isEnabledByDefault = options.defaultValue ?? false;
 
   if (!flag) {
     return {
-      enabled: defaultValue,
+      enabled: isEnabledByDefault,
       usedDefault: true,
       reason: 'missing_flag',
     };
@@ -77,7 +77,7 @@ export function evaluateFeatureFlag(
       percentage > 100
     ) {
       return {
-        enabled: defaultValue,
+        enabled: isEnabledByDefault,
         usedDefault: true,
         reason: 'invalid_percentage',
       };
@@ -86,7 +86,7 @@ export function evaluateFeatureFlag(
     const targetingValue = resolveTargetingValue(flag, context);
     if (!targetingValue) {
       return {
-        enabled: defaultValue,
+        enabled: isEnabledByDefault,
         usedDefault: true,
         reason: 'missing_targeting',
       };
@@ -101,7 +101,7 @@ export function evaluateFeatureFlag(
   }
 
   return {
-    enabled: defaultValue,
+    enabled: isEnabledByDefault,
     usedDefault: true,
     reason: 'missing_flag',
   };

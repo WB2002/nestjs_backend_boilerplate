@@ -17,12 +17,12 @@ describe('JobEnqueueService', () => {
     } as BackgroundJobsConfig;
 
     const service = new JobEnqueueService(repo, queue, config);
-    const result = await service.enqueue({
+    const outcome = await service.enqueue({
       jobName: 'example.echo',
       payload: { message: 'hi' },
     });
 
-    expect(result.enqueued).toBe(true);
+    expect(outcome.enqueued).toBe(true);
     expect(queue.add).toHaveBeenCalledWith(
       BACKGROUND_JOBS_RUN_JOB_NAME,
       { jobRowId: 'job-1' },
@@ -37,12 +37,12 @@ describe('JobEnqueueService', () => {
     const queue = { add: jest.fn() } as unknown as Queue;
     const config = { defaultQueueName: 'default' } as BackgroundJobsConfig;
     const service = new JobEnqueueService(repo, queue, config);
-    const result = await service.enqueue({
+    const outcome = await service.enqueue({
       jobName: 'example.echo',
       payload: {},
       dedupeKey: 'k',
     });
-    expect(result.deduplicated).toBe(true);
+    expect(outcome.deduplicated).toBe(true);
     expect(queue.add).not.toHaveBeenCalled();
   });
 

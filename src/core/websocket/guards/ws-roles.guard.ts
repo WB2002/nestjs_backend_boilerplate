@@ -24,8 +24,8 @@ export class WsRolesGuard implements CanActivate {
 
     const client = context.switchToWs().getClient<AuthenticatedSocket>();
     const role = client.data.user?.role;
-    const allowed = role !== undefined && required.some((r) => r === role);
-    if (!allowed) {
+    const isAllowed = role !== undefined && required.some((r) => r === role);
+    if (!isAllowed) {
       throw new ForbiddenException('Insufficient role');
     }
     return true;

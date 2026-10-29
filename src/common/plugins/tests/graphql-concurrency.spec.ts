@@ -35,16 +35,16 @@ describe('acquireRedisConcurrency', () => {
   it('sets EXPIRE on every successful incr', async () => {
     const redis = createMockRedis();
     const key = 'gql:concurrency:guest:x';
-    const result = await acquireRedisConcurrency(redis as never, key, 3, 300);
-    expect(result.acquired).toBe(true);
+    const outcome = await acquireRedisConcurrency(redis as never, key, 3, 300);
+    expect(outcome.acquired).toBe(true);
     expect(redis.expire).toHaveBeenCalledWith(key, 300);
   });
 
   it('rejects when over max without leaving counter elevated', async () => {
     const redis = createMockRedis();
     await acquireRedisConcurrency(redis as never, 'k', 1, 300);
-    const result = await acquireRedisConcurrency(redis as never, 'k', 1, 300);
-    expect(result.acquired).toBe(false);
+    const outcome = await acquireRedisConcurrency(redis as never, 'k', 1, 300);
+    expect(outcome.acquired).toBe(false);
     expect(redis.getValue()).toBe(1);
   });
 });

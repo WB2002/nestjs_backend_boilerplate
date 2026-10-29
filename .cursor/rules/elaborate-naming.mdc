@@ -1,0 +1,55 @@
+---
+description: Elaborate, domain-accurate names for variables and identifiers
+alwaysApply: true
+---
+
+# Elaborate naming
+
+`eslint.config.mjs` enforces casing, boolean prefixes, and placeholder identifiers on `src/**/*.ts`. This rule adds domain and semantic guidance lint cannot judge.
+
+## Mechanical rules (also in ESLint)
+
+- Booleans: `is` / `has` / `can` / `should` prefixes (`isRedisAvailable`, `shouldSkipDeadline`).
+- No placeholder identifiers: `data`, `result`, `item`, `temp`, `obj`, `val` — name what the value holds.
+- Units in numeric names: `timeoutMs`, `ttlSeconds`, `delayMs`, `maxRetries`, `sizeBytes`.
+
+## Domain glossary (canonical terms only)
+
+| Term | Meaning | Avoid |
+| --- | --- | --- |
+| `user` | Auth account (`User` schema, JWT `sub` / `userId`) | `account`, `customer`, `member` (unless tenant-scoped) |
+| `session` | MongoDB session + opaque `session_id` cookie UUID | `refreshToken` (no refresh JWT in this app) |
+| `sessionId` / `session.token` / JWT `jti` | Same rotating session UUID (see `auth.feature.md`) | inventing parallel names per layer |
+| `organization` / `organizationId` | Feature-flag evaluation context | `tenant`, `org`, `company` for the same attribute |
+| `category` | `categories` module entity | `item`, `record` |
+| `featureFlag` | Flag config / evaluation | bare `flag` when ambiguous |
+| `requestId` | Log/trace correlation | `reqId`, bare `id` |
+| `guestId` | Anonymous rate-limit cookie identity | `anonymousId`, `deviceId` (use `DeviceFingerprint` where that applies) |
+
+Persisted/API field `enabled` on feature flags and similar config is allowed (see ESLint `enabled` class-property exception).
+
+## Abbreviations
+
+Allowed: `id`, `url`, `dto`, `jwt`, `csrf`, `db`, `ctx`, `jti`, `ip`, `ua`, `env`, `ttl`, `ms`. Spell out everything else (`request` not `req`) except Fastify handler parameters that mirror framework types.
+
+## External APIs
+
+When a library requires a fixed identifier (Axios `data`, BullMQ `job.data`, Socket.IO `client.data`), keep the API shape and use `eslint-disable-next-line id-denylist` with a one-line comment — do not rename the external field.
+
+## Nest and persistence
+
+- Class name matches file: `categories.service.ts` → `CategoriesService`.
+- DTOs: `Create<Entity>Dto`, `Update<Entity>Dto`.
+- Mongo may use `_id` internally; DTOs/responses expose `id`.
+
+## Examples
+
+```typescript
+// ❌ BAD
+const result = await this.repository.casWrite({ ... });
+const enabled = parseBoolean(env.FEATURE, false);
+
+// ✅ GOOD
+const casWriteResponse = await this.repository.casWrite({ ... });
+const isFeatureEnabled = parseBoolean(env.FEATURE, false);
+```

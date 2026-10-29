@@ -45,8 +45,11 @@ export async function assertPublicHttpUrlAsync(raw: string): Promise<URL> {
 
   let records: string[];
   try {
-    const result = await dns.lookup(hostname, { all: true, verbatim: true });
-    records = result.map((r) => r.address);
+    const validatedUrl = await dns.lookup(hostname, {
+      all: true,
+      verbatim: true,
+    });
+    records = validatedUrl.map((r) => r.address);
   } catch {
     throw new UnsafeUrlError('URL hostname could not be resolved');
   }

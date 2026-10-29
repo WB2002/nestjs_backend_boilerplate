@@ -54,11 +54,11 @@ describe('HCaptchaService', () => {
       ok: true,
     });
 
-    const result = await service.verify('valid-token', {
+    const outcome = await service.verify('valid-token', {
       remoteIp: '203.0.113.10',
     });
 
-    expect(result).toEqual({ success: true });
+    expect(outcome).toEqual({ success: true });
     expect(post).toHaveBeenCalledWith('/siteverify', undefined, {
       formData: {
         secret: 'test-secret',

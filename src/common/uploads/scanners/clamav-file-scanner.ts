@@ -17,7 +17,7 @@ const DEFAULT_CHUNK_SIZE = 64 * 1024;
  */
 @Injectable()
 export class ClamAvFileScanner implements FileScanner {
-  readonly performsScan = true;
+  readonly isScanningEnabled = true;
 
   private readonly host: string;
   private readonly port: number;
@@ -69,13 +69,13 @@ export class ClamAvFileScanner implements FileScanner {
     return new Promise((resolve, reject) => {
       const socket = net.createConnection({ host: this.host, port: this.port });
       const chunks: Buffer[] = [];
-      let settled = false;
+      let hasFinishedPromise = false;
 
       const finish = (err: Error | null, response?: string) => {
-        if (settled) {
+        if (hasFinishedPromise) {
           return;
         }
-        settled = true;
+        hasFinishedPromise = true;
         socket.destroy();
         if (err) {
           reject(err);
@@ -109,7 +109,7 @@ export class ClamAvFileScanner implements FileScanner {
         socket.write(Buffer.from('zINSTREAM\0'));
         let offset = 0;
         const writeNext = () => {
-          if (settled) {
+          if (hasFinishedPromise) {
             return;
           }
           if (offset >= buffer.length) {
@@ -122,9 +122,9 @@ export class ClamAvFileScanner implements FileScanner {
           const slice = buffer.subarray(offset, end);
           const size = Buffer.alloc(4);
           size.writeUInt32BE(slice.length, 0);
-          const ok = socket.write(Buffer.concat([size, slice]));
+          const canContinueWriting = socket.write(Buffer.concat([size, slice]));
           offset = end;
-          if (!ok) {
+          if (!canContinueWriting) {
             socket.once('drain', writeNext);
           } else {
             writeNext();

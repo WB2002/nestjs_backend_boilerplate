@@ -176,7 +176,7 @@ describe('MemoryRateLimitBackend', () => {
 
   it('falls back unknown algorithm to FixedWindowCounter', async () => {
     const key = 'fallback';
-    const result = await backend.consume(
+    const outcome = await backend.consume(
       baseCtx({
         algorithm: 'NotARealAlgorithm' as RateLimitAlgorithm,
         key,
@@ -185,7 +185,7 @@ describe('MemoryRateLimitBackend', () => {
         durationMs: 1_000,
       }),
     );
-    expect(result.allowed).toBe(true);
+    expect(outcome.allowed).toBe(true);
 
     const denied = await backend.consume(
       baseCtx({

@@ -4,9 +4,12 @@ import {
 } from './overload.constants';
 import { UnderPressureConfig } from './overload.types';
 
-function parseBoolean(value: string | undefined, fallback: boolean): boolean {
+function parseBoolean(
+  value: string | undefined,
+  isDefaultOn: boolean,
+): boolean {
   if (value === undefined || value.trim() === '') {
-    return fallback;
+    return isDefaultOn;
   }
   const normalized = value.trim().toLowerCase();
   if (normalized === 'true' || normalized === '1' || normalized === 'yes') {
@@ -15,21 +18,21 @@ function parseBoolean(value: string | undefined, fallback: boolean): boolean {
   if (normalized === 'false' || normalized === '0' || normalized === 'no') {
     return false;
   }
-  return fallback;
+  return isDefaultOn;
 }
 
 function parseNonNegativeInt(
   value: string | undefined,
-  fallback: number,
+  defaultWhenMissing: number,
 ): number {
   const parsed = Number.parseInt(value ?? '', 10);
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : defaultWhenMissing;
 }
 
 export function parseUnderPressureConfig(
   env: NodeJS.ProcessEnv = process.env,
 ): UnderPressureConfig {
-  const enabled = parseBoolean(env.UNDER_PRESSURE_ENABLED, false);
+  const isEnabled = parseBoolean(env.UNDER_PRESSURE_ENABLED, false);
   const maxEventLoopDelayMs = parseNonNegativeInt(
     env.UNDER_PRESSURE_MAX_EVENT_LOOP_DELAY_MS,
     DEFAULT_UNDER_PRESSURE_MAX_EVENT_LOOP_DELAY_MS,
@@ -46,17 +49,17 @@ export function parseUnderPressureConfig(
       DEFAULT_OVERLOAD_RETRY_AFTER_SEC,
     ),
   );
-  const exposeStatusRoute = parseBoolean(
+  const shouldExposeStatusRoute = parseBoolean(
     env.UNDER_PRESSURE_EXPOSE_STATUS_ROUTE,
     false,
   );
 
   return {
-    enabled,
+    enabled: isEnabled,
     maxEventLoopDelayMs,
     maxHeapUsedBytes,
     maxRssBytes,
     retryAfterSec,
-    exposeStatusRoute,
+    exposeStatusRoute: shouldExposeStatusRoute,
   };
 }

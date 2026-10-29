@@ -61,7 +61,7 @@ export function buildConsumeContext(
   };
 }
 
-/** Runs a scenario against a backend and asserts each step's expected result. */
+/** Runs a scenario against a backend and asserts each step's expected outcome. */
 export async function runScenario(
   backend: RateLimitBackend,
   scenario: AlgorithmScenario,
@@ -69,15 +69,15 @@ export async function runScenario(
   tolMs = 1,
 ): Promise<void> {
   for (const step of scenario.steps) {
-    const result = await backend.consume(
+    const outcome = await backend.consume(
       buildConsumeContext(scenario, step, key),
     );
-    expectResult(result, step.expected, tolMs);
+    expectResult(outcome, step.expected, tolMs);
     if (
       step.expected.allowed === false &&
       step.expected.retryAfterMs === undefined
     ) {
-      expect(result.retryAfterMs).toBeGreaterThan(0);
+      expect(outcome.retryAfterMs).toBeGreaterThan(0);
     }
   }
 }

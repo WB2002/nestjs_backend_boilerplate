@@ -85,7 +85,7 @@ describe('SlackNotificationService', () => {
       message: 'Example operation completed successfully',
       metadata: {
         operationId: '123',
-        result: 'success',
+        operationStatus: 'success',
         extra: 'value',
       },
     });
@@ -96,7 +96,7 @@ describe('SlackNotificationService', () => {
     expect(body.text).toContain('*Operation Completed*');
     expect(body.text).toContain('Example operation completed successfully');
     expect(body.text).toContain('Operation ID: 123');
-    expect(body.text).toContain('Result: success');
+    expect(body.text).toContain('Operation status: success');
     expect(body.text).toContain('Additional metadata:');
     expect(body.text).toContain('extra: value');
     expect(logSpy).toHaveBeenCalled();
@@ -196,7 +196,7 @@ describe('SlackNotificationService', () => {
         password: 's3cret',
         accessToken: 'tok_abc',
         api_key: 'key_abc',
-        result: 'success',
+        operationStatus: 'success',
       },
     });
 

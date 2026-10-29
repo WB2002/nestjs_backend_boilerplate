@@ -5,10 +5,15 @@ import { CountryAccessTelemetry } from '../telemetry/country-access.telemetry';
 
 function createConfig(
   countryCode: string,
-  enabled: boolean,
+  isCountryEnabled: boolean,
 ): CountryAccessConfig {
   const now = new Date('2026-01-01T00:00:00.000Z');
-  return { countryCode, enabled, createdAt: now, updatedAt: now };
+  return {
+    countryCode,
+    enabled: isCountryEnabled,
+    createdAt: now,
+    updatedAt: now,
+  };
 }
 
 describe('CountryAccessService', () => {

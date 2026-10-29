@@ -20,25 +20,25 @@ export class PostgresCountryAccessRepository implements CountryAccessRepository 
   constructor(@Inject(POSTGRES_POOL) private readonly pool: Pool) {}
 
   async getAll(): Promise<CountryAccessConfig[]> {
-    const result = await this.pool.query<CountryAccessRow>(
+    const persistedRow = await this.pool.query<CountryAccessRow>(
       `SELECT country_code, enabled, created_at, updated_at
        FROM country_access
        ORDER BY country_code ASC`,
     );
-    return result.rows.map((row) => this.mapRow(row));
+    return persistedRow.rows.map((row) => this.mapRow(row));
   }
 
   async getByCountryCode(
     countryCode: string,
   ): Promise<CountryAccessConfig | null> {
     const code = assertCountryCode(countryCode);
-    const result = await this.pool.query<CountryAccessRow>(
+    const persistedRow = await this.pool.query<CountryAccessRow>(
       `SELECT country_code, enabled, created_at, updated_at
        FROM country_access
        WHERE country_code = $1`,
       [code],
     );
-    const row = result.rows[0];
+    const row = persistedRow.rows[0];
     return row ? this.mapRow(row) : null;
   }
 

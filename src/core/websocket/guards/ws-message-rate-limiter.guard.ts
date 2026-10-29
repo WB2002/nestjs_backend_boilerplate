@@ -41,11 +41,11 @@ export class WsMessageRateLimiterGuard implements CanActivate {
     }
 
     const config = parseWebSocketConfig(this.configService);
-    const allowed = config.redisAdapterEnabled
+    const isAllowed = config.redisAdapterEnabled
       ? await this.checkRedis(user.id, config.messagesPerMinute)
       : this.checkLocal(user.id, config.messagesPerMinute);
 
-    if (!allowed) {
+    if (!isAllowed) {
       throw new HttpException(
         'WebSocket message rate limit exceeded',
         HttpStatus.TOO_MANY_REQUESTS,

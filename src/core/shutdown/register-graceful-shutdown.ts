@@ -38,14 +38,14 @@ export function registerGracefulShutdown(
     });
 
   const { drainMs, forceMs } = deps;
-  let shuttingDown = false;
+  let isShuttingDown = false;
 
   const handle = async (signal: string) => {
-    if (shuttingDown) {
+    if (isShuttingDown) {
       logger.warn(`Ignoring duplicate ${signal} during shutdown`);
       return;
     }
-    shuttingDown = true;
+    isShuttingDown = true;
     logger.log(
       `Received ${signal}; marking not ready, draining ${drainMs}ms, then closing`,
     );

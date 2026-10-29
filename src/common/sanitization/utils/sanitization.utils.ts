@@ -42,7 +42,9 @@ export async function walkAndSanitize(
     }
     seen.add(value);
     return Promise.all(
-      value.map((item) => walkAndSanitize(item, options, currentKey, seen)),
+      value.map((arrayElement) =>
+        walkAndSanitize(arrayElement, options, currentKey, seen),
+      ),
     );
   }
 
@@ -63,23 +65,23 @@ export async function walkAndSanitize(
     if (proto && proto !== Object.prototype && proto !== Array.prototype) {
       effectiveOptions = { ...options, metadataTarget: proto };
     } else if (options.metadataTarget && currentKey) {
-      const NestedType = Reflect.getMetadata(
+      const nestedPropertyType = Reflect.getMetadata(
         'design:type',
         options.metadataTarget,
         currentKey,
       ) as (new (...args: never[]) => unknown) | undefined;
       if (
-        NestedType &&
-        NestedType !== Object &&
-        NestedType !== Array &&
-        NestedType !== String &&
-        NestedType !== Number &&
-        NestedType !== Boolean &&
-        NestedType.prototype
+        nestedPropertyType &&
+        nestedPropertyType !== Object &&
+        nestedPropertyType !== Array &&
+        nestedPropertyType !== String &&
+        nestedPropertyType !== Number &&
+        nestedPropertyType !== Boolean &&
+        nestedPropertyType.prototype
       ) {
         effectiveOptions = {
           ...options,
-          metadataTarget: NestedType.prototype as object,
+          metadataTarget: nestedPropertyType.prototype as object,
         };
       }
     }
@@ -105,7 +107,7 @@ function readPropertyFlags(
   if (!metadataTarget || currentKey == null) {
     return {};
   }
-  const skip = Reflect.getMetadata(
+  const shouldSkip = Reflect.getMetadata(
     SKIP_SANITIZATION_KEY,
     metadataTarget,
     currentKey,
@@ -115,28 +117,28 @@ function readPropertyFlags(
     metadataTarget,
     currentKey,
   ) as SanitizeHtmlOptions | undefined;
-  const safeUrl = Reflect.getMetadata(
+  const isSafeUrl = Reflect.getMetadata(
     SAFE_URL_KEY,
     metadataTarget,
     currentKey,
   ) as boolean | undefined;
-  const rejectSqlInjection = Reflect.getMetadata(
+  const shouldRejectSqlInjection = Reflect.getMetadata(
     REJECT_SQL_INJECTION_KEY,
     metadataTarget,
     currentKey,
   ) as boolean | undefined;
-  const skipSqlInjection = Reflect.getMetadata(
+  const shouldSkipSqlInjection = Reflect.getMetadata(
     SKIP_SQL_INJECTION_KEY,
     metadataTarget,
     currentKey,
   ) as boolean | undefined;
 
   return {
-    ...(skip ? { skip: true } : {}),
+    ...(shouldSkip ? { shouldSkip: true } : {}),
     ...(htmlOptions !== undefined ? { htmlOptions } : {}),
-    ...(safeUrl ? { safeUrl: true } : {}),
-    ...(rejectSqlInjection ? { rejectSqlInjection: true } : {}),
-    ...(skipSqlInjection ? { skipSqlInjection: true } : {}),
+    ...(isSafeUrl ? { isSafeUrl: true } : {}),
+    ...(shouldRejectSqlInjection ? { shouldRejectSqlInjection: true } : {}),
+    ...(shouldSkipSqlInjection ? { shouldSkipSqlInjection: true } : {}),
   };
 }
 
@@ -148,21 +150,22 @@ async function sanitizeStringValue(
   const flags = readPropertyFlags(options.metadataTarget, currentKey);
   const skipKeys = options.skipKeys ?? DEFAULT_SKIP_KEYS;
 
-  if (flags.skip || (currentKey != null && skipKeys.has(currentKey))) {
+  if (flags.shouldSkip || (currentKey != null && skipKeys.has(currentKey))) {
     return value;
   }
 
-  let rejectSql =
-    flags.rejectSqlInjection ?? options.rejectSqlInjection ?? true;
-  if (flags.skipSqlInjection) {
-    rejectSql = false;
+  let shouldRejectSql =
+    flags.shouldRejectSqlInjection ?? options.rejectSqlInjection ?? true;
+  if (flags.shouldSkipSqlInjection) {
+    shouldRejectSql = false;
   }
-  if (rejectSql && looksLikeSqlInjection(value)) {
+  if (shouldRejectSql && looksLikeSqlInjection(value)) {
     throw new BadRequestException('Potentially malicious input rejected');
   }
 
-  const enforceSafeUrl = flags.safeUrl ?? options.enforceSafeUrl ?? false;
-  if (enforceSafeUrl) {
+  const shouldEnforceSafeUrl =
+    flags.isSafeUrl ?? options.enforceSafeUrl ?? false;
+  if (shouldEnforceSafeUrl) {
     try {
       await assertPublicHttpUrlAsync(value);
     } catch (err) {

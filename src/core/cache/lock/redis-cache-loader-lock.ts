@@ -11,8 +11,13 @@ export class RedisCacheLoaderLock implements CacheLoaderLock {
 
   async tryAcquire(lockKey: string, ttlMs: number): Promise<string | null> {
     const token = randomUUID();
-    const ok = await acquireRedisLoaderLock(this.redis, lockKey, token, ttlMs);
-    return ok ? token : null;
+    const isOk = await acquireRedisLoaderLock(
+      this.redis,
+      lockKey,
+      token,
+      ttlMs,
+    );
+    return isOk ? token : null;
   }
 
   async release(lockKey: string, token: string): Promise<void> {

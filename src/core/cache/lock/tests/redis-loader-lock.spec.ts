@@ -9,7 +9,7 @@ function createMockRedis() {
     set: jest.fn(
       async (
         key: string,
-        val: string,
+        headerValue: string,
         _px: string,
         _ttl: number,
         nx: string,
@@ -17,7 +17,7 @@ function createMockRedis() {
         if (nx === 'NX' && store.has(key)) {
           return null;
         }
-        store.set(key, val);
+        store.set(key, headerValue);
         return 'OK';
       },
     ),

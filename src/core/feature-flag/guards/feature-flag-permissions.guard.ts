@@ -28,10 +28,10 @@ export class FeatureFlagPermissionsGuard implements CanActivate {
       user?: { role?: string };
     }>();
     const role = request.user?.role;
-    const allowed = required.every((permission) =>
+    const isAllowed = required.every((permission) =>
       roleHasPermission(role, permission),
     );
-    if (!allowed) {
+    if (!isAllowed) {
       throw new ForbiddenException('Insufficient feature-flag permissions');
     }
     return true;

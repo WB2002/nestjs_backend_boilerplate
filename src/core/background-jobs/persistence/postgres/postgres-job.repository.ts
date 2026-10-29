@@ -40,7 +40,7 @@ export class PostgresJobRepository {
   async insertPending(
     input: InsertPendingJobInput,
   ): Promise<{ id: string } | null> {
-    const result = await this.pool.query<{ id: string }>(
+    const claimedJobRow = await this.pool.query<{ id: string }>(
       INSERT_PENDING_JOB_SQL,
       [
         input.queueName,
@@ -51,17 +51,16 @@ export class PostgresJobRepository {
         input.maxAttempts,
       ],
     );
-    const row = result.rows[0];
+    const row = claimedJobRow.rows[0];
     return row ? { id: row.id } : null;
   }
 
   async claimById(input: ClaimJobInput): Promise<BackgroundJobRow | null> {
-    const result = await this.pool.query<ClaimedRow>(CLAIM_JOB_BY_ID_SQL, [
-      input.id,
-      input.workerId,
-      input.leaseSec,
-    ]);
-    const row = result.rows[0];
+    const claimedJobRow = await this.pool.query<ClaimedRow>(
+      CLAIM_JOB_BY_ID_SQL,
+      [input.id, input.workerId, input.leaseSec],
+    );
+    const row = claimedJobRow.rows[0];
     if (!row) {
       return null;
     }
@@ -69,11 +68,11 @@ export class PostgresJobRepository {
   }
 
   async getStatus(id: string): Promise<BackgroundJobStatus | null> {
-    const result = await this.pool.query<{ status: string }>(
+    const claimedJobRow = await this.pool.query<{ status: string }>(
       GET_JOB_STATUS_SQL,
       [id],
     );
-    const raw = result.rows[0]?.status;
+    const raw = claimedJobRow.rows[0]?.status;
     if (!raw) {
       return null;
     }
@@ -85,7 +84,7 @@ export class PostgresJobRepository {
   }
 
   async reclaimExpiredLeases(limit: number): Promise<ReclaimedLeaseRow[]> {
-    const result = await this.pool.query<{
+    const claimedJobRow = await this.pool.query<{
       id: string;
       status: string;
       max_attempts: number;
@@ -93,7 +92,7 @@ export class PostgresJobRepository {
       limit,
       BACKGROUND_JOBS_LEASE_EXPIRED_MESSAGE,
     ]);
-    return result.rows.flatMap((row) => {
+    return claimedJobRow.rows.flatMap((row) => {
       const status = parseBackgroundJobStatus(row.status);
       if (!status) {
         return [];

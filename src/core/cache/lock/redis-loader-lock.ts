@@ -15,8 +15,8 @@ export async function acquireRedisLoaderLock(
   ttlMs: number,
 ): Promise<boolean> {
   const ttl = Math.max(1, Math.ceil(ttlMs));
-  const result = await redis.set(lockKey, token, 'PX', ttl, 'NX');
-  return result === 'OK';
+  const loadedValue = await redis.set(lockKey, token, 'PX', ttl, 'NX');
+  return loadedValue === 'OK';
 }
 
 export async function releaseRedisLoaderLock(

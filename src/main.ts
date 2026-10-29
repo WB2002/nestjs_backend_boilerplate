@@ -33,10 +33,10 @@ const DEFAULT_COMPRESSION_THRESHOLD = 1024;
 
 function parseNonNegativeInt(
   value: string | undefined,
-  fallback: number,
+  defaultWhenMissing: number,
 ): number {
   const parsed = Number.parseInt(value ?? '', 10);
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : defaultWhenMissing;
 }
 
 async function bootstrap() {

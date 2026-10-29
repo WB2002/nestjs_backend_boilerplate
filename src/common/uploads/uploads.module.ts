@@ -15,8 +15,8 @@ import { ClamAvFileScanner } from './scanners/clamav-file-scanner';
       provide: FILE_SCANNER,
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
-        const enabled = config.get<string>('UPLOAD_VIRUS_SCAN') === 'true';
-        if (!enabled) {
+        const isEnabled = config.get<string>('UPLOAD_VIRUS_SCAN') === 'true';
+        if (!isEnabled) {
           return new NoopFileScanner();
         }
         const host = config.get<string>('CLAMAV_HOST') ?? 'clamav';

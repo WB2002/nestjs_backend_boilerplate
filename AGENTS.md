@@ -35,7 +35,11 @@ For SDLC-only or guardrail changes, also run `scripts/verify.sh` (or paste CI `A
 - Tests live in `src/**/tests/`: `*.spec.ts` (must run without Docker) or `*.integration.spec.ts`. Property tests use `jest.property.config.ts`; contract tests use `jest.contract.config.ts`. Skip trivial assert-true tests.
 - Intent artifacts: `.cursor/rules/intent-artifacts.mdc` and templates in `intent/_templates/`.
 
-Full rules: `docs/conventions/code_standards.convention.md`.
+Full rules: `docs/conventions/code_standards.convention.md`. Elaborate naming (glossary, units, abbreviations): `.cursor/rules/elaborate-naming.mdc`.
+
+## Naming
+
+See `.cursor/rules/elaborate-naming.mdc` (always applied). ESLint on `src/**/*.ts` enforces boolean prefixes and the placeholder denylist; the rule file holds the domain glossary, units, abbreviations, and `_id` → `id` guidance.
 
 ## Adding features
 

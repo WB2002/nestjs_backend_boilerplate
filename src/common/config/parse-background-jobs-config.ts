@@ -28,8 +28,8 @@ function parsePositiveInt(value: string | undefined, fallback: number): number {
 export function parseBackgroundJobsConfig(
   env: Record<string, string | undefined>,
 ): BackgroundJobsConfig {
-  const enabled = env.BACKGROUND_JOBS_ENABLED === 'true';
-  const workerEnabled = env.BACKGROUND_WORKER_ENABLED === 'true';
+  const isEnabled = env.BACKGROUND_JOBS_ENABLED === 'true';
+  const isWorkerEnabled = env.BACKGROUND_WORKER_ENABLED === 'true';
   const defaultQueueName =
     env.BACKGROUND_JOBS_DEFAULT_QUEUE?.trim() || 'default';
   const claimLeaseSec = parsePositiveInt(
@@ -40,7 +40,7 @@ export function parseBackgroundJobsConfig(
     env.BACKGROUND_JOBS_WORKER_CONCURRENCY,
     5,
   );
-  const leaseReclaimEnabled =
+  const isLeaseReclaimEnabled =
     env.BACKGROUND_JOBS_LEASE_RECLAIM_ENABLED !== 'false';
   const leaseReclaimIntervalMs = parsePositiveInt(
     env.BACKGROUND_JOBS_LEASE_RECLAIM_INTERVAL_MS,
@@ -59,19 +59,19 @@ export function parseBackgroundJobsConfig(
     database: env.POSTGRES_DB?.trim() || '',
   };
 
-  if (enabled && !postgres.database) {
+  if (isEnabled && !postgres.database) {
     throw new Error(
       'POSTGRES_DB is required when BACKGROUND_JOBS_ENABLED=true',
     );
   }
 
   return {
-    enabled,
-    workerEnabled,
+    enabled: isEnabled,
+    workerEnabled: isWorkerEnabled,
     defaultQueueName,
     claimLeaseSec,
     workerConcurrency,
-    leaseReclaimEnabled,
+    leaseReclaimEnabled: isLeaseReclaimEnabled,
     leaseReclaimIntervalMs,
     leaseReclaimBatchSize,
     postgres,

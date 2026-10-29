@@ -17,12 +17,12 @@ function flag(overrides: Partial<IFeatureFlag> = {}): IFeatureFlag {
 describe('FeatureFlagCache', () => {
   it('replaces the snapshot atomically and skips malformed entries', () => {
     const cache = new FeatureFlagCache();
-    const skipped = cache.replaceAll([
+    const skippedInvalidFlags = cache.replaceAll([
       flag({ key: 'a', version: 1 }),
       { key: 'bad' } as unknown as IFeatureFlag,
       flag({ key: 'b', version: 2 }),
     ]);
-    expect(skipped).toBe(1);
+    expect(skippedInvalidFlags).toBe(1);
     expect(cache.size()).toBe(2);
     expect(cache.get('a')?.version).toBe(1);
     expect(cache.get('bad')).toBeUndefined();
@@ -50,7 +50,7 @@ describe('FeatureFlagCache', () => {
   it('ignores events for other environments', () => {
     const cache = new FeatureFlagCache();
     cache.replaceAll([flag({ version: 1 })]);
-    const changed = cache.applyEvent(
+    const hasAppliedEvent = cache.applyEvent(
       {
         event: FeatureFlagEventType.FLAG_UPDATED,
         environment: 'staging',
@@ -60,7 +60,7 @@ describe('FeatureFlagCache', () => {
       'production',
       flag({ version: 2 }),
     );
-    expect(changed).toBe(false);
+    expect(hasAppliedEvent).toBe(false);
     expect(cache.get('new-checkout')?.version).toBe(1);
   });
 

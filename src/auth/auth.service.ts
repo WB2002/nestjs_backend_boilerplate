@@ -160,8 +160,8 @@ export class AuthService {
   }
 
   async isRevoked(jti: string): Promise<boolean> {
-    const result = await this.redis.get(`revoked_jti:${jti}`);
-    return !!result;
+    const tokenPair = await this.redis.get(`revoked_jti:${jti}`);
+    return !!tokenPair;
   }
 
   private async signAccessToken(

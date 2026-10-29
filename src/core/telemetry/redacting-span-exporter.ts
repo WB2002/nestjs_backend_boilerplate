@@ -3,7 +3,7 @@ import type { ReadableSpan, SpanExporter } from '@opentelemetry/sdk-trace-base';
 import { redactOtelAttributes } from '@/core/redaction/redact-otel-attributes';
 
 type SpanExportResult = Parameters<SpanExporter['export']>[1] extends (
-  result: infer R,
+  exportResult: infer R,
 ) => void
   ? R
   : never;
@@ -34,13 +34,13 @@ export function createRedactingSpanExporter(
   delegate: SpanExporter,
   options: RedactingSpanExporterOptions = {},
 ): SpanExporter {
-  const enabled = options.enabled ?? true;
+  const isEnabled = options.enabled ?? true;
   return {
     export(
       spans: ReadableSpan[],
-      resultCallback: (result: SpanExportResult) => void,
+      resultCallback: (exportResult: SpanExportResult) => void,
     ): void {
-      const payload = enabled ? spans.map(redactSpan) : spans;
+      const payload = isEnabled ? spans.map(redactSpan) : spans;
       delegate.export(payload, resultCallback);
     },
     shutdown(): Promise<void> {

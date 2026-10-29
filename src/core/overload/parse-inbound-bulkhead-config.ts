@@ -1,9 +1,12 @@
 import { DEFAULT_INBOUND_MAX_IN_FLIGHT } from './overload.constants';
 import { InboundBulkheadConfig } from './inbound-bulkhead.types';
 
-function parseBoolean(value: string | undefined, fallback: boolean): boolean {
+function parseBoolean(
+  value: string | undefined,
+  isDefaultOn: boolean,
+): boolean {
   if (value === undefined || value.trim() === '') {
-    return fallback;
+    return isDefaultOn;
   }
   const normalized = value.trim().toLowerCase();
   if (normalized === 'true' || normalized === '1' || normalized === 'yes') {
@@ -12,7 +15,7 @@ function parseBoolean(value: string | undefined, fallback: boolean): boolean {
   if (normalized === 'false' || normalized === '0' || normalized === 'no') {
     return false;
   }
-  return fallback;
+  return isDefaultOn;
 }
 
 function parsePositiveInt(value: string | undefined, fallback: number): number {
@@ -23,10 +26,10 @@ function parsePositiveInt(value: string | undefined, fallback: number): number {
 export function parseInboundBulkheadConfig(
   env: NodeJS.ProcessEnv = process.env,
 ): InboundBulkheadConfig {
-  const enabled = parseBoolean(env.INBOUND_BULKHEAD_ENABLED, false);
+  const isEnabled = parseBoolean(env.INBOUND_BULKHEAD_ENABLED, false);
   const maxInFlight = parsePositiveInt(
     env.INBOUND_MAX_IN_FLIGHT,
     DEFAULT_INBOUND_MAX_IN_FLIGHT,
   );
-  return { enabled, maxInFlight };
+  return { enabled: isEnabled, maxInFlight };
 }

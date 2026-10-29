@@ -2,9 +2,12 @@ import type { TelemetryConfig } from './telemetry.types';
 
 const DEFAULT_SERVICE_NAME = 'nestjs-boilerplate';
 
-function parseBoolean(value: string | undefined, fallback: boolean): boolean {
+function parseBoolean(
+  value: string | undefined,
+  isDefaultOn: boolean,
+): boolean {
   if (value == null || value === '') {
-    return fallback;
+    return isDefaultOn;
   }
   const normalized = value.trim().toLowerCase();
   if (normalized === 'true' || normalized === '1') {
@@ -13,17 +16,17 @@ function parseBoolean(value: string | undefined, fallback: boolean): boolean {
   if (normalized === 'false' || normalized === '0') {
     return false;
   }
-  return fallback;
+  return isDefaultOn;
 }
 
 export function parseTelemetryConfig(
   env: NodeJS.ProcessEnv = process.env,
 ): TelemetryConfig {
   const otlpEndpoint = env.OTEL_EXPORTER_OTLP_ENDPOINT?.trim();
-  const otelEnabled = parseBoolean(env.OTEL_ENABLED, false);
+  const isOtelEnabled = parseBoolean(env.OTEL_ENABLED, false);
 
   return {
-    otelEnabled,
+    otelEnabled: isOtelEnabled,
     serviceName: env.OTEL_SERVICE_NAME?.trim() || DEFAULT_SERVICE_NAME,
     appMetricsEnabled: parseBoolean(env.APP_METRICS_ENABLED, true),
     ...(otlpEndpoint ? { otlpEndpoint } : {}),

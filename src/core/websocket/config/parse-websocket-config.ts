@@ -8,9 +8,12 @@ import {
 } from './websocket.constants';
 import { WebSocketConfig } from './websocket-config.types';
 
-function parseBoolean(value: string | undefined, fallback: boolean): boolean {
+function parseBoolean(
+  value: string | undefined,
+  isDefaultOn: boolean,
+): boolean {
   if (value === undefined || value === '') {
-    return fallback;
+    return isDefaultOn;
   }
   return value === 'true' || value === '1';
 }
@@ -49,7 +52,7 @@ export function parseWebSocketConfig(
   const redisAdapterExplicit = configService.get<string>(
     'WEBSOCKET_REDIS_ADAPTER',
   );
-  const redisAdapterEnabled =
+  const isRedisAdapterEnabled =
     redisAdapterExplicit !== undefined && redisAdapterExplicit !== ''
       ? parseBoolean(redisAdapterExplicit, false)
       : nodeEnv === 'production';
@@ -63,7 +66,7 @@ export function parseWebSocketConfig(
       configService.get<string>('WEBSOCKET_ALLOW_QUERY_TOKEN'),
       false,
     ),
-    redisAdapterEnabled,
+    redisAdapterEnabled: isRedisAdapterEnabled,
     corsOrigins: resolveCorsOrigins(configService),
     maxConnectionsPerUser: parsePositiveInt(
       configService.get<string>('WEBSOCKET_MAX_CONNECTIONS_PER_USER'),

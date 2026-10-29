@@ -5,7 +5,7 @@ export type FileScanResult =
 
 export interface FileScanner {
   /** Whether this scanner actually inspects content (false for Noop). */
-  readonly performsScan: boolean;
+  readonly isScanningEnabled: boolean;
   scan(input: { buffer: Buffer; filename: string }): Promise<FileScanResult>;
 }
 

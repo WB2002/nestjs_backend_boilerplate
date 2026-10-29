@@ -28,12 +28,12 @@ describe('ExampleNotificationService', () => {
   it('returns success when the request is valid and notification succeeds', async () => {
     notificationService.send.mockResolvedValue(undefined);
 
-    const result = await service.runExampleOperation({
+    const runResult = await service.runExampleOperation({
       message: 'Example operation completed successfully',
-      metadata: { operationId: '123', result: 'success' },
+      metadata: { operationId: '123', operationStatus: 'success' },
     });
 
-    expect(result).toEqual({
+    expect(runResult).toEqual({
       status: 'success',
       operationId: '123',
       notificationSent: true,
@@ -43,38 +43,38 @@ describe('ExampleNotificationService', () => {
       message: 'Example operation completed successfully',
       metadata: expect.objectContaining({
         operationId: '123',
-        result: 'success',
+        operationStatus: 'success',
       }),
     });
   });
 
-  it('keeps the business result successful when notification fails', async () => {
+  it('keeps the business outcome successful when notification fails', async () => {
     notificationService.send.mockRejectedValue(
       new NotificationError('Slack webhook is unavailable', {
         code: NotificationErrorCode.UNAVAILABLE,
       }),
     );
 
-    const result = await service.runExampleOperation({
+    const runResult = await service.runExampleOperation({
       message: 'Example operation completed successfully',
       metadata: { operationId: '123' },
     });
 
-    expect(result.status).toBe('success');
-    expect(result.operationId).toBe('123');
-    expect(result.notificationSent).toBe(false);
+    expect(runResult.status).toBe('success');
+    expect(runResult.operationId).toBe('123');
+    expect(runResult.notificationSent).toBe(false);
     expect(errorSpy).toHaveBeenCalled();
   });
 
   it('generates an operationId when metadata omits one', async () => {
     notificationService.send.mockResolvedValue(undefined);
 
-    const result = await service.runExampleOperation({
+    const runResult = await service.runExampleOperation({
       message: 'done',
     });
 
-    expect(result.status).toBe('success');
-    expect(result.notificationSent).toBe(true);
-    expect(result.operationId).toMatch(/^example-/);
+    expect(runResult.status).toBe('success');
+    expect(runResult.notificationSent).toBe(true);
+    expect(runResult.operationId).toMatch(/^example-/);
   });
 });

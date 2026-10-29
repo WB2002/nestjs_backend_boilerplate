@@ -32,7 +32,9 @@ export function redactForLog(
       return REDACTED;
     }
     seen.add(value);
-    return value.map((item) => redactForLog(item, depth + 1, seen));
+    return value.map((nestedValue) =>
+      redactForLog(nestedValue, depth + 1, seen),
+    );
   }
   if (value instanceof Date || Buffer.isBuffer(value)) {
     return value;

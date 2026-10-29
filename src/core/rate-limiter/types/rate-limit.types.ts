@@ -87,7 +87,7 @@ export interface ConsumeResult {
 
 export type OnDecisionHook = (
   context: ConsumeContext,
-  result: ConsumeResult,
+  consumeResult: ConsumeResult,
 ) => void | Promise<void>;
 
 export interface RateLimiterModuleOptions {

@@ -13,13 +13,13 @@ describe('SanitizationPipe', () => {
   const pipe = new SanitizationPipe();
 
   it('strips HTML on body fields and skips decorated password', async () => {
-    const result = (await pipe.transform(
+    const outcome = (await pipe.transform(
       { name: '<b>Ada</b>', password: '<script>x</script>' },
       { type: 'body', metatype: SampleDto },
     )) as SampleDto;
 
-    expect(result.name).toBe('Ada');
-    expect(result.password).toBe('<script>x</script>');
+    expect(outcome.name).toBe('Ada');
+    expect(outcome.password).toBe('<script>x</script>');
   });
 
   it('rejects SQL injection in query strings', async () => {
@@ -34,12 +34,12 @@ describe('SanitizationPipe', () => {
     };
     cyclic.self = cyclic;
 
-    const result = await pipe.transform(cyclic, {
+    const outcome = await pipe.transform(cyclic, {
       type: 'custom',
       metatype: Object,
     });
 
-    expect(result).toBe(cyclic);
-    expect((result as { name: string }).name).toBe('<b>req</b>');
+    expect(outcome).toBe(cyclic);
+    expect((outcome as { name: string }).name).toBe('<b>req</b>');
   });
 });

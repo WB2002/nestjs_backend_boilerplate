@@ -24,7 +24,7 @@ export class TracingInterceptor implements NestInterceptor {
           { ...LoggerContext.get(), context: className, method: methodName },
           () => {
             next.handle().subscribe({
-              next: (val) => observer.next(val),
+              next: (streamedChunk) => observer.next(streamedChunk),
               error: (err) => observer.error(err),
               complete: () => observer.complete(),
             });
@@ -60,7 +60,7 @@ export class TracingInterceptor implements NestInterceptor {
               : context.active(),
             () => {
               next.handle().subscribe({
-                next: (val) => observer.next(val),
+                next: (streamedChunk) => observer.next(streamedChunk),
                 error: (err) => observer.error(err),
                 complete: () => observer.complete(),
               });

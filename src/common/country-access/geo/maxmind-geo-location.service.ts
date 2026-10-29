@@ -78,9 +78,10 @@ export class MaxMindGeoLocationService
     }
 
     try {
-      const result = this.reader.get(ip);
+      const lookupResult = this.reader.get(ip);
       const iso =
-        result?.country?.iso_code ?? result?.registered_country?.iso_code;
+        lookupResult?.country?.iso_code ??
+        lookupResult?.registered_country?.iso_code;
       if (!iso) {
         void this.telemetry.unknownCountry('missing_geoip_record');
         return null;

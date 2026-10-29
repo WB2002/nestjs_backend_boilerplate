@@ -60,8 +60,10 @@ export function redactOtelAttributeValue(
   }
 
   if (Array.isArray(value)) {
-    return value.map((item) =>
-      typeof item === 'string' ? String(redactForLog(item)) : item,
+    return value.map((attributeValue) =>
+      typeof attributeValue === 'string'
+        ? String(redactForLog(attributeValue))
+        : attributeValue,
     );
   }
 

@@ -56,12 +56,12 @@ export class RequestDeadlineInterceptor implements NestInterceptor {
       return next.handle();
     }
 
-    const skipped = this.reflector.getAllAndOverride<boolean>(
+    const shouldSkipDeadline = this.reflector.getAllAndOverride<boolean>(
       SKIP_REQUEST_DEADLINE_KEY,
       [context.getHandler(), context.getClass()],
     );
 
-    if (skipped) {
+    if (shouldSkipDeadline) {
       internals.clearTimer();
       return this.bridgeAbort(store, next);
     }

@@ -61,6 +61,85 @@ export default tseslint.config(
   {
     files: ['src/**/*.ts'],
     rules: {
+      '@typescript-eslint/naming-convention': [
+        'error',
+        {
+          selector: 'typeLike',
+          format: ['PascalCase'],
+        },
+        {
+          selector: 'enumMember',
+          format: ['PascalCase'],
+        },
+        {
+          selector: ['objectLiteralProperty', 'typeProperty'],
+          format: null,
+        },
+        {
+          selector: 'import',
+          format: null,
+        },
+        {
+          selector: 'function',
+          format: ['camelCase', 'PascalCase'],
+        },
+        {
+          selector: 'classProperty',
+          filter: { regex: '^_id$', match: true },
+          format: null,
+        },
+        {
+          selector: 'classProperty',
+          filter: { regex: '^enabled$', match: true },
+          format: null,
+        },
+        {
+          selector: ['classProperty', 'variable', 'parameter'],
+          format: ['camelCase'],
+          filter: {
+            regex: '^(is|has|can|should)[A-Z].+',
+            match: true,
+          },
+        },
+        {
+          selector: ['variable', 'parameter', 'classProperty'],
+          types: ['boolean'],
+          format: ['camelCase'],
+          prefix: ['is', 'has', 'can', 'should'],
+        },
+        {
+          selector: 'variable',
+          format: ['camelCase'],
+          leadingUnderscore: 'allow',
+          filter: {
+            regex: '^_(never|exhaustive)$',
+            match: true,
+          },
+        },
+        {
+          selector: 'parameter',
+          leadingUnderscore: 'allow',
+          filter: { regex: '^_', match: true },
+          format: ['camelCase'],
+        },
+        {
+          selector: 'parameter',
+          modifiers: ['unused'],
+          format: ['camelCase'],
+          leadingUnderscore: 'allow',
+        },
+        {
+          selector: 'variable',
+          modifiers: ['const'],
+          format: ['camelCase', 'PascalCase', 'UPPER_CASE'],
+        },
+        {
+          selector: 'default',
+          format: ['camelCase'],
+          leadingUnderscore: 'forbid',
+        },
+      ],
+      'id-denylist': ['error', 'data', 'result', 'item', 'temp', 'obj', 'val'],
       'no-restricted-syntax': [
         'error',
         {

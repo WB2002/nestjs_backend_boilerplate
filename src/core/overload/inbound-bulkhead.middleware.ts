@@ -30,12 +30,12 @@ export class InboundBulkheadMiddleware implements NestMiddleware {
       return;
     }
 
-    let released = false;
+    let hasReleased = false;
     const releaseOnce = (): void => {
-      if (released) {
+      if (hasReleased) {
         return;
       }
-      released = true;
+      hasReleased = true;
       this.bulkhead.release();
     };
 

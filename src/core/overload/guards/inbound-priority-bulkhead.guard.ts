@@ -41,11 +41,11 @@ export class InboundPriorityBulkheadGuard implements CanActivate {
       return true;
     }
 
-    const skip = this.reflector.getAllAndOverride<boolean>(
+    const shouldSkip = this.reflector.getAllAndOverride<boolean>(
       SKIP_INBOUND_BULKHEAD_KEY,
       [context.getHandler(), context.getClass()],
     );
-    if (skip) {
+    if (shouldSkip) {
       return true;
     }
 
@@ -92,12 +92,12 @@ export class InboundPriorityBulkheadGuard implements CanActivate {
   private attachRelease(context: ExecutionContext): void {
     const res = context.switchToHttp().getResponse<ServerResponse>();
     const raw = get(res, 'raw', res) as ServerResponse;
-    let released = false;
+    let hasReleased = false;
     const releaseOnce = (): void => {
-      if (released) {
+      if (hasReleased) {
         return;
       }
-      released = true;
+      hasReleased = true;
       this.bulkhead.release();
     };
     raw.once('finish', releaseOnce);

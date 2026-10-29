@@ -59,7 +59,8 @@ export class ConnectionPoolRegistry {
       );
     }
 
-    const { mode: _mode, ...poolRest } = connectionPool;
+    const { mode: sharedPoolMode, ...poolRest } = connectionPool;
+    void sharedPoolMode;
     const key = poolKey(
       withoutUndefined({
         mode: 'shared',
@@ -104,16 +105,16 @@ export class ConnectionPoolRegistry {
   }
 
   private leaseShared(entry: SharedPoolEntry): AgentBundle {
-    let released = false;
+    let hasReleased = false;
     return withoutUndefined({
       httpAgent: entry.httpAgent,
       httpsAgent: entry.httpsAgent,
       dnsCache: entry.dnsCache,
       release: () => {
-        if (released) {
+        if (hasReleased) {
           return;
         }
-        released = true;
+        hasReleased = true;
         entry.refCount -= 1;
         if (entry.refCount <= 0) {
           entry.httpAgent.destroy();
@@ -132,14 +133,14 @@ export class ConnectionPoolRegistry {
     dns?: DnsPolicy;
   }): AgentBundle {
     const agents = this.createAgents(options);
-    let released = false;
+    let hasReleased = false;
     return withoutUndefined({
       ...agents,
       release: () => {
-        if (released) {
+        if (hasReleased) {
           return;
         }
-        released = true;
+        hasReleased = true;
         agents.httpAgent.destroy();
         agents.httpsAgent.destroy();
         agents.dnsCache?.clear();

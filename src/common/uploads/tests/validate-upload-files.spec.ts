@@ -28,14 +28,14 @@ describe('validateUploadFiles', () => {
   const scanner = new NoopFileScanner();
 
   it('accepts multiple valid files under the limit', async () => {
-    const result = await validateUploadFiles(
+    const outcome = await validateUploadFiles(
       [pngFile('one.png'), pngFile('two.png')],
       { ...DEFAULT_UPLOAD_OPTIONS, maxFiles: 5 },
       scanner,
     );
-    expect(result).toHaveLength(2);
-    expect(result[0]?.storedName).toMatch(/\.png$/);
-    expect(result[0]?.scanned).toBe(false);
+    expect(outcome).toHaveLength(2);
+    expect(outcome[0]?.storedName).toMatch(/\.png$/);
+    expect(outcome[0]?.scanned).toBe(false);
   });
 
   it('rejects when maxFiles is exceeded', async () => {
@@ -70,7 +70,7 @@ describe('validateUploadFiles', () => {
 
   it('rejects infected files from scanner', async () => {
     const infected: FileScanner = {
-      performsScan: true,
+      isScanningEnabled: true,
       scan: async () => ({ status: 'infected', signature: 'Eicar-Test' }),
     };
     await expect(
@@ -84,7 +84,7 @@ describe('validateUploadFiles', () => {
 
   it('returns 503 when scanner errors (fail closed)', async () => {
     const broken: FileScanner = {
-      performsScan: true,
+      isScanningEnabled: true,
       scan: async () => ({ status: 'error', message: 'down' }),
     };
     await expect(
@@ -92,16 +92,16 @@ describe('validateUploadFiles', () => {
     ).rejects.toBeInstanceOf(ServiceUnavailableException);
   });
 
-  it('sets scanned true when scanner.performsScan is true', async () => {
+  it('sets scanned true when scanner.isScanningEnabled is true', async () => {
     const real: FileScanner = {
-      performsScan: true,
+      isScanningEnabled: true,
       scan: async () => ({ status: 'clean' }),
     };
-    const result = await validateUploadFiles(
+    const outcome = await validateUploadFiles(
       [pngFile()],
       DEFAULT_UPLOAD_OPTIONS,
       real,
     );
-    expect(result[0]?.scanned).toBe(true);
+    expect(outcome[0]?.scanned).toBe(true);
   });
 });

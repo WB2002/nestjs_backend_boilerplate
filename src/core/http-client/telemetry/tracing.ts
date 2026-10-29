@@ -22,9 +22,9 @@ export interface TraceHandles {
 export function startLogicalTrace(
   identity: ClientIdentity,
   request: HttpRequest,
-  enabled: boolean,
+  isTracingEnabled: boolean,
 ): TraceHandles | undefined {
-  if (!enabled) {
+  if (!isTracingEnabled) {
     return undefined;
   }
 
@@ -45,10 +45,10 @@ export function startAttemptTrace(
   identity: ClientIdentity,
   request: HttpRequest,
   attempt: number,
-  enabled: boolean,
+  isTracingEnabled: boolean,
   parent?: TraceHandles,
 ): TraceHandles | undefined {
-  if (!enabled) {
+  if (!isTracingEnabled) {
     return undefined;
   }
 
@@ -76,7 +76,10 @@ export function startAttemptTrace(
   return createTraceHandles(span, false);
 }
 
-function createTraceHandles(span: Span, injectEnabled: boolean): TraceHandles {
+function createTraceHandles(
+  span: Span,
+  shouldInjectTraceContext: boolean,
+): TraceHandles {
   return {
     span,
     endSuccess(response: HttpResponse) {
@@ -93,7 +96,7 @@ function createTraceHandles(span: Span, injectEnabled: boolean): TraceHandles {
       span.end();
     },
     injectHeaders(headers: Record<string, string>) {
-      if (!injectEnabled) {
+      if (!shouldInjectTraceContext) {
         return headers;
       }
       const carrier: Record<string, string> = { ...headers };

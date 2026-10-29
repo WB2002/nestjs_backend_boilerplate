@@ -69,9 +69,9 @@ export class RequestCoalescer {
       }
       signal.addEventListener('abort', onAbort, { once: true });
       entry.promise
-        .then((result) => {
+        .then((coalescedHeaders) => {
           signal.removeEventListener('abort', onAbort);
-          resolve(result);
+          resolve(coalescedHeaders);
         })
         .catch((error) => {
           signal.removeEventListener('abort', onAbort);
@@ -104,19 +104,19 @@ function normalizeHeadersForKey(
   if (!headers) {
     return {};
   }
-  const result: Record<string, string> = {};
+  const coalescedHeaders: Record<string, string> = {};
   for (const [key, value] of Object.entries(headers)) {
     if (value == null) {
       continue;
     }
     const normalized = Array.isArray(value) ? value.join(',') : value;
     const lower = key.toLowerCase();
-    result[lower] = isSensitiveHeaderName(key)
+    coalescedHeaders[lower] = isSensitiveHeaderName(key)
       ? sha256Hex(normalized)
       : normalized;
   }
   return Object.fromEntries(
-    Object.entries(result).sort(([a], [b]) => a.localeCompare(b)),
+    Object.entries(coalescedHeaders).sort(([a], [b]) => a.localeCompare(b)),
   );
 }
 

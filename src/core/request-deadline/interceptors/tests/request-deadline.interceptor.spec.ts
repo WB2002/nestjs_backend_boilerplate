@@ -108,7 +108,7 @@ describe('RequestDeadlineInterceptor', () => {
   });
 
   it('clears timer when SkipRequestDeadline is set', () => {
-    let cleared = false;
+    let hasTimerBeenCleared = false;
     const reflector = {
       getAllAndOverride: (key: string) =>
         key === SKIP_REQUEST_DEADLINE_KEY ? true : undefined,
@@ -125,7 +125,7 @@ describe('RequestDeadlineInterceptor', () => {
     };
     const internals = {
       clearTimer: () => {
-        cleared = true;
+        hasTimerBeenCleared = true;
       },
       rescheduleFromStart: () => undefined,
       setReason: () => undefined,
@@ -137,6 +137,6 @@ describe('RequestDeadlineInterceptor', () => {
         .intercept(mockContext(), { handle: () => of('ok') })
         .subscribe();
     });
-    expect(cleared).toBe(true);
+    expect(hasTimerBeenCleared).toBe(true);
   });
 });

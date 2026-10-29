@@ -6,12 +6,12 @@ import { OverloadRejectedError } from '../errors/overload-rejected.error';
 describe('InboundBulkheadMiddleware', () => {
   function createMiddleware(
     maxInFlight: number,
-    enabled = true,
+    isBulkheadEnabled = true,
   ): {
     middleware: InboundBulkheadMiddleware;
     service: InboundBulkheadService;
   } {
-    const config = { enabled, maxInFlight };
+    const config = { enabled: isBulkheadEnabled, maxInFlight };
     const loadLevel = {
       enabled: false,
       maxQueue: 100,

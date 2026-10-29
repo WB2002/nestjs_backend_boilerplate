@@ -142,8 +142,8 @@ function appendQueryValue(
     return;
   }
   if (Array.isArray(value)) {
-    for (const item of value) {
-      absolute.searchParams.append(key, String(item));
+    for (const queryValue of value) {
+      absolute.searchParams.append(key, String(queryValue));
     }
     return;
   }
@@ -170,7 +170,7 @@ export function applyPathParams(
 }
 
 export function buildRequestBody(request: HttpRequest): {
-  data?: unknown;
+  requestBody?: unknown;
   headers: Record<string, string>;
 } {
   const headers = normalizeHeaders(request.headers);
@@ -184,7 +184,7 @@ export function buildRequestBody(request: HttpRequest): {
   }
 
   return {
-    data: request.body,
+    requestBody: request.body,
     headers,
   };
 }
@@ -192,7 +192,7 @@ export function buildRequestBody(request: HttpRequest): {
 function buildMultipartBody(
   request: HttpRequest,
   headers: Record<string, string>,
-): { data: FormData; headers: Record<string, string> } {
+): { requestBody: FormData; headers: Record<string, string> } {
   const form = new FormData();
   for (const field of request.multipart ?? []) {
     const appendOptions: { filename?: string; contentType?: string } = {};
@@ -209,7 +209,7 @@ function buildMultipartBody(
     );
   }
   return {
-    data: form,
+    requestBody: form,
     headers: {
       ...headers,
       ...form.getHeaders(),
@@ -220,13 +220,13 @@ function buildMultipartBody(
 function buildFormUrlEncodedBody(
   request: HttpRequest,
   headers: Record<string, string>,
-): { data: string; headers: Record<string, string> } {
+): { requestBody: string; headers: Record<string, string> } {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(request.formData ?? {})) {
     params.set(key, String(value));
   }
   return {
-    data: params.toString(),
+    requestBody: params.toString(),
     headers: {
       'content-type': 'application/x-www-form-urlencoded',
       ...headers,
@@ -240,29 +240,29 @@ export function normalizeHeaders(
   if (!headers) {
     return {};
   }
-  const result: Record<string, string> = {};
+  const builtHeaders: Record<string, string> = {};
   for (const [key, value] of Object.entries(headers)) {
     if (value == null) {
       continue;
     }
-    result[key] = Array.isArray(value) ? value.join(', ') : value;
+    builtHeaders[key] = Array.isArray(value) ? value.join(', ') : value;
   }
-  return result;
+  return builtHeaders;
 }
 
 export function normalizeResponseHeaders(
   headers: Record<string, unknown>,
 ): Record<string, string> {
-  const result: Record<string, string> = {};
+  const builtHeaders: Record<string, string> = {};
   for (const [key, value] of Object.entries(headers)) {
     if (value == null) {
       continue;
     }
-    result[key.toLowerCase()] = Array.isArray(value)
+    builtHeaders[key.toLowerCase()] = Array.isArray(value)
       ? value.join(', ')
       : String(value);
   }
-  return result;
+  return builtHeaders;
 }
 
 function ensureTrailingSlash(value: string): string {

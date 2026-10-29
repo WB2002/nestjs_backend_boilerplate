@@ -40,8 +40,8 @@ function percentageFlag(overrides: Partial<IFeatureFlag> = {}): IFeatureFlag {
 describe('feature-flag.evaluator', () => {
   describe('boolean', () => {
     it('returns true when enabled', () => {
-      const result = evaluateFeatureFlag(booleanFlag({ enabled: true }), {});
-      expect(result).toEqual({
+      const outcome = evaluateFeatureFlag(booleanFlag({ enabled: true }), {});
+      expect(outcome).toEqual({
         enabled: true,
         usedDefault: false,
         reason: 'boolean',
@@ -49,8 +49,8 @@ describe('feature-flag.evaluator', () => {
     });
 
     it('returns false when disabled', () => {
-      const result = evaluateFeatureFlag(booleanFlag({ enabled: false }), {});
-      expect(result).toEqual({
+      const outcome = evaluateFeatureFlag(booleanFlag({ enabled: false }), {});
+      expect(outcome).toEqual({
         enabled: false,
         usedDefault: false,
         reason: 'disabled',
@@ -80,8 +80,8 @@ describe('feature-flag.evaluator', () => {
       let enabled = 0;
       const sample = 5_000;
       for (let i = 0; i < sample; i += 1) {
-        const result = evaluateFeatureFlag(flag, { userId: `user-${i}` });
-        if (result.enabled) {
+        const outcome = evaluateFeatureFlag(flag, { userId: `user-${i}` });
+        if (outcome.enabled) {
           enabled += 1;
         }
       }
@@ -91,14 +91,14 @@ describe('feature-flag.evaluator', () => {
     });
 
     it('uses default when targeting context is missing', () => {
-      const result = evaluateFeatureFlag(
+      const outcome = evaluateFeatureFlag(
         percentageFlag(),
         {},
         {
           defaultValue: false,
         },
       );
-      expect(result).toEqual({
+      expect(outcome).toEqual({
         enabled: false,
         usedDefault: true,
         reason: 'missing_targeting',
@@ -118,11 +118,11 @@ describe('feature-flag.evaluator', () => {
     });
 
     it('returns false when percentage flag is disabled', () => {
-      const result = evaluateFeatureFlag(percentageFlag({ enabled: false }), {
+      const outcome = evaluateFeatureFlag(percentageFlag({ enabled: false }), {
         userId: 'user-1',
       });
-      expect(result.enabled).toBe(false);
-      expect(result.reason).toBe('disabled');
+      expect(outcome.enabled).toBe(false);
+      expect(outcome.reason).toBe('disabled');
     });
   });
 

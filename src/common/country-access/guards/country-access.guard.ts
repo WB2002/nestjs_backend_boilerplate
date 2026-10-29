@@ -26,11 +26,11 @@ export class CountryAccessGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const skip = this.reflector.getAllAndOverride<boolean>(
+    const shouldSkip = this.reflector.getAllAndOverride<boolean>(
       SKIP_COUNTRY_ACCESS_KEY,
       [context.getHandler(), context.getClass()],
     );
-    if (skip) {
+    if (shouldSkip) {
       return true;
     }
 

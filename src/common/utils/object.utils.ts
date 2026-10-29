@@ -13,12 +13,12 @@ export function withoutUndefined<T extends object>(
     undefined
   >;
 } {
-  const result: Record<string, unknown> = {};
+  const pickedFields: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(input as Record<string, unknown>)) {
     if (value !== undefined) {
-      result[key] = value;
+      pickedFields[key] = value;
     }
   }
   // Runtime omits undefined keys; cast bridges exactOptionalPropertyTypes.
-  return result as never;
+  return pickedFields as never;
 }

@@ -123,13 +123,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
       }
     }
 
-    const responseDestroyed =
+    const isResponseDestroyed =
       get(response, 'raw.destroyed') === true ||
       get(response, 'destroyed') === true ||
       get(response, 'writableEnded') === true ||
       get(response, 'raw.writableEnded') === true;
 
-    if (status === HTTP_STATUS_CLIENT_CLOSED_REQUEST && responseDestroyed) {
+    if (status === HTTP_STATUS_CLIENT_CLOSED_REQUEST && isResponseDestroyed) {
       this.logger.warn(
         `Exception ${status} - ${message} (response already closed)`,
       );
@@ -279,8 +279,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
   private setRetryAfterHeader(response: unknown, retryAfterSec: number): void {
     const value = String(retryAfterSec);
     const res = response as {
-      header?: (name: string, val: string) => void;
-      setHeader?: (name: string, val: string) => void;
+      header?: (name: string, headerValue: string) => void;
+      setHeader?: (name: string, headerValue: string) => void;
     };
     if (typeof res.header === 'function') {
       res.header('Retry-After', value);

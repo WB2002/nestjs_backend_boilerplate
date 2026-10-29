@@ -25,7 +25,7 @@ export class FeatureFlagService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(FeatureFlagService.name);
   private readonly cache = new FeatureFlagCache();
   private environment: string = DEFAULT_FEATURE_FLAG_ENV;
-  private redisAvailable = false;
+  private isRedisAvailable = false;
   private lastReconciledAt: Date | null = null;
   private lastError: string | null = null;
   private startedAt = new Date();
@@ -57,24 +57,24 @@ export class FeatureFlagService implements OnModuleInit, OnModuleDestroy {
     options: IFeatureFlagEvaluationOptions = {},
   ): boolean {
     const flag = this.cache.get(key);
-    const result = evaluateFeatureFlag(flag, context, options);
+    const evaluation = evaluateFeatureFlag(flag, context, options);
     void emitFeatureFlagMetrics({
       enabled: this.metricsEnabled(),
       name: 'feature_flag_evaluation_total',
-      dimensions: { Result: result.enabled ? 'on' : 'off' },
+      dimensions: { Result: evaluation.enabled ? 'on' : 'off' },
     });
-    if (result.usedDefault) {
+    if (evaluation.usedDefault) {
       this.logger.warn(
-        `${FeatureFlagLogEvent.EVALUATION_DEFAULT_USED} key=${key} reason=${result.reason}`,
+        `${FeatureFlagLogEvent.EVALUATION_DEFAULT_USED} key=${key} reason=${evaluation.reason}`,
       );
-      if (result.reason === 'invalid_percentage') {
+      if (evaluation.reason === 'invalid_percentage') {
         void emitFeatureFlagMetrics({
           enabled: this.metricsEnabled(),
           name: 'feature_flag_evaluation_errors',
         });
       }
     }
-    return result.enabled;
+    return evaluation.enabled;
   }
 
   getFlag(key: string): IFeatureFlag | undefined {
@@ -97,8 +97,8 @@ export class FeatureFlagService implements OnModuleInit, OnModuleDestroy {
     const staleAgeMs = this.lastReconciledAt
       ? Date.now() - this.lastReconciledAt.getTime()
       : Date.now() - this.startedAt.getTime();
-    const stale =
-      !this.redisAvailable ||
+    const isStale =
+      !this.isRedisAvailable ||
       !this.subscriber.isConnected() ||
       this.lastError != null;
     void emitFeatureFlagMetrics({
@@ -108,9 +108,9 @@ export class FeatureFlagService implements OnModuleInit, OnModuleDestroy {
       unit: Unit.Milliseconds,
     });
     return {
-      healthy: this.redisAvailable && this.subscriber.isConnected(),
-      stale,
-      redisAvailable: this.redisAvailable,
+      healthy: this.isRedisAvailable && this.subscriber.isConnected(),
+      stale: isStale,
+      redisAvailable: this.isRedisAvailable,
       pubSubConnected: this.subscriber.isConnected(),
       flagCount: this.cache.size(),
       lastReconciledAt: this.lastReconciledAt
@@ -121,26 +121,26 @@ export class FeatureFlagService implements OnModuleInit, OnModuleDestroy {
   }
 
   async reconcileNow(): Promise<void> {
-    const result = await this.reconciler.reconcile();
-    this.applyReconcileResult(result.success, result.error);
+    const reconcileSummary = await this.reconciler.reconcile();
+    this.applyReconcileResult(reconcileSummary.success, reconcileSummary.error);
   }
 
   private async bootstrap(): Promise<void> {
     try {
-      const reachable = await this.repository.ping();
-      if (!reachable) {
+      const isReachable = await this.repository.ping();
+      if (!isReachable) {
         throw new Error('Redis ping failed');
       }
       const flags = await this.repository.loadAllFlags(this.environment);
       this.cache.replaceAll(flags);
-      this.redisAvailable = true;
+      this.isRedisAvailable = true;
       this.lastReconciledAt = new Date();
       this.lastError = null;
       this.logger.log(
         `Feature flags loaded: count=${this.cache.size()} env=${this.environment}`,
       );
     } catch (error) {
-      this.redisAvailable = false;
+      this.isRedisAvailable = false;
       this.lastError = error instanceof Error ? error.message : String(error);
       this.logger.warn(
         `${FeatureFlagLogEvent.REDIS_UNAVAILABLE}: starting with empty snapshot: ${this.lastError}`,
@@ -155,8 +155,11 @@ export class FeatureFlagService implements OnModuleInit, OnModuleDestroy {
     this.reconciler.start({
       environment: this.environment,
       cache: this.cache,
-      onResult: (result) => {
-        this.applyReconcileResult(result.success, result.error);
+      onResult: (reconcileSummary) => {
+        this.applyReconcileResult(
+          reconcileSummary.success,
+          reconcileSummary.error,
+        );
       },
     });
 
@@ -169,14 +172,17 @@ export class FeatureFlagService implements OnModuleInit, OnModuleDestroy {
     });
   }
 
-  private applyReconcileResult(success: boolean, error: string | null): void {
-    if (success) {
-      this.redisAvailable = true;
+  private applyReconcileResult(
+    isSuccessful: boolean,
+    error: string | null,
+  ): void {
+    if (isSuccessful) {
+      this.isRedisAvailable = true;
       this.lastReconciledAt = new Date();
       this.lastError = null;
       return;
     }
-    this.redisAvailable = false;
+    this.isRedisAvailable = false;
     this.lastError = error;
   }
 

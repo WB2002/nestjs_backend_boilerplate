@@ -3,7 +3,7 @@ import type { FileScanResult, FileScanner } from './file-scanner';
 
 @Injectable()
 export class NoopFileScanner implements FileScanner {
-  readonly performsScan = false;
+  readonly isScanningEnabled = false;
 
   async scan(_input: {
     buffer: Buffer;

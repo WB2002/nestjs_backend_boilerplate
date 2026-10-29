@@ -87,8 +87,8 @@ function labelForPreferredKey(key: string): string {
       return 'User ID';
     case 'durationMs':
       return 'Duration (ms)';
-    case 'result':
-      return 'Result';
+    case 'operationStatus':
+      return 'Operation status';
     default:
       return key;
   }

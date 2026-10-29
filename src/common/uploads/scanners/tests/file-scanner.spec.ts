@@ -69,10 +69,10 @@ describe('ClamAvFileScanner', () => {
       port: 1,
       timeoutMs: 500,
     });
-    const result = await scanner.scan({
+    const outcome = await scanner.scan({
       buffer: Buffer.from('x'),
       filename: 'x.png',
     });
-    expect(result.status).toBe('error');
+    expect(outcome.status).toBe('error');
   });
 });

@@ -50,12 +50,12 @@ export class AdaptiveLimiter<T> {
       throw new AdaptiveLimitExceededError();
     }
     this.inFlightCount += 1;
-    const rttAware =
+    const isRttAware =
       this.config.algorithm === 'vegas' ||
       this.config.algorithm === 'gradient2';
-    const start = rttAware ? this.clock() : 0;
+    const start = isRttAware ? this.clock() : 0;
     try {
-      const result = await operation(sig);
+      const operationResponse = await operation(sig);
       switch (this.config.algorithm) {
         case 'vegas':
           this.vegasOnSuccess(this.clock() - start);
@@ -71,7 +71,7 @@ export class AdaptiveLimiter<T> {
           throw new Error(`Unknown algorithm: ${_never}`);
         }
       }
-      return result;
+      return operationResponse;
     } catch (error) {
       this.onFailure();
       throw error;

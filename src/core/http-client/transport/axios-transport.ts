@@ -47,7 +47,7 @@ export class AxiosTransport {
         query: request.query,
       }),
     );
-    const { data, headers } = buildRequestBody({
+    const { requestBody, headers } = buildRequestBody({
       ...request,
       headers: {
         ...options.defaultHeaders,
@@ -59,7 +59,8 @@ export class AxiosTransport {
       method: request.method,
       url,
       headers,
-      data,
+      // eslint-disable-next-line id-denylist -- Axios request config body field
+      data: requestBody,
       timeout: request.timeoutMs ?? options.timeoutMs,
       signal: request.signal ?? options.signal,
       responseType: toAxiosResponseType(request.responseType),

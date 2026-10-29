@@ -139,7 +139,7 @@ describeWithRedis('FeatureFlagRepository (Redis)', () => {
 
   it('stores percentage flags and loads via index (no KEYS)', async () => {
     const now = new Date().toISOString();
-    const result = await repository.casWrite({
+    const outcome = await repository.casWrite({
       environment,
       key,
       operation: 'create',
@@ -156,7 +156,7 @@ describeWithRedis('FeatureFlagRepository (Redis)', () => {
       }),
       event: { environment, key },
     });
-    expect(result.status).toBe('ok');
+    expect(outcome.status).toBe('ok');
     const keys = await repository.listFlagKeys(environment);
     expect(keys).toContain(key);
     const loaded = await repository.getFlag(environment, key);

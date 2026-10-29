@@ -19,8 +19,14 @@ describe('FeatureFlagService evaluation path (local)', () => {
     };
     cache.replaceAll([flag]);
 
-    const isEnabled = (key: string, defaultValue = false): boolean => {
-      return evaluateFeatureFlag(cache.get(key), {}, { defaultValue }).enabled;
+    const isEnabled = (key: string, isEnabledByDefault = false): boolean => {
+      return evaluateFeatureFlag(
+        cache.get(key),
+        {},
+        {
+          defaultValue: isEnabledByDefault,
+        },
+      ).enabled;
     };
 
     expect(isEnabled('new-checkout')).toBe(true);

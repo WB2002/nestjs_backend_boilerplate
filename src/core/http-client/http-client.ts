@@ -8,7 +8,7 @@ import { ConnectionPoolRegistry } from './transport/connection-pool.registry';
 export class HttpClient implements OnApplicationShutdown {
   private readonly poolRegistry = new ConnectionPoolRegistry();
   private readonly runtimeRegistry = new RuntimeRegistry(this.poolRegistry);
-  private closed = false;
+  private isClosed = false;
   private readonly shutdownGraceMs = 10_000;
 
   internal(serviceName: string): ConfiguredHttpClient {
@@ -20,10 +20,10 @@ export class HttpClient implements OnApplicationShutdown {
   }
 
   async close(graceMs = this.shutdownGraceMs): Promise<void> {
-    if (this.closed) {
+    if (this.isClosed) {
       return;
     }
-    this.closed = true;
+    this.isClosed = true;
     await this.runtimeRegistry.close(graceMs);
   }
 
@@ -32,7 +32,7 @@ export class HttpClient implements OnApplicationShutdown {
   }
 
   private create(kind: ClientKind, serviceName: string): ConfiguredHttpClient {
-    if (this.closed) {
+    if (this.isClosed) {
       throw new Error('HttpClient is closed');
     }
     if (!serviceName?.trim()) {

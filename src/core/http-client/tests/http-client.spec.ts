@@ -816,16 +816,16 @@ describe('HttpClient', () => {
     let peak = 0;
     let current = 0;
     let aAttempts = 0;
-    let aInRetryBackoff = false;
-    let bServedDuringABackoff = false;
+    let isClientAInRetryBackoff = false;
+    let isClientBServedDuringABackoff = false;
     let notifyAInBackoff: (() => void) | undefined;
     const aEnteredBackoff = new Promise<void>((resolve) => {
       notifyAInBackoff = resolve;
     });
     const { server, baseUrl } = await listen(async (req, res) => {
       const path = req.url ?? '';
-      if (path.includes('/b') && aInRetryBackoff) {
-        bServedDuringABackoff = true;
+      if (path.includes('/b') && isClientAInRetryBackoff) {
+        isClientBServedDuringABackoff = true;
       }
 
       current += 1;
@@ -836,13 +836,13 @@ describe('HttpClient', () => {
       if (path.includes('/a')) {
         aAttempts += 1;
         if (aAttempts <= 2) {
-          aInRetryBackoff = true;
+          isClientAInRetryBackoff = true;
           notifyAInBackoff?.();
           notifyAInBackoff = undefined;
           res.statusCode = 503;
           res.end('down');
           setTimeout(() => {
-            aInRetryBackoff = false;
+            isClientAInRetryBackoff = false;
           }, 200);
           return;
         }
@@ -866,7 +866,7 @@ describe('HttpClient', () => {
       await aEnteredBackoff;
       const other = client.get('/b');
       await Promise.all([slow, other]);
-      expect(bServedDuringABackoff).toBe(true);
+      expect(isClientBServedDuringABackoff).toBe(true);
       expect(peak).toBe(1);
     } finally {
       server.close();
@@ -1419,6 +1419,7 @@ describe('redaction and error URL safety', () => {
       },
       response: {
         status: 500,
+        // eslint-disable-next-line id-denylist -- Axios error response shape
         data: 'fail',
         statusText: 'Error',
         headers: {},

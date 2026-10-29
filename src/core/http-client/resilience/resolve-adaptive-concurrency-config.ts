@@ -11,18 +11,22 @@ export function resolveAdaptiveConcurrencyConfig(
   instanceCount: number,
 ): AdaptiveLimiterConfigInput {
   const tuning = policy.adaptive ?? {};
-  const cluster = policy.clusterAware === true;
+  const isClusterMode = policy.clusterAware === true;
   const instances = Math.max(1, instanceCount);
 
   const rawMax = tuning.maxLimit ?? policy.maxConcurrent;
   const rawInitial = tuning.initialLimit ?? DEFAULT_INITIAL;
   const rawMin = tuning.minLimit ?? DEFAULT_MIN;
 
-  const maxLimit = cluster ? scaleClusterAwareLimit(rawMax, instances) : rawMax;
-  const initialLimit = cluster
+  const maxLimit = isClusterMode
+    ? scaleClusterAwareLimit(rawMax, instances)
+    : rawMax;
+  const initialLimit = isClusterMode
     ? scaleClusterAwareLimit(rawInitial, instances)
     : rawInitial;
-  const minLimit = cluster ? scaleClusterAwareLimit(rawMin, instances) : rawMin;
+  const minLimit = isClusterMode
+    ? scaleClusterAwareLimit(rawMin, instances)
+    : rawMin;
 
   return {
     algorithm: tuning.algorithm ?? DEFAULT_ALGORITHM,

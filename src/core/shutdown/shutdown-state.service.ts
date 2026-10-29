@@ -2,13 +2,13 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class ShutdownState {
-  private shuttingDown = false;
+  private isShutdownInProgress = false;
 
   get isShuttingDown(): boolean {
-    return this.shuttingDown;
+    return this.isShutdownInProgress;
   }
 
   beginShutdown(): void {
-    this.shuttingDown = true;
+    this.isShutdownInProgress = true;
   }
 }

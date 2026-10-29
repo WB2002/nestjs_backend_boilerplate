@@ -14,9 +14,9 @@ export type WalkSanitizationOptions = {
 };
 
 export type PropertyFlags = {
-  skip?: boolean;
+  shouldSkip?: boolean;
   htmlOptions?: SanitizeHtmlOptions;
-  safeUrl?: boolean;
-  rejectSqlInjection?: boolean;
-  skipSqlInjection?: boolean;
+  isSafeUrl?: boolean;
+  shouldRejectSqlInjection?: boolean;
+  shouldSkipSqlInjection?: boolean;
 };

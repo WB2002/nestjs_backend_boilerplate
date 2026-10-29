@@ -58,7 +58,7 @@ export async function registerInstrumentation(): Promise<void> {
   await sdk.start();
 }
 
-const loadedAsPreload = require.main !== module;
-if (loadedAsPreload) {
+const isLoadedAsPreload = require.main !== module;
+if (isLoadedAsPreload) {
   void registerInstrumentation();
 }

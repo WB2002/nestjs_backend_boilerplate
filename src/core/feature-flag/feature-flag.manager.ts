@@ -86,7 +86,7 @@ export class FeatureFlagManager {
     }
 
     const started = Date.now();
-    const result = await this.repository.casWrite({
+    const casWriteResponse = await this.repository.casWrite({
       environment,
       key: dto.key,
       operation: 'create',
@@ -101,12 +101,12 @@ export class FeatureFlagManager {
       unit: Unit.Milliseconds,
     });
 
-    if (result.status === 'conflict') {
+    if (casWriteResponse.status === 'conflict') {
       throw new ConflictException(
         `Feature flag ${dto.key} already exists or version conflict`,
       );
     }
-    if (!result.flag) {
+    if (!casWriteResponse.flag) {
       throw new ConflictException(`Failed to create feature flag ${dto.key}`);
     }
 
@@ -117,12 +117,12 @@ export class FeatureFlagManager {
       actorUserId: actor.userId,
       actorEmail: actor.email,
       oldValue: null,
-      newValue: result.flag as unknown as Record<string, unknown>,
-      version: result.version,
+      newValue: casWriteResponse.flag as unknown as Record<string, unknown>,
+      version: casWriteResponse.version,
     });
 
-    this.featureFlagService.getCache().applyUpdate(result.flag);
-    return result.flag;
+    this.featureFlagService.getCache().applyUpdate(casWriteResponse.flag);
+    return casWriteResponse.flag;
   }
 
   async update(
@@ -169,7 +169,7 @@ export class FeatureFlagManager {
     }
 
     const started = Date.now();
-    const result = await this.repository.casWrite({
+    const casWriteResponse = await this.repository.casWrite({
       environment,
       key,
       operation: 'update',
@@ -184,12 +184,12 @@ export class FeatureFlagManager {
       unit: Unit.Milliseconds,
     });
 
-    if (result.status === 'conflict') {
+    if (casWriteResponse.status === 'conflict') {
       throw new ConflictException(
         `Feature flag ${key} version conflict (expected ${dto.expectedVersion})`,
       );
     }
-    if (result.status === 'not_found' || !result.flag) {
+    if (casWriteResponse.status === 'not_found' || !casWriteResponse.flag) {
       throw new NotFoundException(`Feature flag ${key} not found`);
     }
 
@@ -200,12 +200,12 @@ export class FeatureFlagManager {
       actorUserId: actor.userId,
       actorEmail: actor.email,
       oldValue: existing as unknown as Record<string, unknown>,
-      newValue: result.flag as unknown as Record<string, unknown>,
-      version: result.version,
+      newValue: casWriteResponse.flag as unknown as Record<string, unknown>,
+      version: casWriteResponse.version,
     });
 
-    this.featureFlagService.getCache().applyUpdate(result.flag);
-    return result.flag;
+    this.featureFlagService.getCache().applyUpdate(casWriteResponse.flag);
+    return casWriteResponse.flag;
   }
 
   async delete(
@@ -220,7 +220,7 @@ export class FeatureFlagManager {
     }
 
     const started = Date.now();
-    const result = await this.repository.casWrite({
+    const casWriteResponse = await this.repository.casWrite({
       environment,
       key,
       operation: 'delete',
@@ -234,12 +234,12 @@ export class FeatureFlagManager {
       unit: Unit.Milliseconds,
     });
 
-    if (result.status === 'conflict') {
+    if (casWriteResponse.status === 'conflict') {
       throw new ConflictException(
         `Feature flag ${key} version conflict (expected ${dto.expectedVersion})`,
       );
     }
-    if (result.status === 'not_found') {
+    if (casWriteResponse.status === 'not_found') {
       throw new NotFoundException(`Feature flag ${key} not found`);
     }
 
@@ -251,11 +251,13 @@ export class FeatureFlagManager {
       actorEmail: actor.email,
       oldValue: existing as unknown as Record<string, unknown>,
       newValue: null,
-      version: result.version,
+      version: casWriteResponse.version,
     });
 
-    this.featureFlagService.getCache().applyDelete(key, result.version);
-    return { key, version: result.version };
+    this.featureFlagService
+      .getCache()
+      .applyDelete(key, casWriteResponse.version);
+    return { key, version: casWriteResponse.version };
   }
 
   private assertPercentageFields(

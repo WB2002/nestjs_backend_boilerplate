@@ -5,24 +5,24 @@
  * - comma-separated IPs/CIDRs → string[]
  */
 export function parseTrustProxy(raw: string | undefined): boolean | string[] {
-  let result: boolean | string[];
+  let trustProxySetting: boolean | string[];
 
   if (raw == null || raw.trim() === '') {
-    result = false;
+    trustProxySetting = false;
   } else {
     const value = raw.trim();
     const lower = value.toLowerCase();
     if (lower === 'false' || lower === '0') {
-      result = false;
+      trustProxySetting = false;
     } else if (lower === 'true' || lower === '1') {
-      result = true;
+      trustProxySetting = true;
     } else {
-      result = value
+      trustProxySetting = value
         .split(',')
         .map((part) => part.trim())
         .filter((part) => part.length > 0);
     }
   }
 
-  return result;
+  return trustProxySetting;
 }

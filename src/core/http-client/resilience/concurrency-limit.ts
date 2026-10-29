@@ -8,7 +8,7 @@ export class ConcurrencyLimiter {
     signal?: AbortSignal;
     onAbort?: () => void;
   }> = [];
-  private closed = false;
+  private isClosed = false;
 
   constructor(private readonly maxConcurrent: number) {
     if (maxConcurrent < 1) {
@@ -25,7 +25,7 @@ export class ConcurrencyLimiter {
   }
 
   async acquire(signal?: AbortSignal): Promise<() => void> {
-    if (this.closed) {
+    if (this.isClosed) {
       throw new ClientClosedError('Concurrency limiter is closed');
     }
     if (signal?.aborted) {
@@ -60,7 +60,7 @@ export class ConcurrencyLimiter {
       }
       this.queue.push(waiter);
     });
-    if (this.closed) {
+    if (this.isClosed) {
       // Permit was transferred to this waiter; return it to the pool.
       this.release();
       throw new ClientClosedError('Concurrency limiter is closed');
@@ -74,7 +74,7 @@ export class ConcurrencyLimiter {
   }
 
   close(error: Error): void {
-    this.closed = true;
+    this.isClosed = true;
     while (this.queue.length > 0) {
       const next = this.queue.shift();
       if (next?.signal && next.onAbort) {

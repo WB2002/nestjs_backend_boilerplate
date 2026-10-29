@@ -21,11 +21,11 @@ export class AdaptiveConcurrencyGate implements ConcurrencyGate {
     signal: AbortSignal | undefined,
     fn: (signal: AbortSignal) => Promise<T>,
   ): Promise<T> {
-    const result = await this.limiter.execute(async (slotSignal) => {
+    const gateResult = await this.limiter.execute(async (slotSignal) => {
       const merged = mergeAbortSignals(signal, slotSignal);
       return fn(merged);
     }, signal);
-    return result as T;
+    return gateResult as T;
   }
 
   close(_error: Error): void {

@@ -43,13 +43,17 @@ export class OAuthTokenManager {
     delete this.inflight;
   }
 
-  private async acquire(force = false): Promise<CachedToken> {
-    if (!force && this.cached && this.cached.expiresAt > Date.now()) {
+  private async acquire(shouldForceRefresh = false): Promise<CachedToken> {
+    if (
+      !shouldForceRefresh &&
+      this.cached &&
+      this.cached.expiresAt > Date.now()
+    ) {
       return this.cached;
     }
 
     if (this.inflight) {
-      if (!force) {
+      if (!shouldForceRefresh) {
         return this.inflight;
       }
       // Force refresh: wait for the current flight, then start one new fetch.
@@ -65,7 +69,11 @@ export class OAuthTokenManager {
       return this.inflight;
     }
 
-    if (!force && this.cached && this.cached.expiresAt > Date.now()) {
+    if (
+      !shouldForceRefresh &&
+      this.cached &&
+      this.cached.expiresAt > Date.now()
+    ) {
       return this.cached;
     }
 
@@ -109,6 +117,8 @@ export class OAuthTokenManager {
         'content-type': 'application/x-www-form-urlencoded',
         accept: 'application/json',
       },
+      // Axios request config uses `data` for the body field.
+      // eslint-disable-next-line id-denylist -- Axios API
       data: body.toString(),
       timeout: 10_000,
     });

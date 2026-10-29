@@ -107,15 +107,15 @@ describe('assertPublicHttpUrl', () => {
 
 describe('walkAndSanitize', () => {
   it('sanitizes nested strings and skips password', async () => {
-    const result = (await walkAndSanitize({
+    const outcome = (await walkAndSanitize({
       name: '<b>Ada</b>',
       password: '<script>x</script>',
       nested: { bio: '<img src=x onerror=alert(1)>' },
     })) as Record<string, unknown>;
 
-    expect(result.name).toBe('Ada');
-    expect(result.password).toBe('<script>x</script>');
-    expect((result.nested as { bio: string }).bio).toBe('');
+    expect(outcome.name).toBe('Ada');
+    expect(outcome.password).toBe('<script>x</script>');
+    expect((outcome.nested as { bio: string }).bio).toBe('');
   });
 
   it('rejects SQL injection in strings', async () => {
@@ -143,12 +143,12 @@ describe('walkAndSanitize', () => {
     });
     const parent = Object.assign(new ParentDto(), { nested });
 
-    const result = (await walkAndSanitize(parent, {
+    const outcome = (await walkAndSanitize(parent, {
       metadataTarget: ParentDto.prototype,
     })) as ParentDto;
 
-    expect(result.nested.secret).toBe('<script>keep</script>');
-    expect(result.nested.link).toBe('https://8.8.8.8/path');
+    expect(outcome.nested.secret).toBe('<script>keep</script>');
+    expect(outcome.nested.link).toBe('https://8.8.8.8/path');
 
     await expect(
       walkAndSanitize(
@@ -172,10 +172,10 @@ describe('walkAndSanitize', () => {
     const dto = Object.assign(new DocDto(), {
       notes: '<b>union</b> of sets -- chapter',
     });
-    const result = (await walkAndSanitize(dto, {
+    const outcome = (await walkAndSanitize(dto, {
       metadataTarget: DocDto.prototype,
     })) as DocDto;
     // HTML stripped, SQLi not rejected
-    expect(result.notes).toBe('union of sets -- chapter');
+    expect(outcome.notes).toBe('union of sets -- chapter');
   });
 });

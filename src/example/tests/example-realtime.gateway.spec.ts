@@ -29,6 +29,8 @@ describe('ExampleRealtimeGateway', () => {
 
   const socket = (userId: string): AuthenticatedSocket =>
     ({
+      // Socket.IO handshake bag
+      // eslint-disable-next-line id-denylist -- Socket.IO API
       data: { user: { id: userId, email: 'a@b.com', jti: 'j', role: 'user' } },
       join: jest.fn(),
     }) as unknown as AuthenticatedSocket;

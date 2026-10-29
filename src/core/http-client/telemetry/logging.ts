@@ -5,12 +5,12 @@ import { redactHeaders, redactQuery, redactUrl } from './redaction';
 const logger = new Logger('HttpClient');
 
 export function logRequestStart(
-  enabled: boolean,
+  isLoggingEnabled: boolean,
   identity: ClientIdentity,
   request: HttpRequest,
   requestId: string,
 ): void {
-  if (!enabled) {
+  if (!isLoggingEnabled) {
     return;
   }
   logger.log({
@@ -26,7 +26,7 @@ export function logRequestStart(
 }
 
 export function logRequestSuccess(
-  enabled: boolean,
+  isLoggingEnabled: boolean,
   identity: ClientIdentity,
   request: HttpRequest,
   response: HttpResponse,
@@ -34,7 +34,7 @@ export function logRequestSuccess(
   latencyMs: number,
   attempts: number,
 ): void {
-  if (!enabled) {
+  if (!isLoggingEnabled) {
     return;
   }
   logger.log({
@@ -51,7 +51,7 @@ export function logRequestSuccess(
 }
 
 export function logRequestFailure(
-  enabled: boolean,
+  isLoggingEnabled: boolean,
   identity: ClientIdentity,
   request: HttpRequest,
   error: unknown,
@@ -59,7 +59,7 @@ export function logRequestFailure(
   latencyMs: number,
   attempts: number,
 ): void {
-  if (!enabled) {
+  if (!isLoggingEnabled) {
     return;
   }
   logger.error({

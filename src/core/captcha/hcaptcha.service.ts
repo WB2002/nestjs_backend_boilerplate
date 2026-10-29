@@ -66,15 +66,15 @@ export class HCaptchaService extends CaptchaService {
   ): Promise<CaptchaVerificationResult> {
     const trimmedToken = isString(token) ? token.trim() : '';
     if (!trimmedToken) {
-      const result: CaptchaVerificationResult = {
+      const verificationResult: CaptchaVerificationResult = {
         success: false,
         errorCodes: ['missing-input-response'],
       };
       this.logger.warn({
         message: 'verification_failed',
-        errorCodes: result.errorCodes,
+        errorCodes: verificationResult.errorCodes,
       });
-      return result;
+      return verificationResult;
     }
 
     const formData: Record<string, string> = {
@@ -92,9 +92,9 @@ export class HCaptchaService extends CaptchaService {
         undefined,
         { formData },
       );
-      const result = this.normalizeResponse(response.body);
-      this.logVerificationOutcome(result);
-      return result;
+      const verificationResult = this.normalizeResponse(response.body);
+      this.logVerificationOutcome(verificationResult);
+      return verificationResult;
     } catch (error) {
       if (
         error instanceof CaptchaMalformedResponseError ||
@@ -120,15 +120,17 @@ export class HCaptchaService extends CaptchaService {
       throw new CaptchaMalformedResponseError();
     }
 
-    const result: CaptchaVerificationResult = { success: record.success };
+    const verificationResult: CaptchaVerificationResult = {
+      success: record.success,
+    };
     const rawCodes = record['error-codes'];
     if (Array.isArray(rawCodes)) {
       const errorCodes = rawCodes.filter(isString);
       if (errorCodes.length > 0) {
-        result.errorCodes = errorCodes;
+        verificationResult.errorCodes = errorCodes;
       }
     }
-    return result;
+    return verificationResult;
   }
 
   private mapHttpClientError(error: unknown): CaptchaVerificationResult {
@@ -167,26 +169,30 @@ export class HCaptchaService extends CaptchaService {
     if (typeof record.success !== 'boolean') {
       return undefined;
     }
-    const result: CaptchaVerificationResult = { success: record.success };
+    const verificationResult: CaptchaVerificationResult = {
+      success: record.success,
+    };
     const rawCodes = record['error-codes'];
     if (Array.isArray(rawCodes)) {
       const errorCodes = rawCodes.filter(isString);
       if (errorCodes.length > 0) {
-        result.errorCodes = errorCodes;
+        verificationResult.errorCodes = errorCodes;
       }
     }
-    return result;
+    return verificationResult;
   }
 
-  private logVerificationOutcome(result: CaptchaVerificationResult): void {
-    if (result.success) {
+  private logVerificationOutcome(
+    verificationResult: CaptchaVerificationResult,
+  ): void {
+    if (verificationResult.success) {
       this.logger.log({ message: 'verification_success' });
       return;
     }
     this.logger.warn({
       message: 'verification_failed',
-      ...(result.errorCodes !== undefined
-        ? { errorCodes: result.errorCodes }
+      ...(verificationResult.errorCodes !== undefined
+        ? { errorCodes: verificationResult.errorCodes }
         : {}),
     });
   }

@@ -13,8 +13,8 @@ import { FeatureFlagEventType, IFeatureFlagEvent } from './types';
 export class FeatureFlagSubscriber {
   private readonly logger = new Logger(FeatureFlagSubscriber.name);
   private subscriber: Redis | null = null;
-  private connected = false;
-  private intentionalStop = false;
+  private isPubSubConnected = false;
+  private isIntentionalStop = false;
   private environment = '';
   private cache: FeatureFlagCache | null = null;
   private onReconnect: (() => Promise<void>) | null = null;
@@ -26,7 +26,7 @@ export class FeatureFlagSubscriber {
   ) {}
 
   isConnected(): boolean {
-    return this.connected;
+    return this.isPubSubConnected;
   }
 
   async start(params: {
@@ -37,12 +37,12 @@ export class FeatureFlagSubscriber {
     this.environment = params.environment;
     this.cache = params.cache;
     this.onReconnect = params.onReconnect;
-    this.intentionalStop = false;
+    this.isIntentionalStop = false;
     await this.connect();
   }
 
   async stop(): Promise<void> {
-    this.intentionalStop = true;
+    this.isIntentionalStop = true;
     if (!this.subscriber) {
       return;
     }
@@ -52,7 +52,7 @@ export class FeatureFlagSubscriber {
       this.subscriber.disconnect(false);
     }
     this.subscriber = null;
-    this.connected = false;
+    this.isPubSubConnected = false;
   }
 
   private async connect(): Promise<void> {
@@ -84,10 +84,10 @@ export class FeatureFlagSubscriber {
         }
         void this.handleMessage(message);
       });
-      this.connected = true;
+      this.isPubSubConnected = true;
       this.logger.log('Feature flag Pub/Sub subscribed');
     } catch (error) {
-      this.connected = false;
+      this.isPubSubConnected = false;
       const message = error instanceof Error ? error.message : String(error);
       this.logger.warn(
         `${FeatureFlagLogEvent.PUBSUB_DISCONNECTED}: ${message}`,
@@ -100,13 +100,13 @@ export class FeatureFlagSubscriber {
   }
 
   private async handleDisconnect(): Promise<void> {
-    if (this.intentionalStop) {
+    if (this.isIntentionalStop) {
       return;
     }
-    if (!this.connected && !this.subscriber) {
+    if (!this.isPubSubConnected && !this.subscriber) {
       return;
     }
-    this.connected = false;
+    this.isPubSubConnected = false;
     this.logger.warn(FeatureFlagLogEvent.PUBSUB_DISCONNECTED);
     void emitFeatureFlagMetrics({
       enabled: this.metricsEnabled(),
@@ -114,7 +114,7 @@ export class FeatureFlagSubscriber {
     });
 
     await this.delay(1_000);
-    if (this.intentionalStop) {
+    if (this.isIntentionalStop) {
       return;
     }
 
@@ -128,7 +128,7 @@ export class FeatureFlagSubscriber {
         this.subscriber = null;
       }
       await this.connect();
-      if (this.connected && this.onReconnect) {
+      if (this.isPubSubConnected && this.onReconnect) {
         await this.onReconnect();
       }
     } catch (error) {
@@ -161,8 +161,8 @@ export class FeatureFlagSubscriber {
 
     try {
       if (event.event === FeatureFlagEventType.FLAG_DELETED) {
-        const changed = this.cache.applyDelete(event.key, event.version);
-        if (changed) {
+        const hasChanged = this.cache.applyDelete(event.key, event.version);
+        if (hasChanged) {
           this.logger.log(
             `${FeatureFlagLogEvent.DELETED} key=${event.key} version=${event.version}`,
           );
@@ -171,8 +171,8 @@ export class FeatureFlagSubscriber {
       }
 
       const flag = await this.repository.getFlag(this.environment, event.key);
-      const changed = this.cache.applyEvent(event, this.environment, flag);
-      if (changed) {
+      const hasChanged = this.cache.applyEvent(event, this.environment, flag);
+      if (hasChanged) {
         this.logger.log(
           `${FeatureFlagLogEvent.UPDATED} key=${event.key} version=${event.version}`,
         );

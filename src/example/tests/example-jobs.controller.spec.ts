@@ -12,12 +12,12 @@ describe('ExampleJobsController', () => {
       }),
     } as unknown as JobEnqueueService;
     const controller = new ExampleJobsController(jobEnqueue);
-    const result = await controller.enqueueEcho({ message: 'hello' });
+    const outcome = await controller.enqueueEcho({ message: 'hello' });
     expect(jobEnqueue.enqueue).toHaveBeenCalledWith({
       jobName: EXAMPLE_ECHO_JOB_NAME,
       payload: { message: 'hello' },
       dedupeKey: undefined,
     });
-    expect(result.enqueued).toBe(true);
+    expect(outcome.enqueued).toBe(true);
   });
 });
