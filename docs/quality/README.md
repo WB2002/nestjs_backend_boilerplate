@@ -53,6 +53,15 @@ SDL source of truth: `src/**/*.graphql`. Snapshot: `test/contracts/graphql/schem
 pnpm quality:contract:update-snapshot
 ```
 
+## CodeQL
+
+The [CodeQL workflow](../.github/workflows/codeql.yml) always runs analysis on push/PR. Uploading results to the **Security** tab requires code scanning to be turned on for the repository.
+
+1. On GitHub: **Settings → Security → Code scanning** → set up **Advanced** (CodeQL) if prompted.
+2. Add a repository **Actions variable** named `CODEQL_UPLOAD` with value `true` (Settings → Secrets and variables → Actions → Variables).
+
+Until `CODEQL_UPLOAD` is `true`, the workflow analyzes code but skips SARIF upload so CI does not fail with “Code scanning is not enabled”.
+
 ## Optional AI review
 
 Enable [Cursor Bugbot](https://cursor.com/docs/bugbot) or CodeRabbit on the repository. The `AI Review (optional)` workflow does not fail merges.

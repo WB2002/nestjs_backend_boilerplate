@@ -31,3 +31,7 @@ jobs:
         uses: github/codeql-action/autobuild@v3
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
+        with:
+          # SARIF upload needs Settings → Security → Code scanning enabled on the repo.
+          # After enabling, set repository variable CODEQL_UPLOAD=true (see docs/quality/README.md).
+          upload: ${{ vars.CODEQL_UPLOAD == 'true' }}
