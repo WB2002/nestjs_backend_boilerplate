@@ -1,11 +1,19 @@
 import { InboundBulkheadService } from '../inbound-bulkhead.service';
 import { InboundBulkheadConfig } from '../inbound-bulkhead.types';
+import { InboundLoadLevelConfig } from '../load-level/inbound-load-level.types';
+
+const disabledLoadLevel: InboundLoadLevelConfig = {
+  enabled: false,
+  maxQueue: 100,
+  maxWaitMs: 2_000,
+  pollIntervalMs: 25,
+};
 
 describe('InboundBulkheadService', () => {
   function createService(
     config: InboundBulkheadConfig,
   ): InboundBulkheadService {
-    return new InboundBulkheadService(config);
+    return new InboundBulkheadService(config, disabledLoadLevel);
   }
 
   it('passes through when disabled', () => {

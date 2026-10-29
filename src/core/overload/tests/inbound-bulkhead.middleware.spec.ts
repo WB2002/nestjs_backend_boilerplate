@@ -12,7 +12,13 @@ describe('InboundBulkheadMiddleware', () => {
     service: InboundBulkheadService;
   } {
     const config = { enabled, maxInFlight };
-    const service = new InboundBulkheadService(config);
+    const loadLevel = {
+      enabled: false,
+      maxQueue: 100,
+      maxWaitMs: 2_000,
+      pollIntervalMs: 25,
+    };
+    const service = new InboundBulkheadService(config, loadLevel);
     return { middleware: new InboundBulkheadMiddleware(service), service };
   }
 
