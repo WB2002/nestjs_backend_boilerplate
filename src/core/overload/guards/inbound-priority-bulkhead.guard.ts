@@ -78,10 +78,11 @@ export class InboundPriorityBulkheadGuard implements CanActivate {
     const maxWaitMs =
       budget === undefined ? configuredWait : Math.min(configuredWait, budget);
 
+    const signal = getRequestSignal();
     await this.bulkhead.acquire({
       priority,
       maxWaitMs,
-      signal: getRequestSignal(),
+      ...(signal !== undefined ? { signal } : {}),
     });
 
     this.attachRelease(context);

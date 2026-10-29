@@ -71,7 +71,7 @@ export class InboundBulkheadService {
     await this.queue.enqueue({
       priority: options.priority,
       maxWaitMs: options.maxWaitMs ?? this.loadLevelConfig.maxWaitMs,
-      signal: options.signal,
+      ...(options.signal !== undefined ? { signal: options.signal } : {}),
     });
   }
 

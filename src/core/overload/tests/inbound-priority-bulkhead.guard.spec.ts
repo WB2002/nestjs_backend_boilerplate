@@ -8,15 +8,13 @@ import { OverloadRejectedError } from '../errors/overload-rejected.error';
 import { API_PRIORITY_KEY } from '../overload.constants';
 import { InboundLoadLevelConfig } from '../load-level/inbound-load-level.types';
 
-jest.mock('@/core/request-deadline/helpers/request-deadline.helpers', () => ({
+jest.mock('@/core/request-deadline', () => ({
+  ...jest.requireActual('@/core/request-deadline'),
   getRequestSignal: jest.fn(),
   remainingMs: jest.fn(),
 }));
 
-import {
-  getRequestSignal,
-  remainingMs,
-} from '@/core/request-deadline/helpers/request-deadline.helpers';
+import { getRequestSignal, remainingMs } from '@/core/request-deadline';
 
 const disabledLoadLevel: InboundLoadLevelConfig = {
   enabled: false,
