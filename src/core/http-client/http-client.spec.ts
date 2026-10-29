@@ -616,14 +616,119 @@ describe('HttpClient', () => {
     }
   });
 
-  it('caps outbound work by inbound request deadline remaining', async () => {
-    const deadlineInternals = {
-      clearTimer: () => undefined,
-      rescheduleFromStart: () => undefined,
-      setReason: () => undefined,
-      abort: () => undefined,
-    };
+  const deadlineInternals = {
+    clearTimer: () => undefined,
+    rescheduleFromStart: () => undefined,
+    setReason: () => undefined,
+    abort: () => undefined,
+  };
 
+  it('propagates inbound x-request-deadline on internal client by default', async () => {
+    let seenDeadline: string | undefined;
+    const { server, baseUrl } = await listen((req, res) => {
+      seenDeadline = req.headers['x-request-deadline'] as string | undefined;
+      res.statusCode = 200;
+      res.end('{}');
+    });
+
+    try {
+      const controller = new AbortController();
+      const startedAt = Date.now();
+      const deadlineAt = startedAt + 5000;
+      const store = {
+        signal: controller.signal,
+        startedAt,
+        deadlineAt,
+      };
+
+      await new Promise<void>((resolve, reject) => {
+        DeadlineContext.run(store, deadlineInternals, () => {
+          httpClient
+            .internal('downstream-deadline-header')
+            .addBaseUrl(baseUrl)
+            .get('/resource')
+            .then(() => resolve())
+            .catch(reject);
+        });
+      });
+
+      expect(seenDeadline).toBe(String(deadlineAt));
+    } finally {
+      server.close();
+    }
+  });
+
+  it('does not propagate x-request-deadline on external client by default', async () => {
+    let seenDeadline: string | undefined;
+    const { server, baseUrl } = await listen((req, res) => {
+      seenDeadline = req.headers['x-request-deadline'] as string | undefined;
+      res.statusCode = 200;
+      res.end('{}');
+    });
+
+    try {
+      const controller = new AbortController();
+      const startedAt = Date.now();
+      const store = {
+        signal: controller.signal,
+        startedAt,
+        deadlineAt: startedAt + 5000,
+      };
+
+      await new Promise<void>((resolve, reject) => {
+        DeadlineContext.run(store, deadlineInternals, () => {
+          httpClient
+            .external('external-no-deadline-header')
+            .addBaseUrl(baseUrl)
+            .get('/resource')
+            .then(() => resolve())
+            .catch(reject);
+        });
+      });
+
+      expect(seenDeadline).toBeUndefined();
+    } finally {
+      server.close();
+    }
+  });
+
+  it('propagates x-request-deadline on external client when opted in', async () => {
+    let seenDeadline: string | undefined;
+    const { server, baseUrl } = await listen((req, res) => {
+      seenDeadline = req.headers['x-request-deadline'] as string | undefined;
+      res.statusCode = 200;
+      res.end('{}');
+    });
+
+    try {
+      const controller = new AbortController();
+      const startedAt = Date.now();
+      const deadlineAt = startedAt + 5000;
+      const store = {
+        signal: controller.signal,
+        startedAt,
+        deadlineAt,
+      };
+
+      await new Promise<void>((resolve, reject) => {
+        DeadlineContext.run(store, deadlineInternals, () => {
+          httpClient
+            .external('external-deadline-header-opt-in')
+            .addBaseUrl(baseUrl)
+            .addDeadlinePropagation({ propagateHeader: true })
+            .get('/resource')
+            .then(() => resolve())
+            .catch(reject);
+        });
+      });
+
+      expect(seenDeadline).toBe(String(deadlineAt));
+    } finally {
+      server.close();
+    }
+  });
+
+  it('caps outbound work by inbound request deadline remaining', async () => {
     const { server, baseUrl } = await listen(async (_req, res) => {
       await new Promise((resolve) => setTimeout(resolve, 300));
       res.statusCode = 200;

@@ -6,6 +6,7 @@ import type {
   CircuitBreakerPolicy,
   ClientPolicySnapshot,
   CoalescingPolicy,
+  DeadlinePropagationPolicy,
   ConcurrencyLimitPolicy,
   ConnectionPoolPolicy,
   DnsPolicy,
@@ -54,6 +55,12 @@ export class ConfiguredHttpClient {
 
   addTimeout(policy: TimeoutPolicy): ConfiguredHttpClient {
     return this.withPolicy({ timeout: policy });
+  }
+
+  addDeadlinePropagation(
+    policy: DeadlinePropagationPolicy = {},
+  ): ConfiguredHttpClient {
+    return this.withPolicy({ deadlinePropagation: policy });
   }
 
   addRetry(policy: RetryPolicy): ConfiguredHttpClient {

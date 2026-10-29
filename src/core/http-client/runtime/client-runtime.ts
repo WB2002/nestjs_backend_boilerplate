@@ -1,4 +1,9 @@
-import type { ClientPolicySnapshot, HttpRequest, HttpResponse } from '../types';
+import type {
+  ClientKind,
+  ClientPolicySnapshot,
+  HttpRequest,
+  HttpResponse,
+} from '../types';
 import {
   ClientClosedError,
   CircuitOpenError,
@@ -42,9 +47,15 @@ import {
 } from './operation-context';
 import { withoutUndefined } from '../utils/without-undefined';
 import {
+  getDeadlineAt,
   getRequestSignal,
   remainingMs,
 } from '../../request-deadline/helpers/request-deadline.helpers';
+import { resolveOutboundDeadlineHeaders } from '../../request-deadline/helpers/outbound-deadline-header';
+
+function defaultPropagateDeadlineHeader(kind: ClientKind): boolean {
+  return kind === 'internal';
+}
 
 export class ClientRuntime {
   private readonly transport: AxiosTransport;
@@ -163,6 +174,26 @@ export class ClientRuntime {
       signal: deadlineMerge.signal,
       timeoutMs: deadlineMerge.timeoutMs,
     });
+
+    const propagateHeader =
+      this.policy.deadlinePropagation?.propagateHeader ??
+      defaultPropagateDeadlineHeader(this.policy.identity.kind);
+    const deadlineHeaders = resolveOutboundDeadlineHeaders(
+      withoutUndefined({
+        propagate: propagateHeader,
+        inboundDeadlineAt: getDeadlineAt(),
+        existingHeaders: request.headers as Record<string, string | undefined>,
+      }),
+    );
+    if (Object.keys(deadlineHeaders).length > 0) {
+      request = {
+        ...request,
+        headers: {
+          ...request.headers,
+          ...deadlineHeaders,
+        },
+      };
+    }
 
     const budget = createTimeoutBudget(
       withoutUndefined({

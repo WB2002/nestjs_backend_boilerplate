@@ -30,6 +30,10 @@ export interface TimeoutPolicy {
   totalTimeoutMs?: number;
 }
 
+export interface DeadlinePropagationPolicy {
+  propagateHeader?: boolean;
+}
+
 export interface CircuitBreakerPolicy {
   failureThreshold: number;
   resetTimeout: number;
@@ -172,6 +176,7 @@ export interface ClientPolicySnapshot {
   dns?: DnsPolicy;
   connectionPool: ConnectionPoolPolicy;
   timeout?: TimeoutPolicy;
+  deadlinePropagation?: DeadlinePropagationPolicy;
   retry?: RetryPolicy;
   circuitBreaker?: CircuitBreakerPolicy;
   concurrencyLimit?: ConcurrencyLimitPolicy;

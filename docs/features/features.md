@@ -27,7 +27,7 @@ Overview of capabilities in `nestjs_backend_boilerplate`. **Implementation statu
 | HTTP client (internal / external)    | Global provider                | Done    | [http_client.feature.md](./http_client.feature.md)                                        |
 | Rate limiting                        | Global guard                   | Done    | — (`src/core/rate-limiter/`)                                                              |
 | Inbound overload & priority shedding | Global guards / Fastify        | Done    | [edge vs app rate limits](./operations/edge-vs-app-rate-limits.md) — `src/core/overload/` |
-| Request deadline                     | Global middleware + HttpClient | Done    | — (`src/core/request-deadline/`) — downstream `x-request-deadline` not wired              |
+| Request deadline                     | Global middleware + HttpClient | Done    | — (`src/core/request-deadline/`) — internal HttpClient propagates `x-request-deadline`    |
 | Cache (SWR + resilience)             | Global module                  | Partial | `src/core/cache/` — core done; feature modules must opt in via `CacheService`             |
 | Graceful shutdown                    | Process signals                | Done    | — (`src/core/shutdown/`)                                                                  |
 | Response compression                 | Fastify plugin                 | Done    | —                                                                                         |
@@ -69,7 +69,7 @@ Last reviewed against the boilerplate roadmap (code audit, not task status). Upd
 | Exponential backoff with jitter | **Done**    | Strategy helpers + tests                                                                                                                                                                                                |
 | Backpressure                    | **Done**    | Under-pressure + inbound bulkhead + API priority shedding + GraphQL Redis concurrency + HttpClient limits — see [edge vs app rate limits](./operations/edge-vs-app-rate-limits.md)                                      |
 | Circuit breaker                 | **Done**    | Per logical client                                                                                                                                                                                                      |
-| Deadline propagation            | **Done**    | Inbound ALS; outbound `HttpClient` inherits signal + caps timeouts by `remainingMs()` — optional `x-request-deadline` header to downstreams not wired                                                                   |
+| Deadline propagation            | **Done**    | Inbound ALS; outbound signal + `remainingMs()` caps; `x-request-deadline` on internal HttpClient by default, external opt-in via `.addDeadlinePropagation()`                                                            |
 | Request coalescing              | **Done**    | HTTP client; cache layer single-flight                                                                                                                                                                                  |
 | Load shedding + `Retry-After`   | **Done**    | **429** rate limit; **503** overload (pressure, bulkhead, priority shed, GraphQL concurrency) — see ops doc                                                                                                             |
 | API priority + load shedding    | **Done**    | `@ApiPriority`, `InboundPriorityBulkheadGuard`, EMF `Reason=api_priority_shed`                                                                                                                                          |
@@ -179,7 +179,7 @@ Code: `src/core/rate-limiter/`.
 
 ### Request deadline
 
-Per-request timeout via middleware and ALS; exposes abort `signal` and `x-request-deadline`. Outbound `HttpClient` merges inbound deadline signal and remaining budget. Propagating `x-request-deadline` to downstream services is not implemented.
+Per-request timeout via middleware and ALS; exposes abort `signal` and `x-request-deadline`. Outbound `HttpClient` merges inbound deadline signal and remaining budget and propagates `x-request-deadline` to downstreams (internal by default; external opt-in).
 
 Code: `src/core/request-deadline/`.
 

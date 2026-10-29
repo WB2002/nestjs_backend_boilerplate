@@ -9,5 +9,6 @@ export * from './resolve-adaptive-concurrency-config';
 export * from './adaptive';
 export * from './parse-http-client-instance-count';
 export * from './inbound-deadline';
+export * from './outbound-deadline-header';
 export * from './coalescing';
 export * from './idempotency';

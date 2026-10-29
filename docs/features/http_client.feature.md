@@ -86,13 +86,13 @@ httpClient.external('stripe').addBaseUrl('https://api.stripe.com');
 
 ## Authentication
 
-| Method | API |
-|--------|-----|
-| API key | `.addApiKey({ key, header?, prefix? })` |
-| Basic | `.addBasicAuth({ username, password })` |
-| Bearer | `.addBearerToken({ token })` |
+| Method                   | API                                                                                     |
+| ------------------------ | --------------------------------------------------------------------------------------- |
+| API key                  | `.addApiKey({ key, header?, prefix? })`                                                 |
+| Basic                    | `.addBasicAuth({ username, password })`                                                 |
+| Bearer                   | `.addBearerToken({ token })`                                                            |
 | OAuth client credentials | `.addOAuth({ grantType: 'client_credentials', tokenUrl, clientId, clientSecret, ... })` |
-| mTLS | `.addMtls({ cert, key, ca?, passphrase? })` |
+| mTLS                     | `.addMtls({ cert, key, ca?, passphrase? })`                                             |
 
 OAuth acquires/caches tokens, applies skew, single-flights concurrent token requests, and retries the original request at most once after a 401 refresh. Token requests never recurse through the OAuth plugin.
 
@@ -108,6 +108,10 @@ When outbound `HttpClient` runs inside an HTTP handler (request-deadline ALS act
 
 - If the outbound request has **no** `signal`, the inbound **`AbortSignal`** is attached automatically.
 - **`timeoutMs`** and **`totalTimeoutMs`** from `.addTimeout(...)` are capped by **`remainingMs()`** on the inbound deadline (`min(policy, remaining)`).
+- For **`internal()`** clients (default), when ALS has `deadlineAt`, outbound requests include **`x-request-deadline: <deadlineAtMs>`** unless the per-request headers already set that header.
+- **`external()`** clients do not send the header unless you call **`.addDeadlinePropagation({ propagateHeader: true })`**.
+- Disable on an internal client with **`.addDeadlinePropagation({ propagateHeader: false })`**.
+- Downstream services should treat the header as an absolute cutoff (same format as this app’s response header). Signal and timeout capping via `remainingMs()` remain unchanged.
 - Background jobs or CLI code without ALS behave unchanged (no signal, policy timeouts only).
 
 Handlers can still pass an explicit per-call `signal` to override inbound propagation.
