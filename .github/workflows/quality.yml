@@ -66,11 +66,7 @@ jobs:
           cache: pnpm
       - uses: aquasecurity/setup-trivy@v0.3.1
       - run: pnpm install --frozen-lockfile && ./scripts/ci/run-pnpm-audit.sh
-      - name: OSV-Scanner
-        uses: google/osv-scanner-action/osv-scanner-action@v2.7.0
-        with:
-          scan-args: |-
-            --lockfile=pnpm-lock.yaml
+      - run: ./scripts/ci/run-osv-scanner.sh
       - run: ./scripts/ci/run-trivy.sh
       - run: ./scripts/ci/run-trivy-app-secrets.sh
 

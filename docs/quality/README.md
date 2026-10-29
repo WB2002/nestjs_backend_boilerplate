@@ -52,7 +52,7 @@ pnpm quality:app-security
 ## Supply chain
 
 - **`pnpm audit`:** fails on high/critical advisories; use `pnpm.overrides` in `package.json` when patches exist.
-- **OSV-Scanner:** `scripts/ci/run-osv-scanner.sh` against `pnpm-lock.yaml`.
+- **OSV-Scanner:** `scripts/ci/run-osv-scanner.sh` against `pnpm-lock.yaml` (fails on CVSS ≥ 7, same bar as `pnpm audit --audit-level=high`).
 - **Trivy:** `run-trivy.sh` (vulns, skips `node_modules`) and `run-trivy-app-secrets.sh` (secrets on `src`, `test`, `scripts` only). CI installs Trivy via `aquasecurity/setup-trivy`.
 - **Dependency Review:** GitHub Action on pull requests (`.github/workflows/dependency-review.yml`).
 - **Dependabot:** weekly npm and GitHub Actions PRs (`.github/dependabot.yml`).
