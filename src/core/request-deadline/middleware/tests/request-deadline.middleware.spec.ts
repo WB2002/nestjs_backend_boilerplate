@@ -27,7 +27,7 @@ function createReqRes() {
   const res = {
     headers: {} as Record<string, string | number>,
     setHeader: (name: string, value: string | number) => {
-      res.headers[name] = value;
+      Object.assign(res.headers, { [name]: value });
     },
     on: (event: string, listener: (...args: unknown[]) => void) => {
       if (event === 'finish') finishListeners.push(listener);

@@ -23,6 +23,54 @@ function redactKnownUrlKey(key: string, value: string): string {
   return value;
 }
 
+function redactOtelStringAttribute(
+  key: string,
+  value: string,
+): RedactedOtelAttributeValue {
+  if (HEADER_JSON_KEYS.has(key)) {
+    try {
+      const parsed = JSON.parse(value) as Record<string, unknown>;
+      if (parsed && typeof parsed === 'object') {
+        return JSON.stringify(redactHeaders(parsed as Record<string, string>));
+      }
+      return redactForLog(value) as string;
+    } catch {
+      return redactForLog(value) as string;
+    }
+  }
+  const urlRedacted = redactKnownUrlKey(key, value);
+  if (urlRedacted !== value) {
+    return urlRedacted;
+  }
+  if (isSensitiveLogKey(key)) {
+    return REDACTED;
+  }
+  const deep = redactForLog(value);
+  return typeof deep === 'string' ? deep : String(deep);
+}
+
+function redactOtelArrayAttribute(
+  value: unknown[],
+): Array<string | number | boolean> {
+  // eslint-disable-next-line sonarjs/function-return-type -- primitive OTEL array elements only
+  return value.map((attributeValue): string | number | boolean => {
+    if (typeof attributeValue === 'string') {
+      return String(redactForLog(attributeValue));
+    }
+    if (
+      typeof attributeValue === 'number' ||
+      typeof attributeValue === 'boolean'
+    ) {
+      return attributeValue;
+    }
+    return String(redactForLog(attributeValue));
+  });
+}
+
+function redactOtelObjectAttribute(value: unknown): string {
+  return JSON.stringify(redactForLog(value));
+}
+
 export function redactOtelAttributeValue(
   key: string,
   value: unknown,
@@ -31,43 +79,17 @@ export function redactOtelAttributeValue(
     return undefined;
   }
 
+  let redacted: RedactedOtelAttributeValue;
   if (typeof value === 'string') {
-    if (HEADER_JSON_KEYS.has(key)) {
-      try {
-        const parsed = JSON.parse(value) as Record<string, unknown>;
-        if (parsed && typeof parsed === 'object') {
-          return JSON.stringify(
-            redactHeaders(parsed as Record<string, string>),
-          );
-        }
-      } catch {
-        return redactForLog(value) as string;
-      }
-    }
-    const urlRedacted = redactKnownUrlKey(key, value);
-    if (urlRedacted !== value) {
-      return urlRedacted;
-    }
-    if (isSensitiveLogKey(key)) {
-      return REDACTED;
-    }
-    const deep = redactForLog(value);
-    return typeof deep === 'string' ? deep : String(deep);
+    redacted = redactOtelStringAttribute(key, value);
+  } else if (typeof value === 'number' || typeof value === 'boolean') {
+    redacted = value;
+  } else if (Array.isArray(value)) {
+    redacted = redactOtelArrayAttribute(value);
+  } else {
+    redacted = redactOtelObjectAttribute(value);
   }
-
-  if (typeof value === 'number' || typeof value === 'boolean') {
-    return value;
-  }
-
-  if (Array.isArray(value)) {
-    return value.map((attributeValue) =>
-      typeof attributeValue === 'string'
-        ? String(redactForLog(attributeValue))
-        : attributeValue,
-    );
-  }
-
-  return JSON.stringify(redactForLog(value));
+  return redacted;
 }
 
 export function redactOtelAttributes(

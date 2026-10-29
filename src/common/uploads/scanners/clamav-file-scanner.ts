@@ -45,7 +45,7 @@ export class ClamAvFileScanner implements FileScanner {
       ) {
         return { status: 'clean' };
       }
-      const infectedMatch = /stream:\s*(.+?)\s+FOUND/i.exec(normalized);
+      const infectedMatch = /stream:\s*([^\n]+?)\s+FOUND/i.exec(normalized);
       if (infectedMatch?.[1]) {
         return { status: 'infected', signature: infectedMatch[1].trim() };
       }
@@ -95,7 +95,7 @@ export class ClamAvFileScanner implements FileScanner {
         // on the first complete status line instead of waiting for 'end'.
         if (
           /stream:\s*OK/i.test(text) ||
-          /stream:\s*.+\s+FOUND/i.test(text) ||
+          /stream:\s*[^\n]+\s+FOUND/i.test(text) ||
           /ERROR/i.test(text)
         ) {
           finish(null, text.trim());

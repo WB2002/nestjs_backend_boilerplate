@@ -1,4 +1,5 @@
 import { ACCESS_TOKEN_COOKIE, SESSION_ID_COOKIE } from '@/common/constants';
+import { readCookieField, readStringRecordField } from '@/common/utils';
 
 const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
@@ -9,12 +10,11 @@ function headerValue(
   if (!headers) {
     return undefined;
   }
-  const direct = headers[name];
-  if (typeof direct === 'string') {
+  const direct = readStringRecordField(headers, name);
+  if (direct !== undefined) {
     return direct;
   }
-  const lower = headers[name.toLowerCase()];
-  return typeof lower === 'string' ? lower : undefined;
+  return readStringRecordField(headers, name.toLowerCase());
 }
 
 function hasBearerAuth(headers: Record<string, unknown> | undefined): boolean {
@@ -28,7 +28,10 @@ function hasSessionCookies(
   if (!cookies) {
     return false;
   }
-  return Boolean(cookies[ACCESS_TOKEN_COOKIE] || cookies[SESSION_ID_COOKIE]);
+  return Boolean(
+    readCookieField(cookies, ACCESS_TOKEN_COOKIE) ||
+    readCookieField(cookies, SESSION_ID_COOKIE),
+  );
 }
 
 export function shouldEnforceCsrf(req: {

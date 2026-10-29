@@ -1,11 +1,13 @@
 import { REDACTED } from './constants';
 import { isSensitiveQueryKey } from './sensitive-keys';
 
+const REDACT_RELATIVE_URL_BASE = 'https://redact.invalid';
+
 export function redactUrl(url: string): string {
   try {
     const parsed = /^https?:\/\//i.test(url)
       ? new URL(url)
-      : new URL(url, 'http://redact.invalid');
+      : new URL(url, REDACT_RELATIVE_URL_BASE);
     if (parsed.username || parsed.password) {
       parsed.username = '';
       parsed.password = '';

@@ -42,7 +42,7 @@ describe('CountryAccessService', () => {
     } as unknown as jest.Mocked<CountryAccessTelemetry>;
     options = {
       refreshIntervalMs: 60_000,
-      geoipDatabasePath: '/tmp/GeoLite2-Country.mmdb',
+      geoipDatabasePath: 'test/fixtures/geoip/placeholder.mmdb',
       unknownCountryPolicy: 'block',
       bypassPaths: ['/health'],
       persistenceProvider: 'postgres',

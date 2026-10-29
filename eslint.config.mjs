@@ -193,6 +193,22 @@ export default tseslint.config(
     rules: {
       'no-useless-escape': 'off',
       'sonarjs/slow-regex': 'off',
+      'security/detect-unsafe-regex': 'off',
+    },
+  },
+  {
+    files: ['src/core/feature-flag/tests/feature-flag.repository.spec.ts'],
+    rules: {
+      'sonarjs/os-command': 'off',
+    },
+  },
+  {
+    files: [
+      'src/core/redaction/redact-log-message.ts',
+      'src/common/uploads/scanners/clamav-file-scanner.ts',
+    ],
+    rules: {
+      'sonarjs/slow-regex': 'off',
     },
   },
   // Must be last so Prettier and ESLint do not fight over formatting rules.

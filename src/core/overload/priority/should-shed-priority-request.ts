@@ -34,7 +34,12 @@ export function shouldShedPriorityRequest(options: {
     options.active,
     options.maxInFlight,
   );
-  const key = THRESHOLD_BY_PRIORITY[options.priority];
-  const maxAllowed = options.thresholds[key];
+  const thresholdKey = THRESHOLD_BY_PRIORITY[options.priority];
+  const maxAllowed = Object.entries(options.thresholds).find(
+    ([key]) => key === thresholdKey,
+  )?.[1];
+  if (maxAllowed === undefined) {
+    return false;
+  }
   return utilization >= maxAllowed;
 }

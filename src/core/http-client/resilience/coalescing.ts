@@ -104,20 +104,23 @@ function normalizeHeadersForKey(
   if (!headers) {
     return {};
   }
-  const coalescedHeaders: Record<string, string> = {};
-  for (const [key, value] of Object.entries(headers)) {
-    if (value == null) {
-      continue;
-    }
-    const normalized = Array.isArray(value) ? value.join(',') : value;
-    const lower = key.toLowerCase();
-    coalescedHeaders[lower] = isSensitiveHeaderName(key)
-      ? sha256Hex(normalized)
-      : normalized;
-  }
+  const coalescedHeaders = Object.fromEntries(
+    Object.entries(headers)
+      .filter(([, value]) => value != null)
+      .map(([key, value]) => {
+        const normalized = Array.isArray(value)
+          ? value.join(',')
+          : String(value);
+        const lower = key.toLowerCase();
+        return [
+          lower,
+          isSensitiveHeaderName(key) ? sha256Hex(normalized) : normalized,
+        ] as const;
+      }),
+  ) as Record<string, string>;
   return Object.fromEntries(
     Object.entries(coalescedHeaders).sort(([a], [b]) => a.localeCompare(b)),
-  );
+  ) as Record<string, string>;
 }
 
 function normalizeQueryForKey(

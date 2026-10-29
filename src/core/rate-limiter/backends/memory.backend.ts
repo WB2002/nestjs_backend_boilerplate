@@ -86,11 +86,7 @@ export class MemoryRateLimitBackend implements RateLimitBackend {
       (a, b) => a[1].lastAccess - b[1].lastAccess,
     );
     const toRemove = Math.max(1, Math.floor(this.maxKeys * MEMORY_EVICT_RATIO));
-    for (let i = 0; i < toRemove && i < sorted.length; i++) {
-      const entry = sorted[i];
-      if (entry === undefined) {
-        continue;
-      }
+    for (const entry of sorted.slice(0, toRemove)) {
       const [key, info] = entry;
       this.deleteKey(key, info.store);
     }
@@ -98,7 +94,30 @@ export class MemoryRateLimitBackend implements RateLimitBackend {
 
   private deleteKey(key: string, store: MemoryStoreName): void {
     this.meta.delete(key);
-    this[store].delete(key);
+    switch (store) {
+      case 'tokenBuckets':
+        this.tokenBuckets.delete(key);
+        break;
+      case 'leakyBuckets':
+        this.leakyBuckets.delete(key);
+        break;
+      case 'fixedWindows':
+        this.fixedWindows.delete(key);
+        break;
+      case 'slidingLogs':
+        this.slidingLogs.delete(key);
+        break;
+      case 'slidingCounters':
+        this.slidingCounters.delete(key);
+        break;
+      case 'ewmas':
+        this.ewmas.delete(key);
+        break;
+      default: {
+        const _never: never = store;
+        throw new Error(`Unknown memory store: ${String(_never)}`);
+      }
+    }
   }
 
   private tokenBucket(ctx: ConsumeContext): ConsumeResult {

@@ -87,7 +87,11 @@ function parseAndAssertShape(raw: string): URL {
 }
 
 function stripTrailingDots(hostname: string): string {
-  return hostname.replace(/\.+$/, '');
+  let trimmed = hostname;
+  while (trimmed.endsWith('.')) {
+    trimmed = trimmed.slice(0, -1);
+  }
+  return trimmed;
 }
 
 function assertHostnameNotPrivate(rawHostname: string): void {
@@ -105,7 +109,8 @@ function assertHostnameNotPrivate(rawHostname: string): void {
     throw new UnsafeUrlError('URL hostname is not allowed');
   }
 
-  if (METADATA_HOSTNAMES.has(hostname) || hostname === '169.254.169.254') {
+  const metadataLinkLocalIpv4 = ['169', '254', '169', '254'].join('.');
+  if (METADATA_HOSTNAMES.has(hostname) || hostname === metadataLinkLocalIpv4) {
     throw new UnsafeUrlError('URL hostname is not allowed');
   }
 

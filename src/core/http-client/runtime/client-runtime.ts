@@ -242,14 +242,17 @@ export class ClientRuntime {
             const isCircuitOpenError =
               error instanceof CircuitOpenError ||
               (error instanceof Error && error.name === 'CircuitOpenError');
-            const isFailure = isCircuitOpenError
-              ? false
-              : isHalfOpen
-                ? true
-                : isBreakerFailure(
-                    error,
-                    this.policy.retry?.isTransient ?? defaultIsTransient,
-                  );
+            let isFailure: boolean;
+            if (isCircuitOpenError) {
+              isFailure = false;
+            } else if (isHalfOpen) {
+              isFailure = true;
+            } else {
+              isFailure = isBreakerFailure(
+                error,
+                this.policy.retry?.isTransient ?? defaultIsTransient,
+              );
+            }
             if (isFailure) {
               this.breaker.recordFailure();
             }
@@ -576,7 +579,7 @@ function isNonReplayableBody(body: unknown): boolean {
   if (body == null) {
     return false;
   }
-  if (typeof body === 'object' && body !== null) {
+  if (typeof body === 'object') {
     const maybeStream = body as { pipe?: unknown; read?: unknown };
     if (typeof maybeStream.pipe === 'function') {
       return true;

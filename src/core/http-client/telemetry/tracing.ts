@@ -104,7 +104,7 @@ function createTraceHandles(
       propagation.inject(ctx, carrier);
       getAwsXrayPropagator().inject(ctx, carrier, {
         set(carrierObj, key, value) {
-          carrierObj[key] = value;
+          Object.assign(carrierObj, { [key]: value });
         },
       });
       return carrier;

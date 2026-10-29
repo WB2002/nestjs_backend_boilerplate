@@ -3,10 +3,7 @@ import { Reflector } from '@nestjs/core';
 import { Observable, of } from 'rxjs';
 import { DeadlineContext } from '../../context/deadline.context';
 import { RequestCancelledError } from '../../errors/request-cancelled.error';
-import {
-  REQUEST_TIMEOUT_KEY,
-  SKIP_REQUEST_DEADLINE_KEY,
-} from '../../constants/request-deadline.constants';
+import { SKIP_REQUEST_DEADLINE_KEY } from '../../constants/request-deadline.constants';
 import { RequestDeadlineInterceptor } from '../request-deadline.interceptor';
 import { RequestDeadlineStore } from '../../types/request-deadline.types';
 
@@ -90,8 +87,7 @@ describe('RequestDeadlineInterceptor', () => {
     };
 
     const reflector = {
-      getAllAndOverride: (key: string) =>
-        key === REQUEST_TIMEOUT_KEY ? undefined : undefined,
+      getAllAndOverride: jest.fn().mockReturnValue(undefined),
     } as unknown as Reflector;
     const interceptor = new RequestDeadlineInterceptor(reflector, {
       defaultTimeoutMs: 1000,

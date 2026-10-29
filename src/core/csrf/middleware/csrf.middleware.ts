@@ -17,6 +17,7 @@ import { CsrfTokenService } from '../csrf-token.service';
 import { isCsrfExemptPath } from '../helpers/is-csrf-exempt-path';
 import { shouldEnforceCsrf } from '../helpers/should-enforce-csrf';
 import { CsrfModuleOptions } from '../types/csrf.types';
+import { readStringRecordField } from '@/common/utils';
 
 @Injectable()
 export class CsrfMiddleware implements NestMiddleware, OnModuleInit {
@@ -92,7 +93,9 @@ export class CsrfMiddleware implements NestMiddleware, OnModuleInit {
 
   private readHeader(req: FastifyRequest, name: string): string | undefined {
     const headers = req.headers as Record<string, unknown>;
-    const value = headers[name] ?? headers[name.toLowerCase()];
-    return typeof value === 'string' ? value : undefined;
+    return (
+      readStringRecordField(headers, name) ??
+      readStringRecordField(headers, name.toLowerCase())
+    );
   }
 }

@@ -7,13 +7,17 @@ export function redactHeaders(
   if (!headers) {
     return {};
   }
-  const redactedHeaders: Record<string, string> = {};
-  for (const [key, value] of Object.entries(headers)) {
-    if (value == null) {
-      continue;
-    }
-    const normalized = Array.isArray(value) ? value.join(', ') : value;
-    redactedHeaders[key] = isSensitiveHeaderName(key) ? REDACTED : normalized;
-  }
-  return redactedHeaders;
+  return Object.fromEntries(
+    Object.entries(headers)
+      .filter(([, value]) => value != null)
+      .map(([key, value]) => {
+        const normalized = Array.isArray(value)
+          ? value.join(', ')
+          : String(value);
+        return [
+          key,
+          isSensitiveHeaderName(key) ? REDACTED : normalized,
+        ] as const;
+      }),
+  ) as Record<string, string>;
 }

@@ -276,12 +276,12 @@ export class CacheService {
     options: CacheGetOrSetOptions,
   ): Promise<T> {
     const value = await loader();
-    if (value === null && options.cacheNull) {
+    if (value == null && options.cacheNull) {
       const negativeTtl = this.resolveNegativeTtl(options);
       await this.setNegative(key, negativeTtl);
-      return value;
+    } else {
+      await this.set(key, value, ttl);
     }
-    await this.set(key, value, ttl);
     return value;
   }
 

@@ -1,3 +1,4 @@
+import { readUnknownRecordField } from '@/common/utils';
 import { REQUEST_TIMEOUT_HEADER } from '../constants/request-deadline.constants';
 
 /**
@@ -12,8 +13,8 @@ export function parseTimeoutHeader(
   }
 
   const raw =
-    headers[REQUEST_TIMEOUT_HEADER] ??
-    headers[REQUEST_TIMEOUT_HEADER.toUpperCase()];
+    readUnknownRecordField(headers, REQUEST_TIMEOUT_HEADER) ??
+    readUnknownRecordField(headers, REQUEST_TIMEOUT_HEADER.toUpperCase());
   const value = Array.isArray(raw) ? raw[0] : raw;
   if (value === undefined || value === null || value === '') {
     return undefined;

@@ -1,7 +1,15 @@
+import { timingSafeEqual } from 'node:crypto';
 import {
   acquireRedisLoaderLock,
   releaseRedisLoaderLock,
 } from '../redis-loader-lock';
+
+function tokensMatch(stored: string | undefined, token: string): boolean {
+  if (stored === undefined || stored.length !== token.length) {
+    return false;
+  }
+  return timingSafeEqual(Buffer.from(stored), Buffer.from(token));
+}
 
 function createMockRedis() {
   const store = new Map<string, string>();
@@ -23,7 +31,7 @@ function createMockRedis() {
     ),
     eval: jest.fn(
       async (_script: string, _n: number, key: string, token: string) => {
-        if (store.get(key) === token) {
+        if (tokensMatch(store.get(key), token)) {
           store.delete(key);
           return 1;
         }

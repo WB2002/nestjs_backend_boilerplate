@@ -46,17 +46,15 @@ export class RateLimitGuard extends ThrottlerGuard {
     super(options, storageService, reflector);
   }
 
+  // eslint-disable-next-line sonarjs/no-invariant-returns -- ThrottlerGuard resolves true on success; rate limits throw
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const shouldSkip = this.reflector.getAllAndOverride<boolean>(
       SKIP_RATE_LIMIT_KEY,
       [context.getHandler(), context.getClass()],
     );
-    if (shouldSkip) {
-      return true;
-    }
-
     const methods = this.resolveMethods(context);
-    if (!methods.length) {
+    if (shouldSkip || !methods.length) {
+      // Nest ThrottlerGuard contract: bypass paths resolve true; limits exceeded throw.
       return true;
     }
 
@@ -71,102 +69,135 @@ export class RateLimitGuard extends ThrottlerGuard {
     const res = context.switchToHttp().getResponse();
 
     for (const method of methods) {
-      let tracker: string | null;
-      try {
-        tracker = resolveTracker(
-          context,
-          method.identifier,
-          this.rateLimitOptions,
-        );
-      } catch (err) {
-        if (
-          err instanceof MissingFingerprintError ||
-          err instanceof MissingGuestIdError
-        ) {
-          throw new HttpException(
-            {
-              statusCode: HttpStatus.BAD_REQUEST,
-              message: err.message,
-            },
-            HttpStatus.BAD_REQUEST,
-          );
-        }
-        throw err;
-      }
-
-      // UserId: intentional skip when unauthenticated (e.g. @Public). Pair with Ip/GuestId.
-      // JwtAuthGuard must run before this guard so authenticated routes have req.user.
-      if (tracker == null) {
-        continue;
-      }
-
-      const policy = method.policy ?? method.name ?? 'default';
-      const algorithm =
-        method.algorithm ??
-        decoratorAlgorithm ??
-        this.rateLimitOptions.algorithm ??
-        RateLimitAlgorithm.FixedWindowCounter;
-      const cost = handlerCost ?? method.cost ?? 1;
-      const keyScope = method.keyScope ?? 'route';
-      const routeScope = resolveRouteScope(context, keyScope);
-
-      const consumeContext: ConsumeContext = {
-        algorithm,
-        key: buildRateLimitKey({
-          policy,
-          identifier: method.identifier,
-          tracker,
-          routeScope,
-          storage,
-          ...(this.rateLimitOptions.hashRouteScope !== undefined
-            ? { hashRouteScope: this.rateLimitOptions.hashRouteScope }
-            : {}),
-        }),
-        limit: method.limit,
-        durationMs: method.duration,
-        cost,
+      await this.enforceMethodLimit(
+        context,
+        method,
+        handlerCost,
+        decoratorAlgorithm,
         nowMs,
-        ...(method.burst !== undefined ? { burst: method.burst } : {}),
-        policy,
-      };
-
-      const consumeResult = await this.backend.consume(consumeContext);
-
-      if (this.rateLimitOptions.onDecision) {
-        await this.rateLimitOptions.onDecision(consumeContext, consumeResult);
-      }
-
-      this.setRateLimitHeaders(
+        storage,
         res,
-        method.limit,
-        consumeResult.remaining,
-        nowMs,
-        consumeResult.resetMs,
       );
-
-      if (!consumeResult.allowed) {
-        const retryAfterSec = Math.max(
-          1,
-          Math.ceil(consumeResult.retryAfterMs / 1000),
-        );
-        if (typeof res.header === 'function') {
-          res.header('Retry-After', String(retryAfterSec));
-        } else if (typeof res.setHeader === 'function') {
-          res.setHeader('Retry-After', String(retryAfterSec));
-        }
-        throw new HttpException(
-          {
-            statusCode: HttpStatus.TOO_MANY_REQUESTS,
-            message: 'Too Many Requests',
-            retryAfterMs: consumeResult.retryAfterMs,
-            policy,
-          },
-          HttpStatus.TOO_MANY_REQUESTS,
-        );
-      }
     }
 
     return true;
+  }
+
+  private async enforceMethodLimit(
+    context: ExecutionContext,
+    method: RateLimitMethodConfig,
+    handlerCost: number | undefined,
+    decoratorAlgorithm: RateLimitAlgorithm | undefined,
+    nowMs: number,
+    storage: RateLimitStorage,
+    res: {
+      header?: (k: string, v: string) => void;
+      setHeader?: (k: string, v: string) => void;
+    },
+  ): Promise<void> {
+    const tracker = this.resolveTrackerOrThrow(context, method.identifier);
+
+    // UserId: intentional skip when unauthenticated (e.g. @Public). Pair with Ip/GuestId.
+    // JwtAuthGuard must run before this guard so authenticated routes have req.user.
+    if (tracker == null) {
+      return;
+    }
+
+    const policy = method.policy ?? method.name ?? 'default';
+    const algorithm =
+      method.algorithm ??
+      decoratorAlgorithm ??
+      this.rateLimitOptions.algorithm ??
+      RateLimitAlgorithm.FixedWindowCounter;
+    const cost = handlerCost ?? method.cost ?? 1;
+    const keyScope = method.keyScope ?? 'route';
+    const routeScope = resolveRouteScope(context, keyScope);
+
+    const consumeContext: ConsumeContext = {
+      algorithm,
+      key: buildRateLimitKey({
+        policy,
+        identifier: method.identifier,
+        tracker,
+        routeScope,
+        storage,
+        ...(this.rateLimitOptions.hashRouteScope !== undefined
+          ? { hashRouteScope: this.rateLimitOptions.hashRouteScope }
+          : {}),
+      }),
+      limit: method.limit,
+      durationMs: method.duration,
+      cost,
+      nowMs,
+      ...(method.burst !== undefined ? { burst: method.burst } : {}),
+      policy,
+    };
+
+    const consumeResult = await this.backend.consume(consumeContext);
+
+    if (this.rateLimitOptions.onDecision) {
+      await this.rateLimitOptions.onDecision(consumeContext, consumeResult);
+    }
+
+    this.setRateLimitHeaders(
+      res,
+      method.limit,
+      consumeResult.remaining,
+      nowMs,
+      consumeResult.resetMs,
+    );
+
+    if (!consumeResult.allowed) {
+      this.throwTooManyRequests(res, consumeResult.retryAfterMs, policy);
+    }
+  }
+
+  private resolveTrackerOrThrow(
+    context: ExecutionContext,
+    identifier: RateLimitMethodConfig['identifier'],
+  ): string | null {
+    try {
+      return resolveTracker(context, identifier, this.rateLimitOptions);
+    } catch (err) {
+      if (
+        err instanceof MissingFingerprintError ||
+        err instanceof MissingGuestIdError
+      ) {
+        throw new HttpException(
+          {
+            statusCode: HttpStatus.BAD_REQUEST,
+            message: err.message,
+          },
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+      throw err;
+    }
+  }
+
+  private throwTooManyRequests(
+    res: {
+      header?: (k: string, v: string) => void;
+      setHeader?: (k: string, v: string) => void;
+    },
+    retryAfterMs: number,
+    policy: string,
+  ): never {
+    const retryAfterSec = Math.max(1, Math.ceil(retryAfterMs / 1000));
+    if (typeof res.header === 'function') {
+      res.header('Retry-After', String(retryAfterSec));
+    } else if (typeof res.setHeader === 'function') {
+      res.setHeader('Retry-After', String(retryAfterSec));
+    }
+    throw new HttpException(
+      {
+        statusCode: HttpStatus.TOO_MANY_REQUESTS,
+        message: 'Too Many Requests',
+        retryAfterMs,
+        policy,
+      },
+      HttpStatus.TOO_MANY_REQUESTS,
+    );
   }
 
   private resolveMethods(context: ExecutionContext): RateLimitMethodConfig[] {

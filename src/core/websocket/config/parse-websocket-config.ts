@@ -23,9 +23,13 @@ function parsePositiveInt(value: string | undefined, fallback: number): number {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
+type CorsOriginsResolveResult =
+  | { mode: 'allow-all' }
+  | { mode: 'list'; origins: string[] };
+
 function resolveCorsOrigins(
   configService: Pick<ConfigService, 'get'>,
-): string[] | boolean {
+): CorsOriginsResolveResult {
   const nodeEnv = configService.get<string>('NODE_ENV') ?? 'development';
   const raw = configService.get<string>('ALLOWED_ORIGINS');
   const origins =
@@ -35,14 +39,14 @@ function resolveCorsOrigins(
       .filter((part) => part.length > 0) ?? [];
 
   if (nodeEnv === 'production') {
-    return origins;
+    return { mode: 'list', origins };
   }
 
   if (origins.length === 0) {
-    return true;
+    return { mode: 'allow-all' };
   }
 
-  return origins;
+  return { mode: 'list', origins };
 }
 
 export function parseWebSocketConfig(
@@ -57,6 +61,8 @@ export function parseWebSocketConfig(
       ? parseBoolean(redisAdapterExplicit, false)
       : nodeEnv === 'production';
 
+  const corsOriginsResolved = resolveCorsOrigins(configService);
+
   return {
     enabled: parseBoolean(configService.get<string>('WEBSOCKET_ENABLED'), true),
     path:
@@ -67,7 +73,10 @@ export function parseWebSocketConfig(
       false,
     ),
     redisAdapterEnabled: isRedisAdapterEnabled,
-    corsOrigins: resolveCorsOrigins(configService),
+    corsOrigins:
+      corsOriginsResolved.mode === 'allow-all'
+        ? true
+        : corsOriginsResolved.origins,
     maxConnectionsPerUser: parsePositiveInt(
       configService.get<string>('WEBSOCKET_MAX_CONNECTIONS_PER_USER'),
       DEFAULT_WEBSOCKET_MAX_CONNECTIONS_PER_USER,

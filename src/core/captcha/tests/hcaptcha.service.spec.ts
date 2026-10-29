@@ -23,7 +23,10 @@ describe('HCaptchaService', () => {
       HCAPTCHA_SECRET: 'test-secret',
     },
   ): HCaptchaService {
-    configGet = jest.fn((key: string) => env[key]);
+    configGet = jest.fn(
+      (key: string) =>
+        Object.entries(env).find(([envKey]) => envKey === key)?.[1],
+    );
     const configService = {
       get: configGet,
     } as unknown as ConfigService;

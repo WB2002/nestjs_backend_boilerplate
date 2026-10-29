@@ -240,14 +240,14 @@ export function normalizeHeaders(
   if (!headers) {
     return {};
   }
-  const builtHeaders: Record<string, string> = {};
-  for (const [key, value] of Object.entries(headers)) {
-    if (value == null) {
-      continue;
-    }
-    builtHeaders[key] = Array.isArray(value) ? value.join(', ') : value;
-  }
-  return builtHeaders;
+  return Object.fromEntries(
+    Object.entries(headers)
+      .filter(([, value]) => value != null)
+      .map(([key, value]) => [
+        key,
+        Array.isArray(value) ? value.join(', ') : String(value),
+      ]),
+  ) as Record<string, string>;
 }
 
 export function normalizeResponseHeaders(

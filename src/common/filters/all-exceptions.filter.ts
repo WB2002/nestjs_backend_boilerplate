@@ -59,17 +59,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     const stack = exception instanceof Error ? exception.stack : '';
 
-    // Handle Database Connection Errors (type-safe: no assertion to any)
-    const exceptionObj = isPlainObject(exception) ? exception : {};
-    const exceptionName = get(exceptionObj, 'name');
-    const rawMessage = get(exceptionObj, 'message');
-    const exceptionMessage = isString(rawMessage) ? rawMessage : '';
-    const isDbConnectionError =
-      exceptionName === 'MongooseServerSelectionError' ||
-      exceptionName === 'MongoNetworkError' ||
-      exceptionMessage.includes('buffering timed out');
-
-    if (isDbConnectionError) {
+    if (this.isDatabaseConnectionError(exception)) {
       status = HttpStatus.SERVICE_UNAVAILABLE;
       message = 'Service temporarily unavailable';
       recordDependencyUnavailable503(httpAdapter.getRequestUrl(request));
@@ -81,46 +71,15 @@ export class AllExceptionsFilter implements ExceptionFilter {
       message = deadlineMapped.message;
     }
 
-    const priorityShedMapped = this.mapPriorityShedException(exception);
-    if (priorityShedMapped) {
-      status = priorityShedMapped.status;
-      message = priorityShedMapped.message;
-      this.setRetryAfterHeader(response, priorityShedMapped.retryAfterSec);
-      recordApiPriorityShed503(httpAdapter.getRequestUrl(request));
-    } else {
-      const loadLevelQueueFullMapped =
-        this.mapLoadLevelQueueFullException(exception);
-      if (loadLevelQueueFullMapped) {
-        status = loadLevelQueueFullMapped.status;
-        message = loadLevelQueueFullMapped.message;
-        this.setRetryAfterHeader(
-          response,
-          loadLevelQueueFullMapped.retryAfterSec,
-        );
-        recordInboundLoadLevelQueueFull503(httpAdapter.getRequestUrl(request));
-      } else {
-        const loadLevelTimeoutMapped =
-          this.mapLoadLevelWaitTimeoutException(exception);
-        if (loadLevelTimeoutMapped) {
-          status = loadLevelTimeoutMapped.status;
-          message = loadLevelTimeoutMapped.message;
-          this.setRetryAfterHeader(
-            response,
-            loadLevelTimeoutMapped.retryAfterSec,
-          );
-          recordInboundLoadLevelWaitTimeout503(
-            httpAdapter.getRequestUrl(request),
-          );
-        } else {
-          const overloadMapped = this.mapOverloadException(exception);
-          if (overloadMapped) {
-            status = overloadMapped.status;
-            message = overloadMapped.message;
-            this.setRetryAfterHeader(response, overloadMapped.retryAfterSec);
-            recordInboundBulkhead503(httpAdapter.getRequestUrl(request));
-          }
-        }
-      }
+    const overloadMapped = this.applyOverloadExceptionMappings(
+      exception,
+      request,
+      response,
+      httpAdapter,
+    );
+    if (overloadMapped) {
+      status = overloadMapped.status;
+      message = overloadMapped.message;
     }
 
     const isResponseDestroyed =
@@ -176,6 +135,73 @@ export class AllExceptionsFilter implements ExceptionFilter {
         };
 
     httpAdapter.reply(response, errorResponse, status);
+    return undefined;
+  }
+
+  private isDatabaseConnectionError(exception: unknown): boolean {
+    const exceptionObj = isPlainObject(exception) ? exception : {};
+    const exceptionName = get(exceptionObj, 'name');
+    const rawMessage = get(exceptionObj, 'message');
+    const exceptionMessage = isString(rawMessage) ? rawMessage : '';
+    const isNamedDbError =
+      typeof exceptionName === 'string' &&
+      (exceptionName === 'MongooseServerSelectionError' ||
+        exceptionName === 'MongoNetworkError');
+    return isNamedDbError || exceptionMessage.includes('buffering timed out');
+  }
+
+  private applyOverloadExceptionMappings(
+    exception: unknown,
+    request: unknown,
+    response: unknown,
+    httpAdapter: HttpAdapterHost['httpAdapter'],
+  ): { status: number; message: string } | undefined {
+    const requestUrl = httpAdapter.getRequestUrl(request);
+    const priorityShedMapped = this.mapPriorityShedException(exception);
+    if (priorityShedMapped) {
+      this.setRetryAfterHeader(response, priorityShedMapped.retryAfterSec);
+      recordApiPriorityShed503(requestUrl);
+      return {
+        status: priorityShedMapped.status,
+        message: priorityShedMapped.message,
+      };
+    }
+
+    const loadLevelQueueFullMapped =
+      this.mapLoadLevelQueueFullException(exception);
+    if (loadLevelQueueFullMapped) {
+      this.setRetryAfterHeader(
+        response,
+        loadLevelQueueFullMapped.retryAfterSec,
+      );
+      recordInboundLoadLevelQueueFull503(requestUrl);
+      return {
+        status: loadLevelQueueFullMapped.status,
+        message: loadLevelQueueFullMapped.message,
+      };
+    }
+
+    const loadLevelTimeoutMapped =
+      this.mapLoadLevelWaitTimeoutException(exception);
+    if (loadLevelTimeoutMapped) {
+      this.setRetryAfterHeader(response, loadLevelTimeoutMapped.retryAfterSec);
+      recordInboundLoadLevelWaitTimeout503(requestUrl);
+      return {
+        status: loadLevelTimeoutMapped.status,
+        message: loadLevelTimeoutMapped.message,
+      };
+    }
+
+    const overloadMapped = this.mapOverloadException(exception);
+    if (overloadMapped) {
+      this.setRetryAfterHeader(response, overloadMapped.retryAfterSec);
+      recordInboundBulkhead503(requestUrl);
+      return {
+        status: overloadMapped.status,
+        message: overloadMapped.message,
+      };
+    }
+
     return undefined;
   }
 

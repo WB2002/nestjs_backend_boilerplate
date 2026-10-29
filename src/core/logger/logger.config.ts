@@ -22,13 +22,12 @@ export function createRedactionFormat(config: LogRedactionConfig) {
     if (typeof info.stack === 'string') {
       info.stack = redactLogMessage(info.stack);
     }
-    for (const key of Object.keys(info)) {
-      if (WINSTON_RESERVED.has(key)) {
-        continue;
-      }
-      info[key] = redactForLog(info[key]);
-    }
-    return info;
+    const redactedCustomFields = Object.fromEntries(
+      Object.entries(info)
+        .filter(([key]) => !WINSTON_RESERVED.has(key))
+        .map(([key, value]) => [key, redactForLog(value)]),
+    );
+    return { ...info, ...redactedCustomFields };
   });
 }
 
@@ -83,7 +82,11 @@ const devFormat = combine(
       : '';
     const formattedTracing = tracingInfo ? ` (${tracingInfo})` : '';
 
-    return `${LOG_COLOR_MAPPER.timestamp}${timestamp}${LOG_COLOR_MAPPER.reset}${formattedContext} ${level}: ${message}${formattedTracing}${formattedMetadata}${stack ? `\n${stack}` : ''}`;
+    const stackSuffix = stack ? `\n${stack}` : '';
+    return (
+      `${LOG_COLOR_MAPPER.timestamp}${timestamp}${LOG_COLOR_MAPPER.reset}` +
+      `${formattedContext} ${level}: ${message}${formattedTracing}${formattedMetadata}${stackSuffix}`
+    );
   }),
 );
 

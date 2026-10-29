@@ -44,17 +44,14 @@ export function redactForLog(
       return REDACTED;
     }
     seen.add(value);
-    const out: Record<string, unknown> = {};
-    for (const [key, child] of Object.entries(
-      value as Record<string, unknown>,
-    )) {
-      if (isSensitiveLogKey(key)) {
-        out[key] = REDACTED;
-        continue;
-      }
-      out[key] = redactForLog(child, depth + 1, seen);
-    }
-    return out;
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([key, child]) => [
+        key,
+        isSensitiveLogKey(key)
+          ? REDACTED
+          : redactForLog(child, depth + 1, seen),
+      ]),
+    );
   }
   return value;
 }

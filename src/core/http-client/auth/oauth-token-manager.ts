@@ -162,8 +162,12 @@ export async function applyAuth(
   switch (auth.type) {
     case 'apiKey': {
       const header = auth.header ?? 'x-api-key';
-      headers[header] = auth.prefix ? `${auth.prefix}${auth.key}` : auth.key;
-      break;
+      const headerValue = auth.prefix ? `${auth.prefix}${auth.key}` : auth.key;
+      const apiKeyHeaders = Object.fromEntries([
+        ...Object.entries(headers),
+        [header, headerValue],
+      ]);
+      return { ...request, headers: apiKeyHeaders };
     }
     case 'basic': {
       const token = Buffer.from(`${auth.username}:${auth.password}`).toString(

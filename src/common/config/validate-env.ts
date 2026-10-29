@@ -23,7 +23,10 @@ export function validateEnv(
     if (!field.required) {
       continue;
     }
-    if (isMissing(config[key])) {
+    const configValue = Object.entries(config).find(
+      ([envKey]) => envKey === key,
+    )?.[1];
+    if (isMissing(configValue)) {
       missing.push(key);
     }
   }

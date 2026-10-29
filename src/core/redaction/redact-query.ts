@@ -7,9 +7,10 @@ export function redactQuery(
   if (!query) {
     return {};
   }
-  const redactedQuery: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(query)) {
-    redactedQuery[key] = isSensitiveQueryKey(key) ? REDACTED : value;
-  }
-  return redactedQuery;
+  return Object.fromEntries(
+    Object.entries(query).map(([key, value]) => [
+      key,
+      isSensitiveQueryKey(key) ? REDACTED : value,
+    ]),
+  );
 }

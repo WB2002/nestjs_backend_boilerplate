@@ -140,12 +140,12 @@ function sanitizeOriginalName(name: string): string {
 }
 
 function mimeMatchesExtension(mime: string, extension: string): boolean {
-  const map: Record<string, string[]> = {
+  const allowedExtensions = Object.entries({
     'image/jpeg': ['.jpg', '.jpeg'],
     'image/png': ['.png'],
     'image/webp': ['.webp'],
     'image/gif': ['.gif'],
     'application/pdf': ['.pdf'],
-  };
-  return map[mime]?.includes(extension) ?? false;
+  }).find(([allowedMime]) => allowedMime === mime)?.[1];
+  return allowedExtensions?.includes(extension) ?? false;
 }

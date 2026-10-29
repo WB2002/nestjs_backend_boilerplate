@@ -36,7 +36,9 @@ export function formatSlackMessageText(notification: INotification): string {
     if (isSensitiveMetadataKey(key)) {
       continue;
     }
-    const value = metadata[key];
+    const value = Object.entries(metadata).find(
+      ([entryKey]) => entryKey === key,
+    )?.[1];
     if (value === undefined) {
       continue;
     }

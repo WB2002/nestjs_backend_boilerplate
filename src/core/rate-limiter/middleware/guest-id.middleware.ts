@@ -15,6 +15,7 @@ import {
   RATE_LIMIT_OPTIONS,
 } from '../constants/rate-limit.constants';
 import { RateLimiterModuleOptions } from '../types/rate-limit.types';
+import { mergeCookieRecord, readCookieField } from '@/common/utils';
 
 /**
  * Mints a secure signed `guest_id` cookie on first visit.
@@ -53,12 +54,9 @@ export class GuestIdMiddleware implements NestMiddleware, OnModuleInit {
       this.options.guestCookie?.name ?? DEFAULT_GUEST_COOKIE_NAME;
     const existing = this.readValidGuestId(req, cookieName);
     if (existing) {
-      if (!req.cookies) {
-        (req as FastifyRequest & { cookies: Record<string, string> }).cookies =
-          {};
-      }
       // Normalize to unsigned UUID for rate-limit resolvers.
-      req.cookies[cookieName] = existing;
+      (req as FastifyRequest & { cookies: Record<string, string> }).cookies =
+        mergeCookieRecord(req.cookies, cookieName, existing);
       return existing;
     }
 
@@ -66,7 +64,7 @@ export class GuestIdMiddleware implements NestMiddleware, OnModuleInit {
   }
 
   readValidGuestId(req: FastifyRequest, cookieName: string): string | null {
-    const raw = req.cookies?.[cookieName];
+    const raw = readCookieField(req.cookies, cookieName);
     if (!raw) {
       return null;
     }
@@ -109,11 +107,8 @@ export class GuestIdMiddleware implements NestMiddleware, OnModuleInit {
       signed: true,
     });
 
-    if (!req.cookies) {
-      (req as FastifyRequest & { cookies: Record<string, string> }).cookies =
-        {};
-    }
-    req.cookies[cookieName] = guestId;
+    (req as FastifyRequest & { cookies: Record<string, string> }).cookies =
+      mergeCookieRecord(req.cookies, cookieName, guestId);
     return guestId;
   }
 }

@@ -18,6 +18,40 @@ import type {
 
 export type { WalkSanitizationOptions } from '../types';
 
+function resolveWalkSanitizationOptions(
+  value: object,
+  options: WalkSanitizationOptions,
+  currentKey?: string,
+): WalkSanitizationOptions {
+  const proto = Object.getPrototypeOf(value) as object | null;
+  if (proto && proto !== Object.prototype && proto !== Array.prototype) {
+    return { ...options, metadataTarget: proto };
+  }
+  if (!options.metadataTarget || !currentKey) {
+    return options;
+  }
+  const nestedPropertyType = Reflect.getMetadata(
+    'design:type',
+    options.metadataTarget,
+    currentKey,
+  ) as (new (...args: never[]) => unknown) | undefined;
+  if (
+    !nestedPropertyType ||
+    nestedPropertyType === Object ||
+    nestedPropertyType === Array ||
+    nestedPropertyType === String ||
+    nestedPropertyType === Number ||
+    nestedPropertyType === Boolean ||
+    !nestedPropertyType.prototype
+  ) {
+    return options;
+  }
+  return {
+    ...options,
+    metadataTarget: nestedPropertyType.prototype as object,
+  };
+}
+
 /**
  * Recursively sanitize/reject string values in plain objects and arrays.
  * Async so @SafeUrl can resolve DNS.
@@ -58,38 +92,23 @@ export async function walkAndSanitize(
     seen.add(value);
 
     const record = value as Record<string, unknown>;
-    // Prefer this object's own DTO prototype so nested class instances
-    // get correct per-property metadata (@SkipSanitization, @SafeUrl, …).
-    let effectiveOptions = options;
     const proto = Object.getPrototypeOf(value) as object | null;
-    if (proto && proto !== Object.prototype && proto !== Array.prototype) {
-      effectiveOptions = { ...options, metadataTarget: proto };
-    } else if (options.metadataTarget && currentKey) {
-      const nestedPropertyType = Reflect.getMetadata(
-        'design:type',
-        options.metadataTarget,
-        currentKey,
-      ) as (new (...args: never[]) => unknown) | undefined;
-      if (
-        nestedPropertyType &&
-        nestedPropertyType !== Object &&
-        nestedPropertyType !== Array &&
-        nestedPropertyType !== String &&
-        nestedPropertyType !== Number &&
-        nestedPropertyType !== Boolean &&
-        nestedPropertyType.prototype
-      ) {
-        effectiveOptions = {
-          ...options,
-          metadataTarget: nestedPropertyType.prototype as object,
-        };
-      }
-    }
+    const effectiveOptions = resolveWalkSanitizationOptions(
+      value,
+      options,
+      currentKey,
+    );
 
-    const out: Record<string, unknown> = {};
-    for (const [key, nested] of Object.entries(record)) {
-      out[key] = await walkAndSanitize(nested, effectiveOptions, key, seen);
-    }
+    const sanitizedEntries = await Promise.all(
+      Object.entries(record).map(
+        async ([key, nested]) =>
+          [
+            key,
+            await walkAndSanitize(nested, effectiveOptions, key, seen),
+          ] as const,
+      ),
+    );
+    const out = Object.fromEntries(sanitizedEntries);
     if (proto && proto !== Object.prototype) {
       Object.assign(value as object, out);
       return value;

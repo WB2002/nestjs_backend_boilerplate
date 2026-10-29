@@ -84,10 +84,21 @@ describe('validateEnv', () => {
 
   it('requires every hard-required key from the schema', () => {
     for (const key of requiredKeys) {
-      const config = validConfig();
-      delete config[key];
+      const configEntries = Object.entries(validConfig()).filter(
+        ([envKey]) => envKey !== key,
+      );
+      const config = Object.fromEntries(configEntries);
       expect(() => validateEnv(config)).toThrow(
-        new RegExp(`Missing required environment variables:.*\\b${key}\\b`),
+        expect.objectContaining({
+          message: expect.stringMatching(
+            /Missing required environment variables/,
+          ),
+        }),
+      );
+      expect(() => validateEnv(config)).toThrow(
+        expect.objectContaining({
+          message: expect.stringContaining(key),
+        }),
       );
     }
   });

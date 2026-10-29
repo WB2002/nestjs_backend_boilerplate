@@ -11,7 +11,7 @@ import { RedisLuaScriptName } from '../types/redis-lua-script.types';
 export class RedisRateLimitBackend implements RateLimitBackend {
   private readonly logger = new Logger(RedisRateLimitBackend.name);
   private readonly scripts: Record<RedisLuaScriptName, string>;
-  private readonly shas: Partial<Record<RedisLuaScriptName, string>> = {};
+  private readonly shas = new Map<RedisLuaScriptName, string>();
   private loadPromise: Promise<void> | null = null;
 
   constructor(private readonly redis: Redis) {
@@ -40,11 +40,33 @@ export class RedisRateLimitBackend implements RateLimitBackend {
   }
 
   private async loadScripts(): Promise<void> {
-    for (const name of Object.keys(this.scripts) as RedisLuaScriptName[]) {
-      this.shas[name] = (await this.redis.script(
-        'LOAD',
-        this.scripts[name],
-      )) as string;
+    for (const [name, scriptSource] of Object.entries(this.scripts) as [
+      RedisLuaScriptName,
+      string,
+    ][]) {
+      const sha = (await this.redis.script('LOAD', scriptSource)) as string;
+      this.shas.set(name, sha);
+    }
+  }
+
+  private scriptSource(name: RedisLuaScriptName): string {
+    switch (name) {
+      case 'token_bucket':
+        return this.scripts.token_bucket;
+      case 'leaky_bucket':
+        return this.scripts.leaky_bucket;
+      case 'fixed_window':
+        return this.scripts.fixed_window;
+      case 'sliding_window_log':
+        return this.scripts.sliding_window_log;
+      case 'sliding_window_counter':
+        return this.scripts.sliding_window_counter;
+      case 'ewma':
+        return this.scripts.ewma;
+      default: {
+        const _never: never = name;
+        throw new Error(`Unknown Lua script: ${String(_never)}`);
+      }
     }
   }
 
@@ -111,7 +133,7 @@ export class RedisRateLimitBackend implements RateLimitBackend {
     key: string,
     args: string[],
   ): Promise<unknown> {
-    const sha = this.shas[name];
+    const sha = this.shas.get(name);
     try {
       if (sha) {
         return await this.redis.evalsha(sha, 1, key, ...args);
@@ -125,7 +147,7 @@ export class RedisRateLimitBackend implements RateLimitBackend {
       this.loadPromise = null;
       await this.ensureScriptsLoaded();
     }
-    return this.redis.eval(this.scripts[name], 1, key, ...args);
+    return this.redis.eval(this.scriptSource(name), 1, key, ...args);
   }
 
   async quit(): Promise<void> {

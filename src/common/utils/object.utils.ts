@@ -13,12 +13,9 @@ export function withoutUndefined<T extends object>(
     undefined
   >;
 } {
-  const pickedFields: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(input as Record<string, unknown>)) {
-    if (value !== undefined) {
-      pickedFields[key] = value;
-    }
-  }
+  const definedEntries = Object.entries(
+    input as Record<string, unknown>,
+  ).filter(([, value]) => value !== undefined);
   // Runtime omits undefined keys; cast bridges exactOptionalPropertyTypes.
-  return pickedFields as never;
+  return Object.fromEntries(definedEntries) as never;
 }

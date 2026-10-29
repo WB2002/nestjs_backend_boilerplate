@@ -19,6 +19,13 @@ export function resolveRouteScope(
   if (!matched) {
     return 'app:unmatched';
   }
-  const path = matched.replace(/\/+$/, '') || '/';
-  return `${method}:${path.startsWith('/') ? path : `/${path}`}`;
+  let path = matched;
+  while (path.length > 1 && path.endsWith('/')) {
+    path = path.slice(0, -1);
+  }
+  if (path.length === 0) {
+    path = '/';
+  }
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  return `${method}:${normalizedPath}`;
 }

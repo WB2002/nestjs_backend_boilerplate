@@ -18,6 +18,7 @@ import { ACCESS_TOKEN_COOKIE, SESSION_ID_COOKIE } from '@/common/constants';
 import {
   getAccessTokenCookieOptions,
   getSessionIdCookieOptions,
+  readCookieField,
 } from '@/common/utils';
 import { ConfigService } from '@nestjs/config';
 import { AuthRequest } from './types/auth.types';
@@ -99,7 +100,8 @@ export class AuthController {
     @Body('sessionId') sessionIdBody: string,
     @Res({ passthrough: true }) res: FastifyReply,
   ) {
-    const incomingSessionId = req.cookies[SESSION_ID_COOKIE] || sessionIdBody;
+    const incomingSessionId =
+      readCookieField(req.cookies, SESSION_ID_COOKIE) || sessionIdBody;
     const { accessToken, sessionId } =
       await this.authService.refreshSession(incomingSessionId);
 
@@ -138,7 +140,9 @@ export class AuthController {
     @Res({ passthrough: true }) res: FastifyReply,
   ) {
     const sessionId =
-      req.cookies[SESSION_ID_COOKIE] || sessionIdBody || req.user.jti;
+      readCookieField(req.cookies, SESSION_ID_COOKIE) ||
+      sessionIdBody ||
+      req.user.jti;
     await this.authService.logout(sessionId);
 
     res.clearCookie(ACCESS_TOKEN_COOKIE, { path: '/' });

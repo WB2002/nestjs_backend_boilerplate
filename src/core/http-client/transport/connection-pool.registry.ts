@@ -12,6 +12,12 @@ import { withoutUndefined } from '../utils/without-undefined';
 import { hashCa, hashMaterial } from '../utils/fingerprint';
 import { AgentBundle, SharedPoolEntry } from '../types/connection-pool.types';
 
+function omitDedicatedPoolMode(
+  connectionPool: ConnectionPoolPolicy,
+): Omit<ConnectionPoolPolicy, 'mode'> {
+  return (({ mode: _poolMode, ...poolRest }) => poolRest)(connectionPool);
+}
+
 export function poolKey(options: {
   mode: string;
   keepAlive?: boolean;
@@ -59,8 +65,7 @@ export class ConnectionPoolRegistry {
       );
     }
 
-    const { mode: sharedPoolMode, ...poolRest } = connectionPool;
-    void sharedPoolMode;
+    const poolRest = omitDedicatedPoolMode(connectionPool);
     const key = poolKey(
       withoutUndefined({
         mode: 'shared',

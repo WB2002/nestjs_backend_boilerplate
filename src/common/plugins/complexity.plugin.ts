@@ -112,8 +112,12 @@ export class ComplexityPlugin implements ApolloServerPlugin {
           activeSpan.setAttribute('graphql.operation.name', operationName);
         }
         const operations = document ? separateOperations(document) : {};
-        const operationDocument =
-          (operationName ? operations[operationName] : document) ?? document;
+        const namedOperation = operationName
+          ? Object.entries(operations).find(
+              ([name]) => name === operationName,
+            )?.[1]
+          : undefined;
+        const operationDocument = namedOperation ?? document;
 
         if (!operationDocument) {
           throw new GraphQLError('Missing GraphQL document', {

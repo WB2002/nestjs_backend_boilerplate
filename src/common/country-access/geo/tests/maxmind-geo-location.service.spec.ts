@@ -5,7 +5,7 @@ import { CountryAccessTelemetry } from '../../telemetry/country-access.telemetry
 describe('MaxMindGeoLocationService', () => {
   const options: CountryAccessModuleOptions = {
     refreshIntervalMs: 60_000,
-    geoipDatabasePath: '/tmp/GeoLite2-Country.mmdb',
+    geoipDatabasePath: 'test/fixtures/geoip/placeholder.mmdb',
     unknownCountryPolicy: 'block',
     bypassPaths: ['/health'],
     persistenceProvider: 'postgres',

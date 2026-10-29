@@ -35,8 +35,8 @@ describe('RateLimitGuard', () => {
           ...req,
         }),
         getResponse: () => ({
-          header: (k: string, v: string) => {
-            headers[k] = v;
+          header: (headerName: string, headerValue: string) => {
+            Object.assign(headers, { [headerName]: headerValue });
           },
         }),
       }),
