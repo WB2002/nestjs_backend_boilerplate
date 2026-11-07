@@ -10,6 +10,7 @@ import { Session, SessionSchema } from './schemas/session.schema';
 import { LocalStrategy } from './strategies/local.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { AccessTokenAuthenticator } from './access-token-authenticator.service';
+import { PasswordHashBulkhead } from './password/password-hash-bulkhead';
 
 @Module({
   imports: [
@@ -41,7 +42,8 @@ import { AccessTokenAuthenticator } from './access-token-authenticator.service';
     LocalStrategy,
     JwtStrategy,
     AccessTokenAuthenticator,
+    PasswordHashBulkhead,
   ],
-  exports: [AuthService, AccessTokenAuthenticator],
+  exports: [AuthService, AccessTokenAuthenticator, PasswordHashBulkhead],
 })
 export class AuthModule {}

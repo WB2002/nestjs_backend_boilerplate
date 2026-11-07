@@ -13,6 +13,7 @@ import { User, Session } from './schemas';
 import { RegisterDto } from './dto';
 import { RedisService } from '@/common/redis/redis.service';
 import { UserRole } from './constants';
+import { PasswordHashBulkhead } from './password/password-hash-bulkhead';
 
 @Injectable()
 export class AuthService {
@@ -22,6 +23,7 @@ export class AuthService {
     private jwtService: JwtService,
     private configService: ConfigService,
     private redisService: RedisService,
+    private passwordHashBulkhead: PasswordHashBulkhead,
   ) {}
 
   private get redis() {
@@ -35,12 +37,14 @@ export class AuthService {
       throw new ConflictException('Email already in use');
     }
 
-    const passwordHash = await argon2.hash(password, {
-      type: argon2.argon2id,
-      memoryCost: 64 * 1024,
-      timeCost: 3,
-      parallelism: 4,
-    });
+    const passwordHash = await this.passwordHashBulkhead.run(() =>
+      argon2.hash(password, {
+        type: argon2.argon2id,
+        memoryCost: 64 * 1024,
+        timeCost: 3,
+        parallelism: 4,
+      }),
+    );
 
     const newUser = new this.userModel({
       email,
@@ -57,7 +61,9 @@ export class AuthService {
   ): Promise<Record<string, unknown> | null> {
     const user = await this.userModel.findOne({ email }).exec();
     if (user && user.isActive) {
-      const isValid = await argon2.verify(user.passwordHash, pass);
+      const isValid = await this.passwordHashBulkhead.run(() =>
+        argon2.verify(user.passwordHash, pass),
+      );
       if (isValid) {
         const plain = user.toObject() as unknown as Record<string, unknown>;
         delete plain.passwordHash;

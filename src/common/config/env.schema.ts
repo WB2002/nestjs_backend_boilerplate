@@ -14,6 +14,11 @@ export const envSchema = {
   ACCESS_TOKEN_TTL: { required: true },
   SESSION_TTL: { required: true },
 
+  // Auth password hash bulkhead (overload resilience)
+  AUTH_PASSWORD_HASH_MAX_CONCURRENT: { required: false },
+  AUTH_PASSWORD_HASH_MAX_QUEUE: { required: false },
+  AUTH_PASSWORD_HASH_MAX_WAIT_MS: { required: false },
+
   // CSRF (cookie-based browser sessions)
   CSRF_ENABLED: { required: false },
   CSRF_EXEMPT_PATHS: { required: false },
