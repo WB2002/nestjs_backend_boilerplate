@@ -66,6 +66,7 @@ export const envSchema = {
 
   // Multi-VM coordination (rate limit + cache backends)
   RATE_LIMIT_STORAGE: { required: false },
+  RATE_LIMIT_FALLBACK_COOLDOWN_MS: { required: false },
   CACHE_STORAGE: { required: false },
   CACHE_TTL_JITTER_RATIO: { required: false },
   CACHE_LOADER_LOCK_TTL_MS: { required: false },

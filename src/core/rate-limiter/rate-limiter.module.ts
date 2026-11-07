@@ -20,6 +20,8 @@ import { RateLimitStorage } from './enums/rate-limit-storage.enum';
 import { RateLimiterModuleOptions } from './types/rate-limit.types';
 import { MemoryRateLimitBackend } from './backends/memory.backend';
 import { RedisRateLimitBackend } from './backends/redis.backend';
+import { FallbackRateLimitBackend } from './backends/fallback.backend';
+import { parseHttpClientInstanceCount } from '@/core/http-client/resilience/parse-http-client-instance-count';
 import { RateLimitBackend } from './types/rate-limit-backend.interface';
 import { RateLimitGuard } from './guards/rate-limit.guard';
 import { GuestIdMiddleware } from './middleware/guest-id.middleware';
@@ -160,13 +162,25 @@ export class RateLimiterModule {
             port: configService.get<number>('REDIS_PORT', 6379),
             lazyConnect: true,
             maxRetriesPerRequest: 1,
+            enableOfflineQueue: false,
           });
           redis.connect().catch((err: unknown) => {
             logger.error(
               `Redis rate-limit connect failed: ${err instanceof Error ? err.message : err}`,
             );
           });
-          return new RedisRateLimitBackend(redis);
+          return new FallbackRateLimitBackend(
+            new RedisRateLimitBackend(redis),
+            new MemoryRateLimitBackend(),
+            {
+              instanceCount: parseHttpClientInstanceCount(
+                configService.get('HTTP_CLIENT_INSTANCE_COUNT'),
+              ),
+              cooldownMs: Number(
+                configService.get('RATE_LIMIT_FALLBACK_COOLDOWN_MS') ?? 5000,
+              ),
+            },
+          );
         }
         return new MemoryRateLimitBackend();
       },

@@ -1,6 +1,14 @@
 export function parseHttpClientInstanceCount(
-  env: NodeJS.ProcessEnv = process.env,
+  envOrValue: NodeJS.ProcessEnv | string | number | undefined = process.env,
 ): number {
-  const parsed = Number.parseInt(env.HTTP_CLIENT_INSTANCE_COUNT ?? '1', 10);
-  return Number.isFinite(parsed) && parsed >= 1 ? parsed : 1;
+  if (typeof envOrValue === 'string' || typeof envOrValue === 'number') {
+    const parsedCount =
+      typeof envOrValue === 'number'
+        ? Math.floor(envOrValue)
+        : Number.parseInt(envOrValue, 10);
+    return Number.isFinite(parsedCount) && parsedCount >= 1 ? parsedCount : 1;
+  }
+  const rawCount = envOrValue?.HTTP_CLIENT_INSTANCE_COUNT;
+  const parsedCount = Number.parseInt(rawCount ?? '1', 10);
+  return Number.isFinite(parsedCount) && parsedCount >= 1 ? parsedCount : 1;
 }
