@@ -147,6 +147,7 @@ export const envSchema = {
   BACKGROUND_JOBS_LEASE_RECLAIM_ENABLED: { required: false },
   BACKGROUND_JOBS_LEASE_RECLAIM_INTERVAL_MS: { required: false },
   BACKGROUND_JOBS_LEASE_RECLAIM_BATCH_SIZE: { required: false },
+  BACKGROUND_JOBS_ORPHAN_MIN_AGE_SEC: { required: false },
 } as const satisfies Record<string, EnvField>;
 
 export type EnvSchema = typeof envSchema;

@@ -17,6 +17,7 @@ export type BackgroundJobsConfig = {
   leaseReclaimEnabled: boolean;
   leaseReclaimIntervalMs: number;
   leaseReclaimBatchSize: number;
+  orphanMinAgeSec: number;
   postgres: BackgroundJobsPostgresConfig;
 };
 
@@ -50,6 +51,10 @@ export function parseBackgroundJobsConfig(
     env.BACKGROUND_JOBS_LEASE_RECLAIM_BATCH_SIZE,
     100,
   );
+  const orphanMinAgeSec = parsePositiveInt(
+    env.BACKGROUND_JOBS_ORPHAN_MIN_AGE_SEC,
+    30,
+  );
 
   const postgres: BackgroundJobsPostgresConfig = {
     host: env.POSTGRES_HOST?.trim() || 'localhost',
@@ -74,6 +79,7 @@ export function parseBackgroundJobsConfig(
     leaseReclaimEnabled: isLeaseReclaimEnabled,
     leaseReclaimIntervalMs,
     leaseReclaimBatchSize,
+    orphanMinAgeSec,
     postgres,
   };
 }
@@ -105,6 +111,9 @@ export function parseBackgroundJobsConfigFromService(
     ),
     BACKGROUND_JOBS_LEASE_RECLAIM_BATCH_SIZE: configService.get<string>(
       'BACKGROUND_JOBS_LEASE_RECLAIM_BATCH_SIZE',
+    ),
+    BACKGROUND_JOBS_ORPHAN_MIN_AGE_SEC: configService.get<string>(
+      'BACKGROUND_JOBS_ORPHAN_MIN_AGE_SEC',
     ),
     POSTGRES_HOST: configService.get<string>('POSTGRES_HOST'),
     POSTGRES_PORT: configService.get<string>('POSTGRES_PORT'),

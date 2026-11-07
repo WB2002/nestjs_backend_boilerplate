@@ -46,6 +46,30 @@ describe('JobEnqueueService', () => {
     expect(queue.add).not.toHaveBeenCalled();
   });
 
+  it('returns enqueued when queue.add rejects after insert', async () => {
+    const repo = {
+      insertPending: jest.fn().mockResolvedValue({ id: 'job-1' }),
+    } as unknown as PostgresJobRepository;
+    const queue = {
+      add: jest.fn().mockRejectedValue(new Error('Redis connection lost')),
+    } as unknown as Queue;
+    const config = {
+      defaultQueueName: 'default',
+    } as BackgroundJobsConfig;
+
+    const service = new JobEnqueueService(repo, queue, config);
+    const outcome = await service.enqueue({
+      jobName: 'example.echo',
+      payload: { message: 'hi' },
+    });
+
+    expect(outcome).toEqual({
+      jobRowId: 'job-1',
+      enqueued: true,
+      deduplicated: false,
+    });
+  });
+
   it('wakeJobRow removes completed redis job and re-adds run job', async () => {
     const repo = {} as PostgresJobRepository;
     const remove = jest.fn().mockResolvedValue(undefined);

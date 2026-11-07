@@ -147,4 +147,33 @@ describeIntegration('PostgresJobRepository integration', () => {
     );
     expect(rows[0]?.last_error).toBe(BACKGROUND_JOBS_LEASE_EXPIRED_MESSAGE);
   });
+
+  it('finds orphaned pending jobs older than minAgeSec', async () => {
+    const freshJob = await repoA.insertPending({
+      queueName: 'default',
+      jobName: 'echo',
+      payload: {},
+      runAt: new Date(),
+      maxAttempts: 5,
+    });
+    const orphanedJob = await repoA.insertPending({
+      queueName: 'default',
+      jobName: 'echo',
+      payload: {},
+      runAt: new Date(Date.now() - 60_000),
+      maxAttempts: 3,
+    });
+    expect(freshJob).not.toBeNull();
+    expect(orphanedJob).not.toBeNull();
+
+    const orphanedRows = await repoA.findOrphanedPendingJobs(10, 30);
+    const foundOrphaned = orphanedRows.find(
+      (row) => row.id === orphanedJob!.id,
+    );
+    const foundFresh = orphanedRows.find((row) => row.id === freshJob!.id);
+
+    expect(foundOrphaned).toBeDefined();
+    expect(foundOrphaned?.maxAttempts).toBe(3);
+    expect(foundFresh).toBeUndefined();
+  });
 });

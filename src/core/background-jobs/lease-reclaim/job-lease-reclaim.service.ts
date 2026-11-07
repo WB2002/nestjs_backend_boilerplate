@@ -72,6 +72,26 @@ export class JobLeaseReclaimService implements OnModuleInit, OnModuleDestroy {
           `Reclaimed ${rows.length} expired background job lease(s)`,
         );
       }
+      const orphanedRows = await this.repo.findOrphanedPendingJobs(
+        this.config.leaseReclaimBatchSize,
+        this.config.orphanMinAgeSec,
+      );
+      let successfullyWokenCount = 0;
+      for (const row of orphanedRows) {
+        try {
+          await this.enqueue.wakeJobRow(row.id, row.maxAttempts);
+          successfullyWokenCount += 1;
+        } catch (err) {
+          this.logger.warn(
+            `Failed to wake orphaned job ${row.id}: ${err instanceof Error ? err.message : err}`,
+          );
+        }
+      }
+      if (successfullyWokenCount > 0) {
+        this.logger.log(
+          `Woke ${successfullyWokenCount} orphaned pending background job(s)`,
+        );
+      }
     } catch (err) {
       this.logger.warn(
         `Lease reclaim tick failed: ${err instanceof Error ? err.message : err}`,

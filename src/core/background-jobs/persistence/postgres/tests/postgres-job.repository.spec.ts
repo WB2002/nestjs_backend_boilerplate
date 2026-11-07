@@ -73,4 +73,29 @@ describe('PostgresJobRepository', () => {
       [50, expect.any(String)],
     );
   });
+
+  it('findOrphanedPendingJobs queries and maps rows', async () => {
+    const pool = {
+      query: jest.fn().mockResolvedValueOnce({
+        rows: [
+          {
+            id: '00000000-0000-4000-8000-000000000001',
+            max_attempts: 5,
+          },
+        ],
+      }),
+    } as unknown as Pool;
+    const repo = new PostgresJobRepository(pool);
+    const rows = await repo.findOrphanedPendingJobs(25, 30);
+    expect(rows).toEqual([
+      {
+        id: '00000000-0000-4000-8000-000000000001',
+        maxAttempts: 5,
+      },
+    ]);
+    expect(pool.query).toHaveBeenCalledWith(
+      expect.stringContaining("status = 'pending'::background_job_status"),
+      [25, 30],
+    );
+  });
 });

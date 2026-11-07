@@ -78,11 +78,12 @@ Handler errors requeue the row to `pending` with delayed `run_at` when `attempts
 
 When a worker dies or exceeds `BACKGROUND_JOBS_CLAIM_LEASE_SEC`, rows can remain in `processing` until the lease expires. `JobLeaseReclaimService` polls Postgres on an interval (all VMs with `BACKGROUND_JOBS_ENABLED=true` unless disabled below).
 
-| Variable | Default | Purpose |
-| -------- | ------- | ------- |
-| `BACKGROUND_JOBS_LEASE_RECLAIM_ENABLED` | `true` | Set `false` to disable the cron |
-| `BACKGROUND_JOBS_LEASE_RECLAIM_INTERVAL_MS` | `30000` | Poll interval |
-| `BACKGROUND_JOBS_LEASE_RECLAIM_BATCH_SIZE` | `100` | Max rows reclaimed per tick |
+| Variable                                    | Default | Purpose                                           |
+| ------------------------------------------- | ------- | ------------------------------------------------- |
+| `BACKGROUND_JOBS_LEASE_RECLAIM_ENABLED`     | `true`  | Set `false` to disable the cron                   |
+| `BACKGROUND_JOBS_LEASE_RECLAIM_INTERVAL_MS` | `30000` | Poll interval                                     |
+| `BACKGROUND_JOBS_LEASE_RECLAIM_BATCH_SIZE`  | `100`   | Max rows reclaimed per tick                       |
+| `BACKGROUND_JOBS_ORPHAN_MIN_AGE_SEC`        | `30`    | Minimum age before sweeping orphaned pending rows |
 
 Behavior:
 
@@ -91,6 +92,16 @@ Behavior:
 - `attempts` is **not** incremented again on reclaim (already bumped at claim time)
 
 Set `BACKGROUND_JOBS_CLAIM_LEASE_SEC` above worst-case handler duration. Handlers do not verify lease ownership on completion; a zombie worker could still mark a row completed after reclaim.
+
+## Outbox recovery
+
+The Postgres `background_jobs` ledger doubles as a transactional outbox. When `JobEnqueueService.enqueue()` commits a `pending` row to Postgres but fails to push to BullMQ (e.g. temporary Redis downtime), the method catches the error, logs a warning, and still returns `{ enqueued: true }`.
+
+During each lease reclaim tick, `JobLeaseReclaimService` sweeps for orphaned pending rows:
+
+- Queries `pending` rows where `run_at <= NOW() - interval BACKGROUND_JOBS_ORPHAN_MIN_AGE_SEC` (default 30s).
+- Calls `wakeJobRow(id, maxAttempts)` for each row, safely deduplicating against any existing BullMQ job.
+- Each row wake is isolated in a try/catch block so a single failing wake does not abort the batch.
 
 ## Follow-ups (not implemented)
 

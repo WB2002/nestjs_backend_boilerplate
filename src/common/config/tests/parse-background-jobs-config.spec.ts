@@ -47,4 +47,21 @@ describe('parseBackgroundJobsConfig', () => {
     });
     expect(cfg.leaseReclaimEnabled).toBe(false);
   });
+
+  it('defaults orphanMinAgeSec to 30', () => {
+    const cfg = parseBackgroundJobsConfig({
+      BACKGROUND_JOBS_ENABLED: 'true',
+      POSTGRES_DB: 'app',
+    });
+    expect(cfg.orphanMinAgeSec).toBe(30);
+  });
+
+  it('parses custom BACKGROUND_JOBS_ORPHAN_MIN_AGE_SEC', () => {
+    const cfg = parseBackgroundJobsConfig({
+      BACKGROUND_JOBS_ENABLED: 'true',
+      POSTGRES_DB: 'app',
+      BACKGROUND_JOBS_ORPHAN_MIN_AGE_SEC: '60',
+    });
+    expect(cfg.orphanMinAgeSec).toBe(60);
+  });
 });

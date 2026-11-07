@@ -1,5 +1,5 @@
 import { InjectQueue } from '@nestjs/bullmq';
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import type { BackgroundJobsConfig } from '@/common/config/parse-background-jobs-config';
 import {
@@ -12,6 +12,8 @@ import { PostgresJobRepository } from './persistence/postgres/postgres-job.repos
 
 @Injectable()
 export class JobEnqueueService {
+  private readonly logger = new Logger(JobEnqueueService.name);
+
   constructor(
     private readonly repo: PostgresJobRepository,
     @InjectQueue(BACKGROUND_JOBS_BULL_QUEUE) private readonly queue: Queue,
@@ -38,11 +40,17 @@ export class JobEnqueueService {
     }
 
     const delayMs = Math.max(0, runAt.getTime() - Date.now());
-    await this.queue.add(
-      BACKGROUND_JOBS_RUN_JOB_NAME,
-      { jobRowId: inserted.id },
-      this.buildRunJobOptions(inserted.id, maxAttempts, delayMs),
-    );
+    try {
+      await this.queue.add(
+        BACKGROUND_JOBS_RUN_JOB_NAME,
+        { jobRowId: inserted.id },
+        this.buildRunJobOptions(inserted.id, maxAttempts, delayMs),
+      );
+    } catch (err) {
+      this.logger.warn(
+        `Failed to add job ${inserted.id} to BullMQ queue: ${err instanceof Error ? err.message : err}`,
+      );
+    }
 
     return {
       jobRowId: inserted.id,

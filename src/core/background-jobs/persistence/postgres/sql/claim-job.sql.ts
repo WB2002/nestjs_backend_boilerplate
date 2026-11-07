@@ -120,3 +120,10 @@ RETURNING
   j.status::text AS status,
   j.max_attempts;
 `;
+
+export const FIND_ORPHANED_PENDING_JOBS_SQL = `
+SELECT id, max_attempts FROM background_jobs
+WHERE status = 'pending'::background_job_status
+  AND run_at <= NOW() - make_interval(secs => $2::double precision)
+ORDER BY run_at ASC LIMIT $1::int;
+`;

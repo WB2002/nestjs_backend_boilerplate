@@ -14,6 +14,7 @@ import {
 } from '../../constants/background-jobs.constants';
 import {
   CLAIM_JOB_BY_ID_SQL,
+  FIND_ORPHANED_PENDING_JOBS_SQL,
   GET_JOB_STATUS_SQL,
   INSERT_PENDING_JOB_SQL,
   MARK_JOB_COMPLETED_SQL,
@@ -105,6 +106,20 @@ export class PostgresJobRepository {
         },
       ];
     });
+  }
+
+  async findOrphanedPendingJobs(
+    limit: number,
+    minAgeSec: number,
+  ): Promise<Array<{ id: string; maxAttempts: number }>> {
+    const orphanedJobsQueryResult = await this.pool.query<{
+      id: string;
+      max_attempts: number;
+    }>(FIND_ORPHANED_PENDING_JOBS_SQL, [limit, minAgeSec]);
+    return orphanedJobsQueryResult.rows.map((row) => ({
+      id: row.id,
+      maxAttempts: row.max_attempts,
+    }));
   }
 
   async markFailed(
