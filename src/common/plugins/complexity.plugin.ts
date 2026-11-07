@@ -21,6 +21,8 @@ import {
   acquireRedisConcurrency,
   applyGraphqlOverloadHttpHeaders,
   buildConcurrencyOverloadError,
+  consumeGraphqlBudget,
+  ConcurrencyReleaseState,
   DEFAULT_GQL_CONCURRENCY_KEY_TTL_SEC,
   recordGraphqlConcurrencyDenied,
   releaseRedisConcurrency,
@@ -84,7 +86,6 @@ export class ComplexityPlugin implements ApolloServerPlugin {
     const maxComplexity = this.maxComplexity;
     const userBudget = this.userBudget;
     const redis = this.redis;
-    const releaseState = { released: false };
 
     const acquired = await acquireRedisConcurrency(
       redis,
@@ -103,6 +104,11 @@ export class ComplexityPlugin implements ApolloServerPlugin {
       );
       throw buildConcurrencyOverloadError(label);
     }
+
+    const releaseState: ConcurrencyReleaseState = {
+      released: false,
+      isDegraded: acquired.isDegraded,
+    };
 
     return {
       async didResolveOperation({ request, document }) {
@@ -144,21 +150,21 @@ export class ComplexityPlugin implements ApolloServerPlugin {
           );
         }
 
-        const currentUsage = await redis.get(budgetKey);
-        const usageAmount = parseInt(currentUsage || '0', 10);
+        const budgetOutcome = await consumeGraphqlBudget(
+          redis,
+          budgetKey,
+          complexity,
+          userBudget,
+          60,
+        );
 
-        if (usageAmount + complexity > userBudget) {
+        if (!budgetOutcome.allowed) {
           throw new GraphQLError(
             `Query complexity of ${complexity} exceeds your remaining budget of ${
-              userBudget - usageAmount
+              userBudget - budgetOutcome.used
             }`,
             { extensions: { code: 'OUT_OF_BUDGET' } },
           );
-        }
-
-        await redis.incrby(budgetKey, complexity);
-        if (!currentUsage) {
-          await redis.expire(budgetKey, 60);
         }
       },
 

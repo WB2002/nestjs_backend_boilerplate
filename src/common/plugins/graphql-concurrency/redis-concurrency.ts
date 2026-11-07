@@ -1,22 +1,53 @@
+import { Logger } from '@nestjs/common';
 import type Redis from 'ioredis';
+import { GQL_ACQUIRE_CONCURRENCY_LUA } from './graphql-lua.scripts';
 
-export type ConcurrencyReleaseState = { released: boolean };
+const logger = new Logger('redis-concurrency');
+
+export type ConcurrencyReleaseState = {
+  released: boolean;
+  isDegraded?: boolean;
+};
+
+export type RedisConcurrencyOutcome = {
+  acquired: boolean;
+  current: number;
+  isDegraded: boolean;
+};
 
 export async function acquireRedisConcurrency(
   redis: Redis,
   key: string,
   maxConcurrent: number,
   ttlSec: number,
-): Promise<
-  { acquired: true; current: number } | { acquired: false; current: number }
-> {
-  const current = await redis.incr(key);
-  await redis.expire(key, ttlSec);
-  if (current > maxConcurrent) {
-    await redis.decr(key);
-    return { acquired: false, current: current - 1 };
+): Promise<RedisConcurrencyOutcome> {
+  try {
+    const rawOutcome = (await redis.eval(
+      GQL_ACQUIRE_CONCURRENCY_LUA,
+      1,
+      key,
+      maxConcurrent,
+      ttlSec,
+    )) as [number, number];
+
+    const [acquiredCode, currentCount] = rawOutcome;
+    const isAcquired = acquiredCode === 1;
+
+    return {
+      acquired: isAcquired,
+      current: Number(currentCount),
+      isDegraded: false,
+    };
+  } catch (evalError) {
+    logger.warn(
+      `Failed to acquire Redis concurrency via Lua for key "${key}", failing open: ${evalError instanceof Error ? evalError.message : String(evalError)}`,
+    );
+    return {
+      acquired: true,
+      current: 0,
+      isDegraded: true,
+    };
   }
-  return { acquired: true, current };
 }
 
 export async function releaseRedisConcurrency(
@@ -28,5 +59,14 @@ export async function releaseRedisConcurrency(
     return;
   }
   state.released = true;
-  await redis.decr(key);
+  if (state.isDegraded) {
+    return;
+  }
+  try {
+    await redis.decr(key);
+  } catch (decrError) {
+    logger.warn(
+      `Failed to release Redis concurrency for key "${key}": ${decrError instanceof Error ? decrError.message : String(decrError)}`,
+    );
+  }
 }
