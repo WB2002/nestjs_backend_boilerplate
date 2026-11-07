@@ -34,21 +34,8 @@ export class CacheService {
     this.keyPrefix = options.keyPrefix ?? 'cache:';
   }
 
-  async get<T>(key: string): Promise<CacheGetResult<T> | null> {
-    const entry = await this.backend.get<T>(this.prefixed(key));
-    if (!entry) {
-      return null;
-    }
-    const now = Date.now();
-    if (now >= entry.hardExpiresAt) {
-      await this.backend.delete(this.prefixed(key));
-      return null;
-    }
-    const status = now >= entry.softExpiresAt ? 'stale' : 'fresh';
-    if (entry.absent === true) {
-      return { absent: true, status };
-    }
-    return { value: entry.v, status };
+  get<T>(key: string): Promise<CacheGetResult<T> | null> {
+    return this.safeBackendGet<T>(key);
   }
 
   async set<T>(key: string, value: T, ttl?: CacheTtl): Promise<void> {
@@ -59,7 +46,7 @@ export class CacheService {
       softExpiresAt: now + resolved.softTtlMs,
       hardExpiresAt: now + resolved.hardTtlMs,
     };
-    await this.backend.set(this.prefixed(key), entry, resolved.hardTtlMs);
+    await this.safeBackendSet(key, entry, resolved.hardTtlMs);
   }
 
   async getOrSet<T>(
@@ -96,7 +83,7 @@ export class CacheService {
   }
 
   async delete(key: string): Promise<void> {
-    await this.backend.delete(this.prefixed(key));
+    await this.safeBackendDelete(key);
   }
 
   private prefixed(key: string): string {
@@ -203,9 +190,11 @@ export class CacheService {
     }
     const promise = this.runCoalescedLoad(key, loader, ttl, options);
     this.inFlight.set(flightKey, promise);
-    void promise.finally(() => {
-      this.inFlight.delete(flightKey);
-    });
+    void promise
+      .finally(() => {
+        this.inFlight.delete(flightKey);
+      })
+      .catch(() => {});
     return promise;
   }
 
@@ -218,7 +207,11 @@ export class CacheService {
     if (this.loaderLock) {
       const lockKey = this.loaderLockKey(key);
       const lockTtlMs = this.options.loaderLockTtlMs ?? 30_000;
-      const token = await this.loaderLock.tryAcquire(lockKey, lockTtlMs);
+      const lockState = { threw: false };
+      const token = await this.safeTryAcquire(lockKey, lockTtlMs, lockState);
+      if (lockState.threw) {
+        return this.executeLoader(key, loader, ttl, options);
+      }
       if (!token) {
         const peer = await this.waitForPeer<T>(key, options);
         if (peer.hit) {
@@ -240,7 +233,7 @@ export class CacheService {
         }
         return await this.executeLoader(key, loader, ttl, options);
       } finally {
-        await this.loaderLock.release(lockKey, token);
+        await this.safeRelease(lockKey, token);
       }
     }
     return this.executeLoader(key, loader, ttl, options);
@@ -294,6 +287,90 @@ export class CacheService {
       softExpiresAt: now + resolved.softTtlMs,
       hardExpiresAt: now + resolved.hardTtlMs,
     };
-    await this.backend.set(this.prefixed(key), entry, resolved.hardTtlMs);
+    await this.safeBackendSet(key, entry, resolved.hardTtlMs);
+  }
+
+  private async safeBackendGet<T>(
+    key: string,
+  ): Promise<CacheGetResult<T> | null> {
+    try {
+      const entry = await this.backend.get<T>(this.prefixed(key));
+      if (!entry) {
+        return null;
+      }
+      const now = Date.now();
+      if (now >= entry.hardExpiresAt) {
+        await this.safeBackendDelete(key);
+        return null;
+      }
+      const status = now >= entry.softExpiresAt ? 'stale' : 'fresh';
+      if (entry.absent === true) {
+        return { absent: true, status };
+      }
+      return { value: entry.v, status };
+    } catch (error: unknown) {
+      this.logger.warn(
+        `Cache backend get failed for key "${key}": ${error instanceof Error ? error.message : String(error)}`,
+      );
+      return null;
+    }
+  }
+
+  private async safeBackendSet<T>(
+    key: string,
+    entry: CacheEntry<T>,
+    ttlMs: number,
+  ): Promise<void> {
+    try {
+      await this.backend.set(this.prefixed(key), entry, ttlMs);
+    } catch (error: unknown) {
+      this.logger.warn(
+        `Cache backend set failed for key "${key}": ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  private async safeBackendDelete(key: string): Promise<void> {
+    try {
+      await this.backend.delete(this.prefixed(key));
+    } catch (error: unknown) {
+      this.logger.warn(
+        `Cache backend delete failed for key "${key}": ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  private async safeTryAcquire(
+    lockKey: string,
+    ttlMs: number,
+    state?: { threw: boolean },
+  ): Promise<string | null> {
+    if (!this.loaderLock) {
+      return null;
+    }
+    try {
+      return await this.loaderLock.tryAcquire(lockKey, ttlMs);
+    } catch (error: unknown) {
+      if (state) {
+        state.threw = true;
+      }
+      this.logger.warn(
+        `Cache loader lock tryAcquire failed for key "${lockKey}": ${error instanceof Error ? error.message : String(error)}`,
+      );
+      return null;
+    }
+  }
+
+  private async safeRelease(lockKey: string, token: string): Promise<void> {
+    if (!this.loaderLock) {
+      return;
+    }
+    try {
+      await this.loaderLock.release(lockKey, token);
+    } catch (error: unknown) {
+      this.logger.warn(
+        `Cache loader lock release failed for key "${lockKey}": ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
   }
 }
