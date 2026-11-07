@@ -120,4 +120,25 @@ describe('GET /health/ready (HTTP)', () => {
     expect(res.statusCode).toBe(200);
     expect(JSON.parse(res.body).details.shuttingDown).toBeUndefined();
   });
+
+  describe('GET /health/live', () => {
+    it('returns 200 { status: "ok" } immediately when not shutting down', async () => {
+      const res = await app.inject({ method: 'GET', url: '/health/live' });
+
+      expect(res.statusCode).toBe(200);
+      expect(JSON.parse(res.body)).toEqual({ status: 'ok' });
+    });
+
+    it('returns 503 when shutdown has begun', async () => {
+      shutdownState.beginShutdown();
+
+      const res = await app.inject({ method: 'GET', url: '/health/live' });
+
+      expect(res.statusCode).toBe(503);
+      expect(JSON.parse(res.body)).toMatchObject({
+        statusCode: 503,
+        message: 'Application is shutting down',
+      });
+    });
+  });
 });

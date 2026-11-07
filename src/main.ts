@@ -7,6 +7,7 @@ import { WinstonModule } from 'nest-winston';
 import { winstonConfig } from './core/logger/logger.config';
 import { registerGracefulShutdown, ShutdownState } from './core/shutdown';
 import { parseTrustProxy } from './common/country-access';
+import { parseHttpServerTimeouts } from './common/config';
 import helmet from '@fastify/helmet';
 import fastifyCookie from '@fastify/cookie';
 import multipart from '@fastify/multipart';
@@ -45,6 +46,7 @@ async function bootstrap() {
   // - Explicit proxies: comma-separated IPs/CIDRs (e.g. 10.0.0.0/8,172.16.0.0/12).
   // - Local/dev (direct to Nest, no ALB): leave unset/false so clients cannot spoof X-Forwarded-For.
   const trustProxy = parseTrustProxy(process.env.TRUST_PROXY);
+  const serverTimeouts = parseHttpServerTimeouts(process.env);
 
   const uploadMaxFiles =
     Number.parseInt(process.env.UPLOAD_MAX_FILES ?? '5', 10) || 5;
@@ -60,6 +62,7 @@ async function bootstrap() {
   const fastifyAdapter = new FastifyAdapter({
     logger: false, // Disable default Fastify logger to use Winston
     trustProxy,
+    keepAliveTimeout: serverTimeouts.keepAliveTimeoutMs,
     // Keep the default ~1MB JSON/GraphQL body cap. Upload totals are enforced
     // by @fastify/multipart limits + readMultipartFiles, not this global limit.
     // Allow app.close() to finish promptly during SIGTERM (drop keep-alive sockets).
@@ -169,6 +172,10 @@ async function bootstrap() {
   // Manual SIGTERM/SIGINT handlers (not enableShutdownHooks): mark readiness
   // 503 first, wait for ALB drain, then close so Nest lifecycle runs.
   await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
+
+  const httpServer = app.getHttpServer();
+  httpServer.keepAliveTimeout = serverTimeouts.keepAliveTimeoutMs;
+  httpServer.headersTimeout = serverTimeouts.headersTimeoutMs;
 
   registerGracefulShutdown(app, app.get(ShutdownState), {
     drainMs: parseNonNegativeInt(

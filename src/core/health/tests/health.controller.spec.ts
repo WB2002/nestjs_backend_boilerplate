@@ -1,9 +1,10 @@
 import { HealthCheckService } from '@nestjs/terminus';
 import { ConfigService } from '@nestjs/config';
+import { ServiceUnavailableException } from '@nestjs/common';
 import { HealthController } from '../health.controller';
 import { ShutdownState } from '@/core/shutdown';
 
-describe('HealthController readiness', () => {
+describe('HealthController', () => {
   let controller: HealthController;
   let health: { check: jest.Mock };
   let shutdownState: ShutdownState;
@@ -49,28 +50,90 @@ describe('HealthController readiness', () => {
     );
   });
 
-  it('ready() runs dependency checks when not shutting down', async () => {
-    await controller.ready();
-    expect(health.check).toHaveBeenCalledTimes(1);
-    const checks = health.check.mock.calls[0][0] as Array<
-      () => Promise<unknown>
-    >;
-    expect(checks.length).toBeGreaterThanOrEqual(3);
-    await expect(checks[0]!()).resolves.toEqual({ mongo: { status: 'up' } });
+  describe('live()', () => {
+    it('returns ok without calling health.check', () => {
+      const liveResponse = controller.live();
+      expect(liveResponse).toEqual({ status: 'ok' });
+      expect(health.check).not.toHaveBeenCalled();
+    });
+
+    it('is 503 while shutting down', () => {
+      shutdownState.beginShutdown();
+      expect(() => controller.live()).toThrow(ServiceUnavailableException);
+      expect(health.check).not.toHaveBeenCalled();
+    });
   });
 
-  it('ready() reports shuttingDown down when shutdown has begun', async () => {
-    shutdownState.beginShutdown();
-    await controller.ready();
-    const checks = health.check.mock.calls[0][0] as Array<
-      () => Promise<unknown>
-    >;
-    expect(checks).toHaveLength(1);
-    await expect(checks[0]!()).resolves.toEqual({
-      shuttingDown: {
-        status: 'down',
-        message: 'Application is shutting down',
-      },
+  describe('readiness', () => {
+    it('ready() runs dependency checks when not shutting down', async () => {
+      await controller.ready();
+      expect(health.check).toHaveBeenCalledTimes(1);
+      const checks = health.check.mock.calls[0][0] as Array<
+        () => Promise<unknown>
+      >;
+      expect(checks.length).toBeGreaterThanOrEqual(3);
+      await expect(checks[0]!()).resolves.toEqual({ mongo: { status: 'up' } });
+    });
+
+    it('ready() reports shuttingDown down when shutdown has begun', async () => {
+      shutdownState.beginShutdown();
+      await controller.ready();
+      const checks = health.check.mock.calls[0][0] as Array<
+        () => Promise<unknown>
+      >;
+      expect(checks).toHaveLength(1);
+      await expect(checks[0]!()).resolves.toEqual({
+        shuttingDown: {
+          status: 'down',
+          message: 'Application is shutting down',
+        },
+      });
+    });
+
+    it('ready() called twice within the TTL calls health.check once', async () => {
+      const firstCheckResponse = await controller.ready();
+      const secondCheckResponse = await controller.ready();
+
+      expect(firstCheckResponse).toEqual({ status: 'ok' });
+      expect(secondCheckResponse).toEqual({ status: 'ok' });
+      expect(health.check).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('onModuleDestroy()', () => {
+    it('closes the Postgres pool if initialized', async () => {
+      const mockEnd = jest.fn().mockResolvedValue(undefined);
+      (controller as any).pgPool = { end: mockEnd };
+      await controller.onModuleDestroy();
+      expect(mockEnd).toHaveBeenCalledTimes(1);
+      expect((controller as any).pgPool).toBeUndefined();
+    });
+
+    it('does nothing if pgPool is undefined', async () => {
+      await expect(controller.onModuleDestroy()).resolves.toBeUndefined();
+    });
+  });
+
+  describe('pingPostgres()', () => {
+    it('returns status up on successful query', async () => {
+      const mockQuery = jest
+        .fn()
+        .mockResolvedValue({ rows: [{ '?column?': 1 }] });
+      (controller as any).pgPool = { query: mockQuery, on: jest.fn() };
+      const pingResponse = await (controller as any).pingPostgres();
+      expect(pingResponse).toEqual({ postgres: { status: 'up' } });
+      expect(mockQuery).toHaveBeenCalledWith('SELECT 1');
+    });
+
+    it('returns status down on query failure', async () => {
+      const mockQuery = jest
+        .fn()
+        .mockRejectedValue(new Error('connection timeout'));
+      (controller as any).pgPool = { query: mockQuery, on: jest.fn() };
+      const pingFailureResponse = await (controller as any).pingPostgres();
+      expect(pingFailureResponse).toEqual({
+        postgres: { status: 'down', message: 'connection timeout' },
+      });
     });
   });
 });

@@ -1,4 +1,9 @@
-import { Controller, Get } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  OnModuleDestroy,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import {
   HealthCheckService,
   HealthCheck,
@@ -9,8 +14,9 @@ import {
 } from '@nestjs/terminus';
 import { Transport, RedisOptions } from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
-import { Client } from 'pg';
+import { Pool } from 'pg';
 import type {
+  HealthCheckResult,
   HealthIndicatorFunction,
   HealthIndicatorResult,
 } from '@nestjs/terminus';
@@ -22,6 +28,7 @@ import { SkipCountryAccess } from '@/common/country-access';
 import { SkipInboundBulkhead } from '@/core/overload';
 import { SkipTracing } from '@/core/telemetry';
 import { FeatureFlagHealthIndicator } from '@/core/feature-flag';
+import { HealthSnapshot } from './health-snapshot';
 
 // Probes must never be throttled: load balancers share source IPs, and a 429
 // during a rolling deploy looks like an unhealthy instance.
@@ -34,7 +41,10 @@ import { FeatureFlagHealthIndicator } from '@/core/feature-flag';
 @SkipInboundBulkhead()
 @SkipTracing()
 @Controller('health')
-export class HealthController {
+export class HealthController implements OnModuleDestroy {
+  private readonly snapshot: HealthSnapshot<HealthCheckResult>;
+  private pgPool: Pool | undefined;
+
   constructor(
     private health: HealthCheckService,
     private mongoose: MongooseHealthIndicator,
@@ -44,17 +54,36 @@ export class HealthController {
     private configService: ConfigService,
     private shutdownState: ShutdownState,
     private featureFlagHealth: FeatureFlagHealthIndicator,
-  ) {}
+  ) {
+    const rawTtl = this.configService.get<string | number>(
+      'HEALTH_CHECK_CACHE_TTL_MS',
+    );
+    const parsedTtl =
+      typeof rawTtl === 'number'
+        ? rawTtl
+        : Number.parseInt(String(rawTtl ?? ''), 10);
+    const ttlMs =
+      Number.isFinite(parsedTtl) && parsedTtl >= 0 ? parsedTtl : 2000;
+    this.snapshot = new HealthSnapshot<HealthCheckResult>(ttlMs);
+  }
+
+  @Get('live')
+  live(): { status: string } {
+    if (this.shutdownState.isShuttingDown) {
+      throw new ServiceUnavailableException('Application is shutting down');
+    }
+    return { status: 'ok' };
+  }
 
   @Get()
   @HealthCheck()
-  check() {
-    return this.health.check(this.buildChecks());
+  check(): Promise<HealthCheckResult> {
+    return this.snapshot.get(() => this.health.check(this.buildChecks()));
   }
 
   @Get('ready')
   @HealthCheck()
-  ready() {
+  ready(): Promise<HealthCheckResult> {
     if (this.shutdownState.isShuttingDown) {
       return this.health.check([
         () =>
@@ -66,7 +95,14 @@ export class HealthController {
           }),
       ]);
     }
-    return this.health.check(this.buildChecks());
+    return this.snapshot.get(() => this.health.check(this.buildChecks()));
+  }
+
+  async onModuleDestroy(): Promise<void> {
+    if (this.pgPool) {
+      await this.pgPool.end().catch(() => {});
+      this.pgPool = undefined;
+    }
   }
 
   private buildChecks(): HealthIndicatorFunction[] {
@@ -121,25 +157,34 @@ export class HealthController {
     return checks;
   }
 
+  private getPgPool(): Pool {
+    if (!this.pgPool) {
+      this.pgPool = new Pool({
+        host: this.configService.get<string>('POSTGRES_HOST', 'localhost'),
+        port: this.configService.get<number>('POSTGRES_PORT', 5432),
+        user: this.configService.get<string>('POSTGRES_USER'),
+        password: this.configService.get<string>('POSTGRES_PASSWORD'),
+        database: this.configService.get<string>('POSTGRES_DB'),
+        max: 1,
+        connectionTimeoutMillis: 2000,
+        idleTimeoutMillis: 30000,
+      });
+      this.pgPool.on('error', () => {
+        // Prevent unhandled error event on idle client disconnect
+      });
+    }
+    return this.pgPool;
+  }
+
   private async pingPostgres(): Promise<HealthIndicatorResult<'postgres'>> {
-    const client = new Client({
-      host: this.configService.get<string>('POSTGRES_HOST', 'localhost'),
-      port: this.configService.get<number>('POSTGRES_PORT', 5432),
-      user: this.configService.get<string>('POSTGRES_USER'),
-      password: this.configService.get<string>('POSTGRES_PASSWORD'),
-      database: this.configService.get<string>('POSTGRES_DB'),
-      connectionTimeoutMillis: 3000,
-    });
     try {
-      await client.connect();
-      await client.query('SELECT 1');
+      const pool = this.getPgPool();
+      await pool.query('SELECT 1');
       return { postgres: { status: 'up' as const } };
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Connection failed';
       return { postgres: { status: 'down' as const, message } };
-    } finally {
-      await client.end().catch(() => {});
     }
   }
 }

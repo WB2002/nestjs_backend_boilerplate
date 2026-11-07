@@ -30,6 +30,8 @@ export const envSchema = {
   PORT: { required: false },
   NODE_ENV: { required: false },
   ALLOWED_ORIGINS: { required: false },
+  HTTP_KEEP_ALIVE_TIMEOUT_MS: { required: false },
+  HEALTH_CHECK_CACHE_TTL_MS: { required: false },
 
   // Request deadline
   REQUEST_TIMEOUT_MS: { required: false },
