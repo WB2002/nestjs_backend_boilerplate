@@ -50,6 +50,8 @@ import { SanitizationPipe } from './common/sanitization';
 import { validateEnv } from './common/config';
 import { isWebSocketEnabled } from './common/config/load-env-file';
 import { isBackgroundJobsEnabled } from './common/config/is-background-jobs-enabled';
+import { isConformanceHarnessEnabled } from './common/config/is-conformance-harness-enabled';
+import { ConformanceModule } from './conformance';
 import { BackgroundJobsModule } from './core/background-jobs';
 import { ExampleRealtimeModule } from './example/example-realtime.module';
 import {
@@ -115,6 +117,7 @@ import { parseCsvPaths } from './core/csrf/helpers/parse-csv-paths';
           ExampleJobsModule,
         ]
       : []),
+    ...(isConformanceHarnessEnabled() ? [ConformanceModule] : []),
     FeatureFlagModule,
     WinstonModule.forRoot(winstonConfig),
     CacheModule.forRootAsync({

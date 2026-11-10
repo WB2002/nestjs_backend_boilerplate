@@ -37,5 +37,14 @@ export function validateEnv(
     );
   }
 
+  if (
+    config.NODE_ENV === 'production' &&
+    config.CONFORMANCE_HARNESS_ENABLED === 'true'
+  ) {
+    throw new Error(
+      'CONFORMANCE_HARNESS_ENABLED cannot be true when NODE_ENV=production',
+    );
+  }
+
   return config;
 }

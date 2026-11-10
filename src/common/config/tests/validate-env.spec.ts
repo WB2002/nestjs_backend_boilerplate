@@ -102,4 +102,22 @@ describe('validateEnv', () => {
       );
     }
   });
+
+  it('throws when harness enabled in production', () => {
+    const config = validConfig({
+      NODE_ENV: 'production',
+      CONFORMANCE_HARNESS_ENABLED: 'true',
+    });
+    expect(() => validateEnv(config)).toThrow(
+      /CONFORMANCE_HARNESS_ENABLED cannot be true/,
+    );
+  });
+
+  it('allows harness outside production', () => {
+    const config = validConfig({
+      NODE_ENV: 'test',
+      CONFORMANCE_HARNESS_ENABLED: 'true',
+    });
+    expect(validateEnv(config)).toBe(config);
+  });
 });
