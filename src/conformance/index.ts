@@ -5,4 +5,10 @@ export {
   type ConformanceCacheResponse,
 } from './conformance-cache.service';
 export type { ConformanceCacheDeleteResponse } from './conformance-cache.controller';
+export { ConformanceHttpClientController } from './conformance-http-client.controller';
+export {
+  ConformanceHttpClientService,
+  type ConformanceHttpClientResponse,
+} from './conformance-http-client.service';
+export { assertLoopbackTargetUrl } from './assert-loopback-target-url';
 export * from './dto';

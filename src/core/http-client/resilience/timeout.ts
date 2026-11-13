@@ -88,7 +88,7 @@ export async function sleepWithinBudget(
     throw new TimeoutError('Total request timeout exceeded');
   }
   const waitMs = remaining == null ? delayMs : Math.min(delayMs, remaining);
-  if (waitMs <= 0) {
+  if (remaining != null && waitMs <= 0) {
     throw new TimeoutError('Total request timeout exceeded');
   }
   await sleep(waitMs, signal);
