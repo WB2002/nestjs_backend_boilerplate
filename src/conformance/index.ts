@@ -10,5 +10,15 @@ export {
   ConformanceHttpClientService,
   type ConformanceHttpClientResponse,
 } from './conformance-http-client.service';
+export {
+  ConformanceDeadlineController,
+  type ConformanceDeadlineResponse,
+} from './conformance-deadline.controller';
+export {
+  ConformancePriorityController,
+  type ConformancePriorityResponse,
+  type ConformancePriorityLevelName,
+} from './conformance-priority.controller';
+export { waitForDelayOrAbort } from './wait-for-delay-or-abort';
 export { assertLoopbackTargetUrl } from './assert-loopback-target-url';
 export * from './dto';
