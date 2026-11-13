@@ -24,6 +24,10 @@ export {
   type ConformanceRateLimitResponse,
   type ConformanceRateLimitIdentifierKind,
 } from './conformance-rate-limit.controller';
+export {
+  ConformanceRedactionController,
+  type ConformanceRedactionResponse,
+} from './conformance-redaction.controller';
 export { waitForDelayOrAbort } from './wait-for-delay-or-abort';
 export { assertLoopbackTargetUrl } from './assert-loopback-target-url';
 export * from './dto';

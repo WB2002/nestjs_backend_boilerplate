@@ -7,6 +7,7 @@ import { ConformanceHttpClientController } from './conformance-http-client.contr
 import { ConformanceHttpClientService } from './conformance-http-client.service';
 import { ConformancePriorityController } from './conformance-priority.controller';
 import { ConformanceRateLimitController } from './conformance-rate-limit.controller';
+import { ConformanceRedactionController } from './conformance-redaction.controller';
 
 @Module({
   imports: [HttpClientModule],
@@ -16,6 +17,7 @@ import { ConformanceRateLimitController } from './conformance-rate-limit.control
     ConformanceDeadlineController,
     ConformancePriorityController,
     ConformanceRateLimitController,
+    ConformanceRedactionController,
   ],
   providers: [ConformanceCacheService, ConformanceHttpClientService],
   exports: [ConformanceCacheService, ConformanceHttpClientService],
