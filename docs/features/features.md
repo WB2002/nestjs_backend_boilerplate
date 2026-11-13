@@ -49,6 +49,7 @@ Overview of capabilities in `nestjs_backend_boilerplate`. **Implementation statu
 | ESLint + Husky + Gitleaks            | Git hooks                                  | Done    | [../security/git_hooks.md](../security/git_hooks.md)                                                                                                                                         |
 | CORS & CSP (Helmet)                  | `main.ts`                                  | Done    | —                                                                                                                                                                                            |
 | Cookies                              | Auth + rate-limit guest                    | Done    | —                                                                                                                                                                                            |
+| Conformance harness                  | `/conformance/*` (test only)               | Done    | [conformance_harness.feature.md](./conformance_harness.feature.md)                                                                                                                           |
 
 ---
 

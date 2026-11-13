@@ -14,6 +14,7 @@ Artifact-driven feature work lives under `intent/<slug>/`. Templates: `_template
 | http-client-adaptive-concurrency-phase2           | —    | yes  |                      |
 | heavy-load-resilience-hardening                   | yes  | yes  | Draft; Task 4 tier 2 |
 | http-load-leveling                                | yes  | yes  |                      |
+| language-agnostic-conformance-suite               | yes  | yes  |                      |
 | multi-vm-redis-coordination                       | —    | yes  |                      |
 | multi-vm-resilience-superplan                     | —    | yes  | Epic; child intents  |
 | nestjs-v12-phase1-upgrade                         | —    | yes  |                      |

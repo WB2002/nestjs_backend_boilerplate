@@ -91,6 +91,30 @@ The [CodeQL workflow](../.github/workflows/codeql.yml) always runs analysis on p
 
 Until `CODEQL_UPLOAD` is `true`, the workflow analyzes code but skips SARIF upload so CI does not fail with “Code scanning is not enabled”.
 
+## Language-specific vs conformance
+
+Quality verification is split between this repository's language-specific test suite and an external black-box conformance test suite:
+
+### What stays in this repository
+
+- **TypeScript type-level assertions (`tsd`):** Verifies compile-time type invariants, generic constraints, and API surface typing (`pnpm quality:types`).
+- **Property-based tests (`fast-check`):** Verifies mathematical invariants, input fuzzing, and algorithmic properties of internal utilities (`pnpm quality:property`).
+- **Unit tests:** Verifies pure functions, internal business logic, and NestJS dependency injection, module configuration, guards, interceptors, and decorator metadata wiring (`pnpm quality:unit`).
+- **Testcontainers persistence integration tests:** Verifies raw database schema migrations, transaction locks (`FOR UPDATE SKIP LOCKED`), and database drivers against real ephemeral Postgres/MongoDB containers (`pnpm quality:integration`).
+
+### What belongs in the conformance suite
+
+HTTP-observable behavior is validated externally via the language-agnostic conformance suite (`backend_boilerplate_conformance_tests`):
+
+- Wire contracts (REST endpoints, GraphQL queries/mutations, WebSockets).
+- Authentication lifecycles, session cookies, and double-submit CSRF tokens.
+- Distributed coordination (multi-VM Redis rate limiting, cache stampede locks, loader coalescing, negative caching).
+- Resilience mechanisms (deadlines, client retries, backoff, circuit breaking, priority shedding, load leveling queues).
+- Standard HTTP status semantics (400, 401, 403, 404, 409, 422, 429 + `Retry-After`, 503 + `Retry-After`).
+- Logging and telemetry privacy scrubbing (PII and span attribute redaction).
+
+Testing observable behavior through external black-box HTTP calls allows alternative backend implementations (e.g. in Go, Rust, Python, Java) to prove behavioral equivalence against the exact same test suite.
+
 ## Optional AI review
 
 Enable [Cursor Bugbot](https://cursor.com/docs/bugbot) or CodeRabbit on the repository. The `AI Review (optional)` workflow does not fail merges.
