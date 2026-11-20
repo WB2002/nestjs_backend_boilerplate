@@ -16,7 +16,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-README.md
+# Documentation & Markdown files (zero .md files in runtime image)
+*.md
+**/*.md
 docs/
 test/
 coverage/

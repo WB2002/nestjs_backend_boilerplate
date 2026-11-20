@@ -32,7 +32,8 @@ RUN pnpm run build
 
 # Prune devDependencies in-place without triggering dev lifecycle scripts like husky
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
-    pnpm prune --prod --ignore-scripts
+    pnpm prune --prod --ignore-scripts \
+ && find /app/node_modules -type f -iname "*.md" -delete
 
 # ------------------------------------------------------------------------------
 # Stage 2: Minimal Production Runtime
@@ -53,6 +54,9 @@ ENV PORT=3000
 COPY --from=builder --chown=node:node /app/node_modules ./node_modules
 COPY --from=builder --chown=node:node /app/dist ./dist
 COPY --from=builder --chown=node:node /app/package.json ./package.json
+
+# Invariant check: enforce zero markdown files in the final runtime container
+RUN find /app -name "*.md" | (! grep .)
 
 # Run as unprivileged built-in 'node' user (UID 1000)
 USER node
