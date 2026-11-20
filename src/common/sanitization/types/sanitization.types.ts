@@ -11,6 +11,8 @@ export type WalkSanitizationOptions = {
   enforceSafeUrl?: boolean;
   /** DTO prototype used to read per-property Reflect metadata. */
   metadataTarget?: object;
+  /** Max array elements to walk (request-path bound). */
+  maxArrayLength?: number;
 };
 
 export type PropertyFlags = {

@@ -250,7 +250,7 @@ See [country_access.feature.md](./country_access.feature.md).
 
 ### GraphQL
 
-Apollo on Fastify, schema via `*.graphql`, sample `CategoriesModule`, depth limit, query complexity + **Redis-backed** per-subject concurrency in `ComplexityPlugin` (`GQL_MAX_CONCURRENCY`, TTL leak safety via `GQL_CONCURRENCY_KEY_TTL_SEC`, keys by JWT user or `guest_id` cookie). Concurrency denial returns **503** + `Retry-After` (overload). Limits are **cluster-wide** when Redis is shared across tasks.
+Apollo on Fastify, schema via `*.graphql`, sample `CategoriesModule`, depth limit, query complexity + **Redis-backed** per-subject concurrency in `ComplexityPlugin` (`GQL_MAX_CONCURRENCY`, TTL leak safety via `GQL_CONCURRENCY_KEY_TTL_SEC`, keys by JWT user or `guest_id` cookie). Concurrency denial returns **503** + `Retry-After` (overload). Limits are **cluster-wide** when Redis is shared across tasks. **Admission:** `InboundPriorityBulkheadGuard` and app `RateLimitGuard` resolve the underlying Fastify HTTP request for `graphql` execution (same as `JwtAuthGuard`), so GraphQL shares inbound bulkhead / shedding and global IP rate limits with REST.
 
 ### File uploads
 

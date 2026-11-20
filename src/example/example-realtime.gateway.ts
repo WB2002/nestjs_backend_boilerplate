@@ -40,6 +40,7 @@ export class ExampleRealtimeGateway
     private readonly handshake: WsHandshakeService,
     private readonly connectionLimiter: WsConnectionLimiterService,
     private readonly webSocketShutdown: WebSocketShutdownService,
+    private readonly messageRateLimiter: WsMessageRateLimiterGuard,
   ) {}
 
   afterInit(server: Server): void {
@@ -59,6 +60,7 @@ export class ExampleRealtimeGateway
     if (!user) {
       return;
     }
+    this.messageRateLimiter.releaseLocalCounter(user.id);
     await this.connectionLimiter.releaseConnection(user.id, client.id);
   }
 

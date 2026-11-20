@@ -7,6 +7,7 @@ import {
 import { Reflector } from '@nestjs/core';
 import { get } from 'lodash';
 import type { ServerResponse } from 'http';
+import { resolveExecutionHttpContext } from '@/common/http/get-execution-http-context';
 import { getRequestSignal, remainingMs } from '@/core/request-deadline';
 import { InboundBulkheadService } from '../inbound-bulkhead.service';
 import { isPressureExemptPath } from '../is-pressure-exempt-path';
@@ -33,7 +34,8 @@ export class InboundPriorityBulkheadGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    if (context.getType() !== 'http') {
+    const httpContext = resolveExecutionHttpContext(context);
+    if (!httpContext) {
       return true;
     }
 
@@ -49,8 +51,7 @@ export class InboundPriorityBulkheadGuard implements CanActivate {
       return true;
     }
 
-    const req = context.switchToHttp().getRequest<{ url?: string }>();
-    const url = typeof req.url === 'string' ? req.url : '';
+    const url = httpContext.url;
     if (isPressureExemptPath(url)) {
       return true;
     }
@@ -85,12 +86,11 @@ export class InboundPriorityBulkheadGuard implements CanActivate {
       ...(signal !== undefined ? { signal } : {}),
     });
 
-    this.attachRelease(context);
+    this.attachRelease(httpContext.res);
     return true;
   }
 
-  private attachRelease(context: ExecutionContext): void {
-    const res = context.switchToHttp().getResponse<ServerResponse>();
+  private attachRelease(res: ServerResponse | { raw?: ServerResponse }): void {
     const raw = get(res, 'raw', res) as ServerResponse;
     let hasReleased = false;
     const releaseOnce = (): void => {

@@ -4,6 +4,7 @@ import { looksLikeSqlInjection } from './sql-injection.utils';
 import { assertPublicHttpUrlAsync, UnsafeUrlError } from './ssrf.utils';
 import {
   DEFAULT_SKIP_KEYS,
+  DEFAULT_WALK_MAX_ARRAY_LENGTH,
   REJECT_SQL_INJECTION_KEY,
   SAFE_URL_KEY,
   SANITIZE_HTML_KEY,
@@ -75,6 +76,13 @@ export async function walkAndSanitize(
       return value;
     }
     seen.add(value);
+    const maxArrayLength =
+      options.maxArrayLength ?? DEFAULT_WALK_MAX_ARRAY_LENGTH;
+    if (value.length > maxArrayLength) {
+      throw new BadRequestException(
+        `Array exceeds maximum length of ${maxArrayLength}`,
+      );
+    }
     return Promise.all(
       value.map((arrayElement) =>
         walkAndSanitize(arrayElement, options, currentKey, seen),

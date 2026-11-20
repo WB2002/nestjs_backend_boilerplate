@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { JwtPayload } from '@/types';
 import { AuthService } from './auth.service';
+import { UserRole } from './constants';
 import { AuthenticatedUser } from './types/authenticated-user.types';
 
 @Injectable()
@@ -44,9 +45,7 @@ export class AccessTokenAuthenticator {
       throw new UnauthorizedException('Session has been revoked');
     }
 
-    const role = await this.authService.resolveAuthoritativeRoleForUserId(
-      payload.sub,
-    );
+    const role = await this.resolveRoleForPayload(payload);
 
     return {
       id: payload.sub,
@@ -54,5 +53,12 @@ export class AccessTokenAuthenticator {
       jti: payload.jti,
       role,
     };
+  }
+
+  private async resolveRoleForPayload(payload: JwtPayload): Promise<UserRole> {
+    if (payload.role === UserRole.ADMIN || payload.role === UserRole.USER) {
+      return payload.role;
+    }
+    return this.authService.resolveAuthoritativeRoleForUserId(payload.sub);
   }
 }

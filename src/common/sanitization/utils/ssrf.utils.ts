@@ -1,5 +1,5 @@
 import { isIP } from 'node:net';
-import { promises as dns } from 'node:dns';
+import { resolvePublicHostnameAddresses } from './dns-lookup-cache';
 
 const METADATA_HOSTNAMES = new Set([
   'metadata.google.internal',
@@ -45,11 +45,7 @@ export async function assertPublicHttpUrlAsync(raw: string): Promise<URL> {
 
   let records: string[];
   try {
-    const validatedUrl = await dns.lookup(hostname, {
-      all: true,
-      verbatim: true,
-    });
-    records = validatedUrl.map((r) => r.address);
+    records = await resolvePublicHostnameAddresses(hostname);
   } catch {
     throw new UnsafeUrlError('URL hostname could not be resolved');
   }

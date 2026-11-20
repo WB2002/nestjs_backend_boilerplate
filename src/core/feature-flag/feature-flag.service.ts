@@ -29,6 +29,7 @@ export class FeatureFlagService implements OnModuleInit, OnModuleDestroy {
   private lastReconciledAt: Date | null = null;
   private lastError: string | null = null;
   private startedAt = new Date();
+  private evaluationMetricCounter = 0;
 
   constructor(
     private readonly configService: ConfigService,
@@ -58,11 +59,13 @@ export class FeatureFlagService implements OnModuleInit, OnModuleDestroy {
   ): boolean {
     const flag = this.cache.get(key);
     const evaluation = evaluateFeatureFlag(flag, context, options);
-    void emitFeatureFlagMetrics({
-      enabled: this.metricsEnabled(),
-      name: 'feature_flag_evaluation_total',
-      dimensions: { Result: evaluation.enabled ? 'on' : 'off' },
-    });
+    if (this.shouldSampleEvaluationMetrics()) {
+      void emitFeatureFlagMetrics({
+        enabled: true,
+        name: 'feature_flag_evaluation_total',
+        dimensions: { Result: evaluation.enabled ? 'on' : 'off' },
+      });
+    }
     if (evaluation.usedDefault) {
       this.logger.warn(
         `${FeatureFlagLogEvent.EVALUATION_DEFAULT_USED} key=${key} reason=${evaluation.reason}`,
@@ -195,6 +198,35 @@ export class FeatureFlagService implements OnModuleInit, OnModuleDestroy {
   }
 
   private metricsEnabled(): boolean {
-    return this.configService.get<string>('FEATURE_FLAG_METRICS') !== 'false';
+    const explicit = this.configService.get<string>('FEATURE_FLAG_METRICS');
+    if (explicit === 'true') {
+      return true;
+    }
+    if (explicit === 'false') {
+      return false;
+    }
+    return (
+      (this.configService.get<string>('NODE_ENV') ?? 'development') ===
+      'production'
+    );
+  }
+
+  private shouldSampleEvaluationMetrics(): boolean {
+    if (!this.metricsEnabled()) {
+      return false;
+    }
+    const sampleRate = this.configService.get<number>(
+      'FEATURE_FLAG_METRICS_SAMPLE_RATE',
+      0.01,
+    );
+    if (sampleRate >= 1) {
+      return true;
+    }
+    if (sampleRate <= 0) {
+      return false;
+    }
+    const stride = Math.max(1, Math.ceil(1 / sampleRate));
+    this.evaluationMetricCounter += 1;
+    return this.evaluationMetricCounter % stride === 0;
   }
 }

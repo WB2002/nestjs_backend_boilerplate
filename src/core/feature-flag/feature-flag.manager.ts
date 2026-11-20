@@ -35,9 +35,34 @@ export class FeatureFlagManager {
     private readonly configService: ConfigService,
   ) {}
 
-  async list(): Promise<IFeatureFlag[]> {
+  async list(
+    cursor?: string,
+    limit = 50,
+  ): Promise<{
+    items: IFeatureFlag[];
+    nextCursor: string | null;
+  }> {
     const environment = this.featureFlagService.getEnvironment();
-    return this.repository.loadAllFlags(environment);
+    const pageLimit = Math.min(Math.max(1, limit), 200);
+    const keys = (await this.repository.listFlagKeys(environment)).sort(
+      (a, b) => a.localeCompare(b),
+    );
+    const startIndex = cursor ? Math.max(0, keys.indexOf(cursor) + 1) : 0;
+    const pageKeys = keys.slice(startIndex, startIndex + pageLimit);
+    const flags: IFeatureFlag[] = [];
+    for (const key of pageKeys) {
+      const flag = await this.repository.getFlag(environment, key);
+      if (flag) {
+        flags.push(flag);
+      }
+    }
+    const lastKey = pageKeys.at(-1);
+    const hasMore =
+      lastKey !== undefined && keys.indexOf(lastKey) < keys.length - 1;
+    return {
+      items: flags,
+      nextCursor: hasMore && lastKey ? lastKey : null,
+    };
   }
 
   async get(key: string): Promise<IFeatureFlag> {
@@ -295,6 +320,16 @@ export class FeatureFlagManager {
   }
 
   private metricsEnabled(): boolean {
-    return this.configService.get<string>('FEATURE_FLAG_METRICS') !== 'false';
+    const explicit = this.configService.get<string>('FEATURE_FLAG_METRICS');
+    if (explicit === 'true') {
+      return true;
+    }
+    if (explicit === 'false') {
+      return false;
+    }
+    return (
+      (this.configService.get<string>('NODE_ENV') ?? 'development') ===
+      'production'
+    );
   }
 }

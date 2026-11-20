@@ -6,6 +6,7 @@ import {
   Param,
   Post,
   Put,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -34,8 +35,13 @@ export class FeatureFlagController {
 
   @Get()
   @RequirePermissions(FeatureFlagPermission.READ)
-  async list() {
-    return this.manager.list();
+  async list(@Query('cursor') cursor?: string, @Query('limit') limit?: string) {
+    const parsedLimit =
+      limit !== undefined && limit !== '' ? Number.parseInt(limit, 10) : 50;
+    return this.manager.list(
+      cursor,
+      Number.isFinite(parsedLimit) ? parsedLimit : 50,
+    );
   }
 
   @Get(':key')

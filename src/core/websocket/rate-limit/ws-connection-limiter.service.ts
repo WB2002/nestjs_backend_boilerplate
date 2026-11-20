@@ -3,53 +3,77 @@ import {
   HttpStatus,
   Injectable,
   OnModuleDestroy,
+  OnModuleInit,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { RedisService } from '@/common/redis/redis.service';
 import { parseWebSocketConfig } from '../config/parse-websocket-config';
 
-const CONNECTION_KEY_PREFIX = 'ws:conn:';
 const CONNECTION_ALIVE_PREFIX = 'ws:conn:alive:';
+const CONNECTION_COUNT_PREFIX = 'ws:conn:count:';
+const REDIS_PRUNE_BATCH = 50;
+const REDIS_PRUNE_INTERVAL_MS = 60_000;
 
 @Injectable()
-export class WsConnectionLimiterService implements OnModuleDestroy {
+export class WsConnectionLimiterService
+  implements OnModuleInit, OnModuleDestroy
+{
   private readonly localConnections = new Map<string, Set<string>>();
+  private pruneTimer: NodeJS.Timeout | null = null;
 
   constructor(
     private readonly configService: ConfigService,
     private readonly redisService: RedisService,
   ) {}
 
+  onModuleInit(): void {
+    const config = parseWebSocketConfig(this.configService);
+    if (!config.redisAdapterEnabled) {
+      return;
+    }
+    this.pruneTimer = setInterval(
+      () => void this.pruneStaleAliveKeys(),
+      REDIS_PRUNE_INTERVAL_MS,
+    );
+    if (this.pruneTimer && typeof this.pruneTimer.unref === 'function') {
+      this.pruneTimer.unref();
+    }
+  }
+
   private aliveKey(userId: string, socketId: string): string {
     return `${CONNECTION_ALIVE_PREFIX}${userId}:${socketId}`;
   }
 
-  private async pruneStaleRedisConnections(
-    userId: string,
-    setKey: string,
-  ): Promise<void> {
+  private countKey(userId: string): string {
+    return `${CONNECTION_COUNT_PREFIX}${userId}`;
+  }
+
+  private async pruneStaleAliveKeys(): Promise<void> {
     const client = this.redisService.getClient();
-    const members = await client.smembers(setKey);
-    if (members.length === 0) {
-      return;
-    }
-    const pipeline = client.pipeline();
-    for (const socketId of members) {
-      pipeline.exists(this.aliveKey(userId, socketId));
-    }
-    const existsResults = await pipeline.exec();
-    if (!existsResults) {
-      return;
-    }
-    await Promise.all(
-      existsResults.map(async (existsResult, memberIndex) => {
-        const socketId = members.at(memberIndex);
-        const isAliveKeyPresent = existsResult?.[1] === 1;
-        if (!isAliveKeyPresent && socketId) {
-          await client.srem(setKey, socketId);
+    let cursor = '0';
+    let scanned = 0;
+    do {
+      const [nextCursor, keys] = await client.scan(
+        cursor,
+        'MATCH',
+        `${CONNECTION_ALIVE_PREFIX}*`,
+        'COUNT',
+        REDIS_PRUNE_BATCH,
+      );
+      cursor = nextCursor;
+      for (const key of keys) {
+        const ttl = await client.ttl(key);
+        if (ttl === -2) {
+          const suffix = key.slice(CONNECTION_ALIVE_PREFIX.length);
+          const sep = suffix.lastIndexOf(':');
+          if (sep > 0) {
+            const userId = suffix.slice(0, sep);
+            await client.decr(this.countKey(userId));
+          }
         }
-      }),
-    );
+      }
+      scanned += keys.length;
+    } while (cursor !== '0' && scanned < REDIS_PRUNE_BATCH * 10);
   }
 
   async registerConnection(userId: string, socketId: string): Promise<void> {
@@ -57,21 +81,15 @@ export class WsConnectionLimiterService implements OnModuleDestroy {
     const max = config.maxConnectionsPerUser;
 
     if (config.redisAdapterEnabled) {
-      const setKey = `${CONNECTION_KEY_PREFIX}${userId}`;
       const client = this.redisService.getClient();
-      await this.pruneStaleRedisConnections(userId, setKey);
-      await client.sadd(setKey, socketId);
-      await client.set(
-        this.aliveKey(userId, socketId),
-        '1',
-        'EX',
-        config.connectionKeyTtlSec,
-      );
-      await client.expire(setKey, config.connectionKeyTtlSec);
-      const count = await client.scard(setKey);
+      const countKey = this.countKey(userId);
+      const aliveKey = this.aliveKey(userId, socketId);
+      const count = await client.incr(countKey);
+      await client.expire(countKey, config.connectionKeyTtlSec);
+      await client.set(aliveKey, '1', 'EX', config.connectionKeyTtlSec);
       if (count > max) {
-        await client.srem(setKey, socketId);
-        await client.del(this.aliveKey(userId, socketId));
+        await client.decr(countKey);
+        await client.del(aliveKey);
         throw new HttpException(
           'WebSocket connection limit exceeded',
           HttpStatus.TOO_MANY_REQUESTS,
@@ -97,13 +115,11 @@ export class WsConnectionLimiterService implements OnModuleDestroy {
   async releaseConnection(userId: string, socketId: string): Promise<void> {
     const config = parseWebSocketConfig(this.configService);
     if (config.redisAdapterEnabled) {
-      const setKey = `${CONNECTION_KEY_PREFIX}${userId}`;
       const client = this.redisService.getClient();
-      await client.srem(setKey, socketId);
       await client.del(this.aliveKey(userId, socketId));
-      const remaining = await client.scard(setKey);
-      if (remaining === 0) {
-        await client.del(setKey);
+      const remaining = await client.decr(this.countKey(userId));
+      if (remaining <= 0) {
+        await client.del(this.countKey(userId));
       }
       return;
     }
@@ -119,6 +135,10 @@ export class WsConnectionLimiterService implements OnModuleDestroy {
   }
 
   onModuleDestroy(): void {
+    if (this.pruneTimer) {
+      clearInterval(this.pruneTimer);
+      this.pruneTimer = null;
+    }
     this.localConnections.clear();
   }
 }

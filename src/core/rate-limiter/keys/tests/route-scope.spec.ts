@@ -3,6 +3,7 @@ import { resolveRouteScope } from '../route-scope';
 
 function mockContext(req: Record<string, unknown>): ExecutionContext {
   return {
+    getType: () => 'http',
     switchToHttp: () => ({
       getRequest: () => req,
     }),

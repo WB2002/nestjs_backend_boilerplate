@@ -1,6 +1,10 @@
 #!/bin/bash
 set -euo pipefail
-cd "$(dirname "$0")/.."
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "${SCRIPT_DIR}/.."
+# shellcheck disable=SC1091
+. "${SCRIPT_DIR}/lib/ensure-pnpm.sh"
+ensure_pnpm_on_path
 
 echo "== lint =="
 pnpm quality:lint

@@ -27,7 +27,10 @@ export const MEMORY_KEY_TTL_MULTIPLIER = 2;
 /** Fraction of max keys to drop when the memory backend hits the cap (LRU). */
 export const MEMORY_EVICT_RATIO = 0.1;
 
-/** Default module options when `forRoot` / `forRootAsync` omit fields. */
+/**
+ * Default module options when `forRoot` / `forRootAsync` omit fields.
+ * Multi-instance deployments should set `RATE_LIMIT_STORAGE=redis` (memory backend is single-VM only).
+ */
 export const DEFAULT_RATE_LIMITER_OPTIONS: RateLimiterModuleOptions = {
   storage: RateLimitStorage.Memory,
   algorithm: RateLimitAlgorithm.FixedWindowCounter,

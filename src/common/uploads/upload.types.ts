@@ -39,8 +39,9 @@ export type IncomingUploadFile = {
   fieldname: string;
   originalname: string;
   mimetype: string;
-  buffer: Buffer;
   size: number;
+  buffer?: Buffer;
+  tempPath?: string;
 };
 
 export type AcceptedUploadFile = {

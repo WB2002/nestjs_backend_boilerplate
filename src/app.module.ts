@@ -34,7 +34,6 @@ import {
   RateLimiterModule,
   RateLimitGuard,
   RateLimitAlgorithm,
-  RateLimitIdentifier,
   GuestIdMiddleware,
 } from './core/rate-limiter';
 import {
@@ -62,6 +61,7 @@ import {
   resolveCacheStorageFromConfig,
   resolveRateLimitStorageFromConfig,
 } from './common/config/resolve-coordination-storage';
+import { resolveDefaultRateLimitMethods } from './common/config/resolve-default-rate-limit-methods';
 import { UploadsModule } from './common/uploads/uploads.module';
 import {
   CountryAccessModule,
@@ -144,16 +144,7 @@ import { parseCsvPaths } from './core/csrf/helpers/parse-csv-paths';
           guestCookie: {
             secure: configService.get<string>('NODE_ENV') === 'production',
           },
-          methods: [
-            {
-              name: 'global-ip',
-              identifier: RateLimitIdentifier.Ip,
-              duration: 60_000,
-              limit: 10,
-              cost: 1,
-              keyScope: 'global',
-            },
-          ],
+          methods: resolveDefaultRateLimitMethods(configService),
         };
       },
     }),

@@ -20,11 +20,15 @@ describe('ExampleRealtimeGateway', () => {
   const handshake = {
     acceptConnection: jest.fn(),
   } as unknown as WsHandshakeService;
+  const messageRateLimiter = {
+    releaseLocalCounter: jest.fn(),
+  } as unknown as import('@/core/websocket/guards/ws-message-rate-limiter.guard').WsMessageRateLimiterGuard;
 
   const gateway = new ExampleRealtimeGateway(
     handshake,
     connectionLimiter,
     webSocketShutdown,
+    messageRateLimiter,
   );
 
   const socket = (userId: string): AuthenticatedSocket =>

@@ -5,6 +5,7 @@ import * as argon2 from 'argon2';
 import { AuthService } from '../auth.service';
 import { PasswordHashBulkhead } from '../password/password-hash-bulkhead';
 import { RedisService } from '@/common/redis/redis.service';
+import { CacheService } from '@/core/cache';
 import { User, Session } from '../schemas';
 import { OverloadRejectedError } from '@/core/overload';
 
@@ -57,6 +58,15 @@ describe('AuthService with PasswordHashBulkhead', () => {
       ...args: Parameters<typeof userModel.findOne>
     ) => userModel.findOne?.(...args) as ReturnType<typeof userModel.findOne>;
 
+    const cacheService = {
+      getOrSet: jest.fn(async (_key: string, loader: () => Promise<unknown>) =>
+        loader(),
+      ),
+      get: jest.fn().mockResolvedValue(null),
+      set: jest.fn().mockResolvedValue(undefined),
+      delete: jest.fn().mockResolvedValue(undefined),
+    } as unknown as CacheService;
+
     authService = new AuthService(
       UserModelConstructor,
       sessionModel as Model<Session>,
@@ -64,6 +74,7 @@ describe('AuthService with PasswordHashBulkhead', () => {
       configService as ConfigService,
       redisService as RedisService,
       bulkhead,
+      cacheService,
     );
   });
 

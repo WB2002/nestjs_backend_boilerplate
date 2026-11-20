@@ -6,6 +6,8 @@ import { extname } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import type { FileScanner } from './scanners/file-scanner';
 import { detectMimeFromMagicBytes } from './detect-mime-from-magic';
+import { readUploadPrefix, removeTempUpload } from './read-file-bytes';
+import { UploadScanSemaphore } from './upload-scan-semaphore';
 import {
   AcceptedUploadFile,
   IncomingUploadFile,
@@ -25,6 +27,8 @@ export class UploadValidationError extends BadRequestException {
 /**
  * Validate multiple uploaded files: count → size → extension → MIME → magic bytes → virus scan.
  */
+const uploadScanSemaphore = new UploadScanSemaphore();
+
 export async function validateUploadFiles(
   files: IncomingUploadFile[],
   options: UploadValidationOptions,
@@ -48,87 +52,93 @@ export async function validateUploadFiles(
   const accepted: AcceptedUploadFile[] = [];
 
   for (const file of files) {
-    if (!file.buffer?.length || file.size === 0) {
-      throw new UploadValidationError(
-        UPLOAD_REJECT_CODES.EMPTY_FILE,
-        'Empty files are not allowed',
-      );
-    }
+    try {
+      const payloadLength = file.size;
+      if (payloadLength === 0) {
+        throw new UploadValidationError(
+          UPLOAD_REJECT_CODES.EMPTY_FILE,
+          'Empty files are not allowed',
+        );
+      }
 
-    if (
-      file.size > options.maxFileSize ||
-      file.buffer.length > options.maxFileSize
-    ) {
-      throw new UploadValidationError(
-        UPLOAD_REJECT_CODES.FILE_TOO_LARGE,
-        `Each file must be at most ${options.maxFileSize} bytes`,
-      );
-    }
+      if (file.size > options.maxFileSize) {
+        throw new UploadValidationError(
+          UPLOAD_REJECT_CODES.FILE_TOO_LARGE,
+          `Each file must be at most ${options.maxFileSize} bytes`,
+        );
+      }
 
-    totalSize += file.buffer.length;
-    if (totalSize > options.maxTotalSize) {
-      throw new UploadValidationError(
-        UPLOAD_REJECT_CODES.TOTAL_SIZE_EXCEEDED,
-        `Total upload size must be at most ${options.maxTotalSize} bytes`,
-      );
-    }
+      totalSize += file.size;
+      if (totalSize > options.maxTotalSize) {
+        throw new UploadValidationError(
+          UPLOAD_REJECT_CODES.TOTAL_SIZE_EXCEEDED,
+          `Total upload size must be at most ${options.maxTotalSize} bytes`,
+        );
+      }
 
-    const originalName = sanitizeOriginalName(file.originalname);
-    const extension = extname(originalName).toLowerCase();
-    if (!options.allowedExtensions.includes(extension)) {
-      throw new UploadValidationError(
-        UPLOAD_REJECT_CODES.INVALID_FILE_TYPE,
-        'File extension is not allowed',
-      );
-    }
+      const originalName = sanitizeOriginalName(file.originalname);
+      const extension = extname(originalName).toLowerCase();
+      if (!options.allowedExtensions.includes(extension)) {
+        throw new UploadValidationError(
+          UPLOAD_REJECT_CODES.INVALID_FILE_TYPE,
+          'File extension is not allowed',
+        );
+      }
 
-    const declaredMime = (file.mimetype || '').toLowerCase();
-    if (!options.allowedMimeTypes.includes(declaredMime)) {
-      throw new UploadValidationError(
-        UPLOAD_REJECT_CODES.INVALID_FILE_TYPE,
-        'File MIME type is not allowed',
-      );
-    }
+      const declaredMime = (file.mimetype || '').toLowerCase();
+      if (!options.allowedMimeTypes.includes(declaredMime)) {
+        throw new UploadValidationError(
+          UPLOAD_REJECT_CODES.INVALID_FILE_TYPE,
+          'File MIME type is not allowed',
+        );
+      }
 
-    const detected = detectMimeFromMagicBytes(file.buffer);
-    if (
-      !detected ||
-      !options.allowedMimeTypes.includes(detected.mime) ||
-      !mimeMatchesExtension(detected.mime, extension)
-    ) {
-      throw new UploadValidationError(
-        UPLOAD_REJECT_CODES.INVALID_FILE_TYPE,
-        'File content does not match an allowed type',
-      );
-    }
+      const magicPrefix = await readUploadPrefix(file, 512);
+      const detected = detectMimeFromMagicBytes(magicPrefix);
+      if (
+        !detected ||
+        !options.allowedMimeTypes.includes(detected.mime) ||
+        !mimeMatchesExtension(detected.mime, extension)
+      ) {
+        throw new UploadValidationError(
+          UPLOAD_REJECT_CODES.INVALID_FILE_TYPE,
+          'File content does not match an allowed type',
+        );
+      }
 
-    const scan = await scanner.scan({
-      buffer: file.buffer,
-      filename: originalName,
-    });
-    if (scan.status === 'infected') {
-      throw new UploadValidationError(
-        UPLOAD_REJECT_CODES.MALWARE_DETECTED,
-        'Malicious file rejected',
+      const scan = await uploadScanSemaphore.run(() =>
+        scanner.scan({
+          ...(file.buffer ? { buffer: file.buffer } : {}),
+          ...(file.tempPath ? { tempPath: file.tempPath } : {}),
+          filename: originalName,
+        }),
       );
-    }
-    if (scan.status === 'error') {
-      throw new ServiceUnavailableException({
-        statusCode: 503,
-        code: UPLOAD_REJECT_CODES.SCANNER_UNAVAILABLE,
-        message: 'Virus scanner unavailable',
+      if (scan.status === 'infected') {
+        throw new UploadValidationError(
+          UPLOAD_REJECT_CODES.MALWARE_DETECTED,
+          'Malicious file rejected',
+        );
+      }
+      if (scan.status === 'error') {
+        throw new ServiceUnavailableException({
+          statusCode: 503,
+          code: UPLOAD_REJECT_CODES.SCANNER_UNAVAILABLE,
+          message: 'Virus scanner unavailable',
+        });
+      }
+
+      const id = randomUUID();
+      accepted.push({
+        id,
+        originalName,
+        storedName: `${id}${extension}`,
+        mimeType: detected.mime,
+        size: file.size,
+        scanned: scanner.isScanningEnabled,
       });
+    } finally {
+      await removeTempUpload(file.tempPath);
     }
-
-    const id = randomUUID();
-    accepted.push({
-      id,
-      originalName,
-      storedName: `${id}${extension}`,
-      mimeType: detected.mime,
-      size: file.buffer.length,
-      scanned: scanner.isScanningEnabled,
-    });
   }
 
   return accepted;

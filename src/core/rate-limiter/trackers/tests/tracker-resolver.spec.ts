@@ -6,6 +6,7 @@ import { resolveTracker } from '../tracker-resolver';
 
 function mockContext(req: Record<string, unknown>): ExecutionContext {
   return {
+    getType: () => 'http',
     switchToHttp: () => ({
       getRequest: () => req,
     }),

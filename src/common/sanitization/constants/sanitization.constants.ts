@@ -5,6 +5,8 @@ export const REJECT_SQL_INJECTION_KEY = 'sanitization:rejectSqlInjection';
 export const SKIP_SQL_INJECTION_KEY = 'sanitization:skipSqlInjection';
 
 /** Keys skipped by global sanitization even without a DTO decorator. */
+export const DEFAULT_WALK_MAX_ARRAY_LENGTH = 100;
+
 export const DEFAULT_SKIP_KEYS = new Set([
   'password',
   'currentPassword',

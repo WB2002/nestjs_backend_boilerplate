@@ -31,6 +31,7 @@ import {
 } from '../types/rate-limit.types';
 import { MissingFingerprintError, MissingGuestIdError } from '../errors';
 import { buildRateLimitKey, resolveRouteScope } from '../keys';
+import { getHttpResponse } from '../http/get-http-response';
 import { resolveTracker } from '../trackers';
 
 @Injectable()
@@ -66,7 +67,7 @@ export class RateLimitGuard extends ThrottlerGuard {
 
     const nowMs = Date.now();
     const storage = this.rateLimitOptions.storage ?? RateLimitStorage.Memory;
-    const res = context.switchToHttp().getResponse();
+    const res = getHttpResponse(context);
 
     for (const method of methods) {
       await this.enforceMethodLimit(

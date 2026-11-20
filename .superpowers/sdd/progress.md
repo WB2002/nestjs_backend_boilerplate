@@ -1,5 +1,9 @@
-# SDD progress — app-wide tracing + overload alerting
+# SDD progress — security audit remediation
 
-Branch: `feat/app-wide-tracing-overload-alerting`
+Plan: `docs/superpowers/plans/2026-11-21-security-audit-remediation.md`
 
-Plan: `intent/app-wide-tracing-overload-alerting/plan.md`
+BASE: `102e445ae356e6d275d24253df9b6b08fd245105`
+
+Implementation: inline (subagent Task API unavailable)
+
+Tasks 1–8: complete (uncommitted). Verification: quality:lint, quality:types, test:unit passed.

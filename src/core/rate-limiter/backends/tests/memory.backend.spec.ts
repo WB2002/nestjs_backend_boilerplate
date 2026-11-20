@@ -33,6 +33,10 @@ describe('MemoryRateLimitBackend', () => {
     backend = new MemoryRateLimitBackend(100);
   });
 
+  afterEach(() => {
+    backend.dispose();
+  });
+
   describe('allow up to limit then deny (all algorithms)', () => {
     it.each(allowThenDenyScenarios())('$name', async (scenario) => {
       await runScenario(backend, scenario, `mem-${scenario.name}`);

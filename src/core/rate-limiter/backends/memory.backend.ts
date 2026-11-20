@@ -6,6 +6,8 @@ import {
   MEMORY_EVICT_RATIO,
   MEMORY_KEY_TTL_MULTIPLIER,
 } from '../constants/rate-limit.constants';
+
+const MEMORY_BACKEND_SWEEP_INTERVAL_MS = 30_000;
 import {
   EwmaState,
   FixedWindowState,
@@ -26,13 +28,26 @@ export class MemoryRateLimitBackend implements RateLimitBackend {
   private readonly ewmas = new Map<string, EwmaState>();
   private readonly meta = new Map<string, MemoryKeyMeta>();
   private readonly maxKeys: number;
+  private readonly sweeper: NodeJS.Timeout;
 
   constructor(maxKeys = MEMORY_BACKEND_MAX_KEYS) {
     this.maxKeys = maxKeys;
+    this.sweeper = setInterval(
+      () => this.sweepExpired(Date.now()),
+      MEMORY_BACKEND_SWEEP_INTERVAL_MS,
+    );
+    if (typeof this.sweeper.unref === 'function') {
+      this.sweeper.unref();
+    }
+  }
+
+  /** Stop periodic sweeper (tests / shutdown). */
+  dispose(): void {
+    clearInterval(this.sweeper);
   }
 
   async consume(context: ConsumeContext): Promise<ConsumeResult> {
-    this.evictExpired(context.nowMs);
+    this.expireKeyIfStale(context.key, context.nowMs);
     this.enforceCap();
 
     switch (context.algorithm) {
@@ -70,7 +85,14 @@ export class MemoryRateLimitBackend implements RateLimitBackend {
     });
   }
 
-  private evictExpired(nowMs: number): void {
+  private expireKeyIfStale(key: string, nowMs: number): void {
+    const info = this.meta.get(key);
+    if (info && info.expiresAt <= nowMs) {
+      this.deleteKey(key, info.store);
+    }
+  }
+
+  private sweepExpired(nowMs: number): void {
     for (const [key, info] of this.meta) {
       if (info.expiresAt <= nowMs) {
         this.deleteKey(key, info.store);

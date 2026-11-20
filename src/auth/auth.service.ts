@@ -14,6 +14,8 @@ import { RegisterDto } from './dto';
 import { RedisService } from '@/common/redis/redis.service';
 import { UserRole } from './constants';
 import { PasswordHashBulkhead } from './password/password-hash-bulkhead';
+import { CacheService } from '@/core/cache';
+import type { CacheTtl } from '@/core/cache/types/cache.types';
 
 @Injectable()
 export class AuthService {
@@ -24,6 +26,7 @@ export class AuthService {
     private configService: ConfigService,
     private redisService: RedisService,
     private passwordHashBulkhead: PasswordHashBulkhead,
+    private readonly cacheService: CacheService,
   ) {}
 
   private get redis() {
@@ -94,6 +97,7 @@ export class AuthService {
     }
 
     const role = await this.ensureAdminRoleIfAllowlisted(userForToken);
+    await this.invalidateRoleCache(userId);
 
     const accessToken = await this.signAccessToken(
       userId,
@@ -132,6 +136,7 @@ export class AuthService {
     }
 
     const role = await this.ensureAdminRoleIfAllowlisted(user);
+    await this.invalidateRoleCache(user.id);
 
     const accessToken = await this.signAccessToken(
       user.id,
@@ -162,20 +167,57 @@ export class AuthService {
         accessTokenTtl,
         'true',
       );
+      await Promise.all([
+        this.cacheService.delete(`auth:revoked:${sessionId}`),
+        this.cacheService.set(`auth:revoked:${sessionId}`, true, {
+          softTtlMs: accessTokenTtl * 1000,
+          hardTtlMs: accessTokenTtl * 1000,
+        }),
+        this.cacheService.delete(`auth:role:${session.userId}`),
+      ]);
     }
   }
 
   async isRevoked(jti: string): Promise<boolean> {
-    const tokenPair = await this.redis.get(`revoked_jti:${jti}`);
-    return !!tokenPair;
+    const ttl = this.authHotPathCacheTtl();
+    return this.cacheService.getOrSet(
+      `auth:revoked:${jti}`,
+      async () => {
+        const tokenPair = await this.redis.get(`revoked_jti:${jti}`);
+        return !!tokenPair;
+      },
+      { ttl, cacheNull: true },
+    );
   }
 
   async resolveAuthoritativeRoleForUserId(userId: string): Promise<UserRole> {
+    const ttl = this.authHotPathCacheTtl();
+    return this.cacheService.getOrSet(
+      `auth:role:${userId}`,
+      async () => this.loadPersistedUserRole(userId),
+      { ttl },
+    );
+  }
+
+  invalidateRoleCache(userId: string): Promise<void> {
+    return this.cacheService.delete(`auth:role:${userId}`);
+  }
+
+  private async loadPersistedUserRole(userId: string): Promise<UserRole> {
     const user = await this.userModel.findById(userId).exec();
     if (!user?.isActive) {
       throw new UnauthorizedException('User not found');
     }
-    return this.ensureAdminRoleIfAllowlisted(user);
+    return user.role ?? UserRole.USER;
+  }
+
+  private authHotPathCacheTtl(): CacheTtl {
+    const ttlSec = this.configService.get<number>(
+      'AUTH_HOT_PATH_CACHE_TTL_SEC',
+      5,
+    );
+    const softTtlMs = Math.max(1, ttlSec) * 1000;
+    return { softTtlMs, hardTtlMs: softTtlMs * 2 };
   }
 
   private async signAccessToken(

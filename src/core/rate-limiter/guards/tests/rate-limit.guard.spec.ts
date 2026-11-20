@@ -23,6 +23,7 @@ describe('RateLimitGuard', () => {
   ): ExecutionContext => {
     headers = {};
     return {
+      getType: () => 'http',
       getHandler: () => jest.fn(),
       getClass: () => jest.fn(),
       switchToHttp: () => ({
@@ -169,6 +170,41 @@ describe('RateLimitGuard', () => {
     await expect(guard.canActivate(ctx)).rejects.toMatchObject({
       status: HttpStatus.BAD_REQUEST,
     } as Partial<HttpException>);
+  });
+
+  it('applies global IP limits for GraphQL execution context', async () => {
+    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(undefined);
+    jest.spyOn(reflector, 'get').mockReturnValue(undefined);
+
+    const gqlCtx = {
+      getType: () => 'graphql',
+      getHandler: () => jest.fn(),
+      getClass: () => jest.fn(),
+      switchToHttp: () => ({
+        getRequest: () => {
+          throw new Error('graphql should not use switchToHttp request');
+        },
+        getResponse: () => ({ header: jest.fn() }),
+      }),
+    } as unknown as ExecutionContext;
+
+    jest.mock('@nestjs/graphql', () => ({
+      GqlExecutionContext: {
+        create: () => ({
+          getContext: () => ({
+            req: {
+              ip: '198.51.100.2',
+              headers: {},
+              routeOptions: { url: '/graphql' },
+            },
+            res: { header: jest.fn() },
+          }),
+        }),
+      },
+    }));
+
+    await guard.canActivate(gqlCtx);
+    expect(backend.consume).toHaveBeenCalled();
   });
 
   it('sets X-RateLimit-Reset as Unix epoch seconds', async () => {

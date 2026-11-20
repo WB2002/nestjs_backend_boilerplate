@@ -74,7 +74,7 @@ describe('AccessTokenAuthenticator', () => {
     );
   });
 
-  it('uses role from AuthService, not stale JWT claim', async () => {
+  it('uses embedded JWT role on the hot path without Mongo lookup', async () => {
     (jwtService.verifyAsync as jest.Mock).mockResolvedValue({
       sub: 'user-1',
       email: 'a@example.com',
@@ -82,16 +82,16 @@ describe('AccessTokenAuthenticator', () => {
       role: UserRole.ADMIN,
     });
     (authService.isRevoked as jest.Mock).mockResolvedValue(false);
-    (
-      authService.resolveAuthoritativeRoleForUserId as jest.Mock
-    ).mockResolvedValue(UserRole.USER);
 
     await expect(authenticator.verifyAccessToken('tok')).resolves.toEqual({
       id: 'user-1',
       email: 'a@example.com',
       jti: 'jti-1',
-      role: UserRole.USER,
+      role: UserRole.ADMIN,
     });
+    expect(
+      authService.resolveAuthoritativeRoleForUserId,
+    ).not.toHaveBeenCalled();
   });
 
   it('rejects when authoritative role lookup fails', async () => {
@@ -99,7 +99,7 @@ describe('AccessTokenAuthenticator', () => {
       sub: 'user-1',
       email: 'a@example.com',
       jti: 'jti-1',
-      role: UserRole.USER,
+      role: 'legacy-unknown',
     });
     (authService.isRevoked as jest.Mock).mockResolvedValue(false);
     (

@@ -31,6 +31,13 @@ if [ "$outside" -eq 0 ]; then
   exit 0
 fi
 
+# shellcheck disable=SC1091
+. "${root}/scripts/lib/ensure-pnpm.sh"
+if ! ensure_pnpm_on_path; then
+  jq -n --arg msg "scripts/verify.sh failed: pnpm is not on PATH. Fix toolchain (see scripts/lib/ensure-pnpm.sh)." '{followup_message:$msg}'
+  exit 0
+fi
+
 set +e
 output=$(scripts/verify.sh 2>&1)
 code=$?

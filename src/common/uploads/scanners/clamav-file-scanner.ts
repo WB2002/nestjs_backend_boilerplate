@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import * as net from 'node:net';
+import { readUploadFullBuffer } from '../read-file-bytes';
 import type { FileScanResult, FileScanner } from './file-scanner';
 
 export type ClamAvFileScannerOptions = {
@@ -32,11 +33,13 @@ export class ClamAvFileScanner implements FileScanner {
   }
 
   async scan(input: {
-    buffer: Buffer;
+    buffer?: Buffer;
+    tempPath?: string;
     filename: string;
   }): Promise<FileScanResult> {
     try {
-      const response = await this.instream(input.buffer);
+      const payload = await readUploadFullBuffer(input);
+      const response = await this.instream(payload);
       const normalized = response.replace(/\0/g, '').trim();
 
       if (

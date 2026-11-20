@@ -1,7 +1,9 @@
 import { Controller, Post, Req, BadRequestException } from '@nestjs/common';
 import type { FastifyRequest } from 'fastify';
 import '@fastify/multipart';
+import { ApiPriority, ApiPriorityLevel } from '@/core/overload';
 import { UploadsService } from './uploads.service';
+import { removeTempUpload, streamMultipartToTempFile } from './read-file-bytes';
 import type { IncomingUploadFile } from './upload.types';
 import { UPLOAD_REJECT_CODES } from './upload.types';
 import { UploadValidationError } from './validate-upload-files';
@@ -20,6 +22,7 @@ import { UploadValidationError } from './validate-upload-files';
  *
  * Response is metadata only (buffers are discarded after validation/scan).
  */
+@ApiPriority(ApiPriorityLevel.Low)
 @Controller('uploads')
 export class UploadsController {
   constructor(private readonly uploadsService: UploadsService) {}
@@ -77,16 +80,26 @@ async function readMultipartFiles(
       );
     }
 
-    const buffer = await part.toBuffer();
-    if (buffer.length > options.maxFileSize) {
+    let tempPath: string | undefined;
+    let size = 0;
+    try {
+      const streamed = await streamMultipartToTempFile(
+        part.file,
+        options.maxFileSize,
+      );
+      tempPath = streamed.tempPath;
+      size = streamed.size;
+    } catch {
+      await removeTempUpload(tempPath);
       throw new UploadValidationError(
         UPLOAD_REJECT_CODES.FILE_TOO_LARGE,
         `Each file must be at most ${options.maxFileSize} bytes`,
       );
     }
 
-    totalSize += buffer.length;
+    totalSize += size;
     if (totalSize > options.maxTotalSize) {
+      await removeTempUpload(tempPath);
       throw new UploadValidationError(
         UPLOAD_REJECT_CODES.TOTAL_SIZE_EXCEEDED,
         `Total upload size must be at most ${options.maxTotalSize} bytes`,
@@ -97,8 +110,8 @@ async function readMultipartFiles(
       fieldname: part.fieldname,
       originalname: part.filename || 'file',
       mimetype: part.mimetype || 'application/octet-stream',
-      buffer,
-      size: buffer.length,
+      tempPath,
+      size,
     });
   }
   return files;

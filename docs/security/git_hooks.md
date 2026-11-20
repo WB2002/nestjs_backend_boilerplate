@@ -42,6 +42,8 @@ Packages: `husky`, `lint-staged`, `eslint-config-prettier` (devDependencies). Gi
    brew install gitleaks
    ```
    If Gitleaks is missing but Docker is available, the wrapper uses `zricethezav/gitleaks:latest`.
+   When Docker cannot mount the repo (for example a macOS repo under `~/Documents`), the wrapper
+   rsyncs a lightweight copy under `/tmp` and scans that mount instead.
 3. On each commit, `.husky/pre-commit` runs:
    1. `pnpm exec lint-staged` — Prettier + `eslint --fix` on staged files only
    2. `./scripts/gitleaks-pre-commit.sh` — `gitleaks protect --staged --redact`

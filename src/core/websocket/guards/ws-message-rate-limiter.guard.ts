@@ -4,6 +4,8 @@ import {
   HttpException,
   HttpStatus,
   Injectable,
+  OnModuleDestroy,
+  OnModuleInit,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { RedisService } from '@/common/redis/redis.service';
@@ -12,18 +14,53 @@ import { AuthenticatedSocket } from '../types/authenticated-socket.types';
 
 const MESSAGE_KEY_PREFIX = 'ws:msg:';
 const MESSAGE_WINDOW_SEC = 60;
+const LOCAL_COUNTER_SWEEP_MS = 60_000;
 
 @Injectable()
-export class WsMessageRateLimiterGuard implements CanActivate {
+export class WsMessageRateLimiterGuard
+  implements CanActivate, OnModuleInit, OnModuleDestroy
+{
   private readonly localCounts = new Map<
     string,
     { count: number; resetAt: number }
   >();
+  private sweepTimer: NodeJS.Timeout | null = null;
 
   constructor(
     private readonly configService: ConfigService,
     private readonly redisService: RedisService,
   ) {}
+
+  onModuleInit(): void {
+    this.sweepTimer = setInterval(
+      () => this.sweepExpiredLocalCounters(),
+      LOCAL_COUNTER_SWEEP_MS,
+    );
+    if (this.sweepTimer && typeof this.sweepTimer.unref === 'function') {
+      this.sweepTimer.unref();
+    }
+  }
+
+  onModuleDestroy(): void {
+    if (this.sweepTimer) {
+      clearInterval(this.sweepTimer);
+      this.sweepTimer = null;
+    }
+    this.localCounts.clear();
+  }
+
+  releaseLocalCounter(userId: string): void {
+    this.localCounts.delete(userId);
+  }
+
+  private sweepExpiredLocalCounters(): void {
+    const now = Date.now();
+    for (const [userId, entry] of this.localCounts) {
+      if (entry.resetAt <= now) {
+        this.localCounts.delete(userId);
+      }
+    }
+  }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     if (context.getType() !== 'ws') {
