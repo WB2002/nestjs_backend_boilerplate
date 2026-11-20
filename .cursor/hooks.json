@@ -16,6 +16,11 @@
         "command": ".cursor/hooks/manifest-guard.sh",
         "matcher": "Write",
         "failClosed": true
+      },
+      {
+        "command": ".cursor/hooks/protect-status-accepted.sh",
+        "matcher": "Write",
+        "failClosed": true
       }
     ],
     "beforeShellExecution": [
