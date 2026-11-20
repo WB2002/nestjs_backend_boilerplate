@@ -1,5 +1,5 @@
-import { Controller, Get, Query } from '@nestjs/common';
-import { Public } from '@/common/decorators';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { ConformanceHarnessAuthGuard } from './guards/conformance-harness-auth.guard';
 import { ApiPriority, ApiPriorityLevel } from '@/core/overload';
 import { getRequestSignal, throwIfAborted } from '@/core/request-deadline';
 import { ConformancePriorityQueryDto } from './dto';
@@ -15,7 +15,7 @@ export interface ConformancePriorityResponse {
   priority: ConformancePriorityLevelName;
 }
 
-@Public()
+@UseGuards(ConformanceHarnessAuthGuard)
 @Controller('conformance/priority')
 export class ConformancePriorityController {
   @Get('critical')

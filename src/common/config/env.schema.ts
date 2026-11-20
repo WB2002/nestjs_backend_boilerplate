@@ -156,9 +156,13 @@ export const envSchema = {
   BACKGROUND_JOBS_LEASE_RECLAIM_INTERVAL_MS: { required: false },
   BACKGROUND_JOBS_LEASE_RECLAIM_BATCH_SIZE: { required: false },
   BACKGROUND_JOBS_ORPHAN_MIN_AGE_SEC: { required: false },
+  EXAMPLE_JOBS_API_ENABLED: { required: false },
 
   // Conformance harness (test only; refused in production)
   CONFORMANCE_HARNESS_ENABLED: { required: false },
+  CONFORMANCE_HARNESS_TOKEN: { required: false },
+
+  HEALTH_EXPOSE_DEPENDENCIES: { required: false },
 } as const satisfies Record<string, EnvField>;
 
 export type EnvSchema = typeof envSchema;

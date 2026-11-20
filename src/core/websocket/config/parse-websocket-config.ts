@@ -6,6 +6,7 @@ import {
   DEFAULT_WEBSOCKET_MESSAGES_PER_MINUTE,
   DEFAULT_WEBSOCKET_PATH,
 } from './websocket.constants';
+import { resolveCorsOrigins } from '@/common/config/resolve-cors-origins';
 import { WebSocketConfig } from './websocket-config.types';
 
 function parseBoolean(
@@ -21,32 +22,6 @@ function parseBoolean(
 function parsePositiveInt(value: string | undefined, fallback: number): number {
   const parsed = Number.parseInt(value ?? '', 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
-}
-
-type CorsOriginsResolveResult =
-  | { mode: 'allow-all' }
-  | { mode: 'list'; origins: string[] };
-
-function resolveCorsOrigins(
-  configService: Pick<ConfigService, 'get'>,
-): CorsOriginsResolveResult {
-  const nodeEnv = configService.get<string>('NODE_ENV') ?? 'development';
-  const raw = configService.get<string>('ALLOWED_ORIGINS');
-  const origins =
-    raw
-      ?.split(',')
-      .map((part) => part.trim())
-      .filter((part) => part.length > 0) ?? [];
-
-  if (nodeEnv === 'production') {
-    return { mode: 'list', origins };
-  }
-
-  if (origins.length === 0) {
-    return { mode: 'allow-all' };
-  }
-
-  return { mode: 'list', origins };
 }
 
 export function parseWebSocketConfig(

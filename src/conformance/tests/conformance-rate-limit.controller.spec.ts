@@ -4,6 +4,8 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { Test, TestingModule } from '@nestjs/testing';
+import { GUARDS_METADATA } from '@nestjs/common/constants';
+import { ConformanceHarnessAuthGuard } from '../guards/conformance-harness-auth.guard';
 import { IS_PUBLIC_KEY } from '@/common/constants';
 import {
   RATE_LIMIT_KEY,
@@ -12,6 +14,7 @@ import {
   RateLimitIdentifier,
 } from '@/core/rate-limiter';
 import { ConformanceRateLimitController } from '../conformance-rate-limit.controller';
+import { withConformanceHarnessGuardStub } from './conformance-harness-guard-test.provider';
 
 describe('ConformanceRateLimitController', () => {
   let testingModule: TestingModule;
@@ -20,9 +23,11 @@ describe('ConformanceRateLimitController', () => {
   let reflector: Reflector;
 
   beforeEach(async () => {
-    testingModule = await Test.createTestingModule({
-      controllers: [ConformanceRateLimitController],
-    }).compile();
+    testingModule = await withConformanceHarnessGuardStub(
+      Test.createTestingModule({
+        controllers: [ConformanceRateLimitController],
+      }),
+    ).compile();
 
     reflector = new Reflector();
     controller = testingModule.get<ConformanceRateLimitController>(
@@ -42,12 +47,12 @@ describe('ConformanceRateLimitController', () => {
   });
 
   describe('metadata', () => {
-    it('does not decorate the controller class with @Public() so user route remains JWT-protected', () => {
-      const isControllerPublic = reflector.get<boolean | undefined>(
-        IS_PUBLIC_KEY,
+    it('protects the controller with ConformanceHarnessAuthGuard', () => {
+      const guards = reflector.get<unknown[] | undefined>(
+        GUARDS_METADATA,
         ConformanceRateLimitController,
       );
-      expect(isControllerPublic).toBeUndefined();
+      expect(guards).toContain(ConformanceHarnessAuthGuard);
     });
 
     it('attaches rate-limit metadata with UserId to user handler and leaves it without @Public()', () => {
@@ -74,12 +79,12 @@ describe('ConformanceRateLimitController', () => {
       ]);
     });
 
-    it('attaches rate-limit metadata with DeviceFingerprint to fingerprint handler and decorates with @Public()', () => {
+    it('attaches rate-limit metadata with DeviceFingerprint to fingerprint handler', () => {
       const isFingerprintPublic = reflector.get<boolean | undefined>(
         IS_PUBLIC_KEY,
         controller.fingerprint,
       );
-      expect(isFingerprintPublic).toBe(true);
+      expect(isFingerprintPublic).toBeUndefined();
 
       const fingerprintRateLimitOptions = reflector.get<
         RateLimitDecoratorOptions | undefined
@@ -98,12 +103,12 @@ describe('ConformanceRateLimitController', () => {
       ]);
     });
 
-    it('attaches rate-limit metadata with GuestId to guest handler and decorates with @Public()', () => {
+    it('attaches rate-limit metadata with GuestId to guest handler', () => {
       const isGuestPublic = reflector.get<boolean | undefined>(
         IS_PUBLIC_KEY,
         controller.guest,
       );
-      expect(isGuestPublic).toBe(true);
+      expect(isGuestPublic).toBeUndefined();
 
       const guestRateLimitOptions = reflector.get<
         RateLimitDecoratorOptions | undefined

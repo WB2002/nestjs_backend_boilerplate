@@ -5,9 +5,11 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { Test, TestingModule } from '@nestjs/testing';
-import { IS_PUBLIC_KEY } from '@/common/constants';
+import { GUARDS_METADATA } from '@nestjs/common/constants';
+import { ConformanceHarnessAuthGuard } from '../guards/conformance-harness-auth.guard';
 import { REDACTED } from '@/core/redaction';
 import { ConformanceRedactionController } from '../conformance-redaction.controller';
+import { withConformanceHarnessGuardStub } from './conformance-harness-guard-test.provider';
 import { ConformanceRedactionRequestDto } from '../dto';
 
 describe('ConformanceRedactionController', () => {
@@ -17,9 +19,11 @@ describe('ConformanceRedactionController', () => {
   let reflector: Reflector;
 
   beforeEach(async () => {
-    testingModule = await Test.createTestingModule({
-      controllers: [ConformanceRedactionController],
-    }).compile();
+    testingModule = await withConformanceHarnessGuardStub(
+      Test.createTestingModule({
+        controllers: [ConformanceRedactionController],
+      }),
+    ).compile();
 
     reflector = new Reflector();
     controller = testingModule.get<ConformanceRedactionController>(
@@ -39,12 +43,12 @@ describe('ConformanceRedactionController', () => {
   });
 
   describe('metadata', () => {
-    it('decorates the controller class with @Public()', () => {
-      const isControllerPublic = reflector.get<boolean | undefined>(
-        IS_PUBLIC_KEY,
+    it('protects the controller with ConformanceHarnessAuthGuard', () => {
+      const guards = reflector.get<unknown[] | undefined>(
+        GUARDS_METADATA,
         ConformanceRedactionController,
       );
-      expect(isControllerPublic).toBe(true);
+      expect(guards).toContain(ConformanceHarnessAuthGuard);
     });
   });
 

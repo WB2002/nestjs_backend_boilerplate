@@ -5,9 +5,11 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { Test, TestingModule } from '@nestjs/testing';
-import { IS_PUBLIC_KEY } from '@/common/constants';
+import { GUARDS_METADATA } from '@nestjs/common/constants';
+import { ConformanceHarnessAuthGuard } from '../guards/conformance-harness-auth.guard';
 import { API_PRIORITY_KEY, ApiPriorityLevel } from '@/core/overload';
 import { ConformancePriorityController } from '../conformance-priority.controller';
+import { withConformanceHarnessGuardStub } from './conformance-harness-guard-test.provider';
 
 describe('ConformancePriorityController', () => {
   let testingModule: TestingModule;
@@ -16,9 +18,11 @@ describe('ConformancePriorityController', () => {
   let reflector: Reflector;
 
   beforeEach(async () => {
-    testingModule = await Test.createTestingModule({
-      controllers: [ConformancePriorityController],
-    }).compile();
+    testingModule = await withConformanceHarnessGuardStub(
+      Test.createTestingModule({
+        controllers: [ConformancePriorityController],
+      }),
+    ).compile();
 
     reflector = new Reflector();
     controller = testingModule.get<ConformancePriorityController>(
@@ -45,12 +49,12 @@ describe('ConformancePriorityController', () => {
   });
 
   describe('metadata', () => {
-    it('decorates the controller class with @Public()', () => {
-      const isPublic = reflector.get<boolean>(
-        IS_PUBLIC_KEY,
+    it('protects the controller with ConformanceHarnessAuthGuard', () => {
+      const guards = reflector.get<unknown[] | undefined>(
+        GUARDS_METADATA,
         ConformancePriorityController,
       );
-      expect(isPublic).toBe(true);
+      expect(guards).toContain(ConformanceHarnessAuthGuard);
     });
 
     it('attaches ApiPriorityLevel.Critical metadata to critical handler', () => {

@@ -16,6 +16,7 @@ describe('AccessTokenAuthenticator', () => {
   } as unknown as JwtService;
   const authService = {
     isRevoked: jest.fn(),
+    resolveAuthoritativeRoleForUserId: jest.fn(),
   } as unknown as AuthService;
   const configService = {
     get: jest.fn((key: string) =>
@@ -47,6 +48,9 @@ describe('AccessTokenAuthenticator', () => {
       role: UserRole.ADMIN,
     });
     (authService.isRevoked as jest.Mock).mockResolvedValue(false);
+    (
+      authService.resolveAuthoritativeRoleForUserId as jest.Mock
+    ).mockResolvedValue(UserRole.ADMIN);
 
     await expect(authenticator.verifyAccessToken('tok')).resolves.toEqual({
       id: 'user-1',
@@ -64,6 +68,43 @@ describe('AccessTokenAuthenticator', () => {
       role: UserRole.USER,
     });
     (authService.isRevoked as jest.Mock).mockResolvedValue(true);
+
+    await expect(authenticator.verifyAccessToken('tok')).rejects.toBeInstanceOf(
+      UnauthorizedException,
+    );
+  });
+
+  it('uses role from AuthService, not stale JWT claim', async () => {
+    (jwtService.verifyAsync as jest.Mock).mockResolvedValue({
+      sub: 'user-1',
+      email: 'a@example.com',
+      jti: 'jti-1',
+      role: UserRole.ADMIN,
+    });
+    (authService.isRevoked as jest.Mock).mockResolvedValue(false);
+    (
+      authService.resolveAuthoritativeRoleForUserId as jest.Mock
+    ).mockResolvedValue(UserRole.USER);
+
+    await expect(authenticator.verifyAccessToken('tok')).resolves.toEqual({
+      id: 'user-1',
+      email: 'a@example.com',
+      jti: 'jti-1',
+      role: UserRole.USER,
+    });
+  });
+
+  it('rejects when authoritative role lookup fails', async () => {
+    (jwtService.verifyAsync as jest.Mock).mockResolvedValue({
+      sub: 'user-1',
+      email: 'a@example.com',
+      jti: 'jti-1',
+      role: UserRole.USER,
+    });
+    (authService.isRevoked as jest.Mock).mockResolvedValue(false);
+    (
+      authService.resolveAuthoritativeRoleForUserId as jest.Mock
+    ).mockRejectedValue(new UnauthorizedException('User not found'));
 
     await expect(authenticator.verifyAccessToken('tok')).rejects.toBeInstanceOf(
       UnauthorizedException,

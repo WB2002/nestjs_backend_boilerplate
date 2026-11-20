@@ -48,8 +48,11 @@ import {
 import { ComplexityPlugin } from './common/plugins/complexity.plugin';
 import { SanitizationPipe } from './common/sanitization';
 import { validateEnv } from './common/config';
+import { parseGraphQlDriverOptions } from './common/config/parse-graphql-driver-config';
 import { isWebSocketEnabled } from './common/config/load-env-file';
 import { isBackgroundJobsEnabled } from './common/config/is-background-jobs-enabled';
+import { isExampleJobsApiEnabled } from './common/config/is-example-jobs-api-enabled';
+import { ExampleJobsHandlersModule } from './example/example-jobs-handlers.module';
 import { isConformanceHarnessEnabled } from './common/config/is-conformance-harness-enabled';
 import { ConformanceModule } from './conformance';
 import { BackgroundJobsModule } from './core/background-jobs';
@@ -114,7 +117,8 @@ import { parseCsvPaths } from './core/csrf/helpers/parse-csv-paths';
           BackgroundJobsModule.forRootAsync({
             registerWorker: process.env.BACKGROUND_WORKER_ENABLED === 'true',
           }),
-          ExampleJobsModule,
+          ExampleJobsHandlersModule,
+          ...(isExampleJobsApiEnabled() ? [ExampleJobsModule] : []),
         ]
       : []),
     ...(isConformanceHarnessEnabled() ? [ConformanceModule] : []),
@@ -184,22 +188,29 @@ import { parseCsvPaths } from './core/csrf/helpers/parse-csv-paths';
         };
       },
     }),
-    GraphQLModule.forRoot<ApolloDriverConfig>({
+    GraphQLModule.forRootAsync<ApolloDriverConfig>({
       driver: ApolloDriver,
-      typePaths: ['./**/*.graphql'],
-      context: ({
-        request,
-        reply,
-      }: {
-        request: FastifyRequest;
-        reply: FastifyReply;
-      }) => ({ req: request, res: reply }),
-      definitions: {
-        path: join(process.cwd(), 'src/graphql.ts'),
-        outputAs: 'class',
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => {
+        const security = parseGraphQlDriverOptions(configService);
+        return {
+          typePaths: ['./**/*.graphql'],
+          context: ({
+            request,
+            reply,
+          }: {
+            request: FastifyRequest;
+            reply: FastifyReply;
+          }) => ({ req: request, res: reply }),
+          definitions: {
+            path: join(process.cwd(), 'src/graphql.ts'),
+            outputAs: 'class',
+          },
+          graphiql: security.graphiql,
+          introspection: security.introspection,
+          validationRules: [depthLimit(10)],
+        };
       },
-      graphiql: true,
-      validationRules: [depthLimit(10)],
     }),
   ],
   controllers: [AppController],

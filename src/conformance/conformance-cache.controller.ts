@@ -5,8 +5,9 @@ import {
   HttpCode,
   Param,
   Post,
+  UseGuards,
 } from '@nestjs/common';
-import { Public } from '@/common/decorators';
+import { ConformanceHarnessAuthGuard } from './guards/conformance-harness-auth.guard';
 import { ConformanceCacheRequestDto } from './dto';
 import {
   ConformanceCacheResponse,
@@ -17,7 +18,7 @@ export interface ConformanceCacheDeleteResponse {
   deleted: boolean;
 }
 
-@Public()
+@UseGuards(ConformanceHarnessAuthGuard)
 @Controller('conformance/cache')
 export class ConformanceCacheController {
   constructor(

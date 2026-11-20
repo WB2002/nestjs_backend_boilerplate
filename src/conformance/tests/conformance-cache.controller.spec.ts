@@ -8,23 +8,26 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { CacheModule, CacheStorage } from '@/core/cache';
 import { ConformanceCacheController } from '../conformance-cache.controller';
 import { ConformanceCacheService } from '../conformance-cache.service';
+import { withConformanceHarnessGuardStub } from './conformance-harness-guard-test.provider';
 
 describe('ConformanceCacheController (HTTP)', () => {
   let testingModule: TestingModule;
   let testApplication: NestFastifyApplication;
 
   beforeEach(async () => {
-    testingModule = await Test.createTestingModule({
-      imports: [
-        ConfigModule.forRoot({ isGlobal: true }),
-        CacheModule.forRoot({
-          storage: CacheStorage.Memory,
-          ttlJitterRatio: 0,
-        }),
-      ],
-      controllers: [ConformanceCacheController],
-      providers: [ConformanceCacheService],
-    }).compile();
+    testingModule = await withConformanceHarnessGuardStub(
+      Test.createTestingModule({
+        imports: [
+          ConfigModule.forRoot({ isGlobal: true }),
+          CacheModule.forRoot({
+            storage: CacheStorage.Memory,
+            ttlJitterRatio: 0,
+          }),
+        ],
+        controllers: [ConformanceCacheController],
+        providers: [ConformanceCacheService],
+      }),
+    ).compile();
 
     testApplication =
       testingModule.createNestApplication<NestFastifyApplication>(

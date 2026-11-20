@@ -117,7 +117,31 @@ describe('validateEnv', () => {
     const config = validConfig({
       NODE_ENV: 'test',
       CONFORMANCE_HARNESS_ENABLED: 'true',
+      CONFORMANCE_HARNESS_TOKEN: 'harness-secret',
     });
     expect(validateEnv(config)).toBe(config);
+  });
+
+  it('throws when production has empty ALLOWED_ORIGINS', () => {
+    const config = validConfig({ NODE_ENV: 'production' });
+    expect(() => validateEnv(config)).toThrow(/ALLOWED_ORIGINS/);
+  });
+
+  it('requires CONFORMANCE_HARNESS_TOKEN when harness enabled', () => {
+    const config = validConfig({
+      NODE_ENV: 'test',
+      CONFORMANCE_HARNESS_ENABLED: 'true',
+    });
+    expect(() => validateEnv(config)).toThrow(/CONFORMANCE_HARNESS_TOKEN/);
+  });
+
+  it('refuses private HTTP client with harness outside test', () => {
+    const config = validConfig({
+      NODE_ENV: 'development',
+      CONFORMANCE_HARNESS_ENABLED: 'true',
+      CONFORMANCE_HARNESS_TOKEN: 'harness-secret',
+      HTTP_CLIENT_ALLOW_PRIVATE_URLS: 'true',
+    });
+    expect(() => validateEnv(config)).toThrow(/HTTP_CLIENT_ALLOW_PRIVATE_URLS/);
   });
 });

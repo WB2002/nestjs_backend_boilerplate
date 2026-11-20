@@ -170,6 +170,14 @@ export class AuthService {
     return !!tokenPair;
   }
 
+  async resolveAuthoritativeRoleForUserId(userId: string): Promise<UserRole> {
+    const user = await this.userModel.findById(userId).exec();
+    if (!user?.isActive) {
+      throw new UnauthorizedException('User not found');
+    }
+    return this.ensureAdminRoleIfAllowlisted(user);
+  }
+
   private async signAccessToken(
     userId: string,
     email: string,

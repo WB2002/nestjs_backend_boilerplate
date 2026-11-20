@@ -29,6 +29,7 @@ import { SkipInboundBulkhead } from '@/core/overload';
 import { SkipTracing } from '@/core/telemetry';
 import { FeatureFlagHealthIndicator } from '@/core/feature-flag';
 import { HealthSnapshot } from './health-snapshot';
+import { resolveHealthResponseMode } from './resolve-health-response-mode';
 
 // Probes must never be throttled: load balancers share source IPs, and a 429
 // during a rolling deploy looks like an unhealthy instance.
@@ -78,24 +79,43 @@ export class HealthController implements OnModuleDestroy {
   @Get()
   @HealthCheck()
   check(): Promise<HealthCheckResult> {
-    return this.snapshot.get(() => this.health.check(this.buildChecks()));
+    return this.presentHealthResult(
+      this.snapshot.get(() => this.health.check(this.buildChecks())),
+    );
   }
 
   @Get('ready')
   @HealthCheck()
   ready(): Promise<HealthCheckResult> {
     if (this.shutdownState.isShuttingDown) {
-      return this.health.check([
-        () =>
-          Promise.resolve({
-            shuttingDown: {
-              status: 'down' as const,
-              message: 'Application is shutting down',
-            },
-          }),
-      ]);
+      return this.presentHealthResult(
+        this.health.check([
+          () =>
+            Promise.resolve({
+              shuttingDown: {
+                status: 'down' as const,
+                message: 'Application is shutting down',
+              },
+            }),
+        ]),
+      );
     }
-    return this.snapshot.get(() => this.health.check(this.buildChecks()));
+    return this.presentHealthResult(
+      this.snapshot.get(() => this.health.check(this.buildChecks())),
+    );
+  }
+
+  private async presentHealthResult(
+    healthCheckPromise: Promise<HealthCheckResult>,
+  ): Promise<HealthCheckResult> {
+    const healthCheckOutcome = await healthCheckPromise;
+    if (resolveHealthResponseMode(this.configService) === 'minimal') {
+      return {
+        status: healthCheckOutcome.status,
+        details: {},
+      };
+    }
+    return healthCheckOutcome;
   }
 
   async onModuleDestroy(): Promise<void> {

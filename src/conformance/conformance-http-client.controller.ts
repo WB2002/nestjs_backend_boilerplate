@@ -1,5 +1,5 @@
-import { Body, Controller, HttpCode, Post } from '@nestjs/common';
-import { Public } from '@/common/decorators';
+import { Body, Controller, HttpCode, Post, UseGuards } from '@nestjs/common';
+import { ConformanceHarnessAuthGuard } from './guards/conformance-harness-auth.guard';
 import { assertLoopbackTargetUrl } from './assert-loopback-target-url';
 import {
   ConformanceHttpClientResponse,
@@ -7,7 +7,7 @@ import {
 } from './conformance-http-client.service';
 import { ConformanceHttpClientRequestDto } from './dto';
 
-@Public()
+@UseGuards(ConformanceHarnessAuthGuard)
 @Controller('conformance/http-client')
 export class ConformanceHttpClientController {
   constructor(

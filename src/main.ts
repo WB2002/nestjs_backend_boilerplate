@@ -8,6 +8,11 @@ import { winstonConfig } from './core/logger/logger.config';
 import { registerGracefulShutdown, ShutdownState } from './core/shutdown';
 import { parseTrustProxy } from './common/country-access';
 import { parseHttpServerTimeouts } from './common/config';
+import {
+  assertProductionAllowedOrigins,
+  resolveCorsOrigins,
+  toFastifyCorsOrigin,
+} from './common/config/resolve-cors-origins';
 import helmet from '@fastify/helmet';
 import fastifyCookie from '@fastify/cookie';
 import multipart from '@fastify/multipart';
@@ -142,12 +147,18 @@ async function bootstrap() {
     },
   );
 
+  const configService = app.get(ConfigService);
+  const corsResolved = resolveCorsOrigins(configService);
+  if (corsResolved.mode === 'list') {
+    assertProductionAllowedOrigins(
+      configService.get<string>('NODE_ENV') ?? 'development',
+      corsResolved.origins,
+    );
+  }
   app.enableCors({
-    origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
+    origin: toFastifyCorsOrigin(corsResolved),
     credentials: true,
   });
-
-  const configService = app.get(ConfigService);
   const wsConfig = parseWebSocketConfig(configService);
   assertWebSocketProductionOrigins(
     wsConfig,

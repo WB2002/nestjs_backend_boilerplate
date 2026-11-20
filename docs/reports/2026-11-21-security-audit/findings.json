@@ -1,0 +1,149 @@
+{
+  "summary": { "confirmed": 3, "needs_validation": 3, "rejected": 6 },
+  "findings": [
+    {
+      "id": "SEC-AUD-001",
+      "unit_id": "UNIT-002",
+      "title": "GraphiQL IDE enabled unconditionally in all environments",
+      "severity": "High",
+      "cwe_owasp": "CWE-200 / OWASP A05:2021 Security Misconfiguration",
+      "location": "src/app.module.ts:201",
+      "verdict": "confirmed",
+      "exploit_path": "Deploy with NODE_ENV=production → unauthenticated attacker opens GET/POST /graphql GraphiQL UI → explores schema, runs queries (public category queries today; future mutations inherit exposure).",
+      "disprover_notes": "No NODE_ENV guard, introspection policy, or auth wrapper around GraphiQL in GraphQLModule config. Depth limit does not restrict IDE access.",
+      "remediation": "Set `graphiql: process.env.NODE_ENV !== 'production'` (or false in production). Disable introspection in production via Apollo plugins. Document ops requirement in docs/threat-model.md."
+    },
+    {
+      "id": "SEC-AUD-002",
+      "unit_id": "UNIT-016",
+      "title": "Unauthenticated job enqueue on example background-jobs endpoint",
+      "severity": "High",
+      "cwe_owasp": "CWE-306 / OWASP A07:2021 Identification and Authentication Failures",
+      "location": "src/example/example-jobs.controller.ts:21",
+      "verdict": "confirmed",
+      "exploit_path": "When BACKGROUND_JOBS_ENABLED loads ExampleJobsModule → POST /example/jobs/echo without Authorization → enqueues arbitrary payloads (dedupeKey optional) → worker/Postgres/BullMQ load and queue flooding.",
+      "disprover_notes": "@Public() bypasses global JwtAuthGuard. Global IP rate limit (10/min) is weak abuse control, not authentication. Example module ships in default app.module imports.",
+      "remediation": "Remove @Public() or guard with JwtAuthGuard + role; gate ExampleJobsModule behind NODE_ENV=development or explicit EXAMPLE_ROUTES_ENABLED=false in production. Add integration test asserting 401 without token in production profile."
+    },
+    {
+      "id": "SEC-AUD-003",
+      "unit_id": "UNIT-004",
+      "title": "Authorization role taken from JWT claim without live DB reconciliation",
+      "severity": "Medium",
+      "cwe_owasp": "CWE-613 / OWASP A01:2021 Broken Access Control",
+      "location": "src/auth/access-token-authenticator.service.ts:48",
+      "verdict": "confirmed",
+      "exploit_path": "User receives JWT with role=admin → operator demotes user in MongoDB → user retains admin API/WebSocket privileges until access token TTL expires and refresh occurs (role re-read only on refresh/login in AuthService).",
+      "disprover_notes": "isRevoked checks session JTI only, not role. FeatureFlagPermissionsGuard reads request.user.role from JWT-derived context.",
+      "remediation": "On each request (or per sensitive route), load role from DB or include role version in JWT and invalidate on change. Minimum: reload role in AccessTokenAuthenticator.userFromVerifiedPayload via User model."
+    },
+    {
+      "id": "SEC-AUD-004",
+      "unit_id": "UNIT-001",
+      "title": "HTTP CORS allows wildcard origins with credentials when ALLOWED_ORIGINS unset",
+      "severity": "Medium",
+      "cwe_owasp": "CWE-942 / OWASP A05:2021 Security Misconfiguration",
+      "location": "src/main.ts:145",
+      "verdict": "needs_validation",
+      "exploit_path": "Production deployment with empty ALLOWED_ORIGINS → enableCors origin resolves to '*' with credentials:true → misconfiguration; browser may block some cases but non-browser clients and future SPA origins may be overly permissive depending on @fastify/cors reflection behavior.",
+      "disprover_notes": "WebSocket layer throws if production ALLOWED_ORIGINS empty (assertWebSocketProductionOrigins), but HTTP CORS in main.ts has no parallel guard. Browsers often reject Access-Control-Allow-Origin:* with credentials, reducing cookie-based CSRF from random origins but not fixing API misconfiguration.",
+      "remediation": "Mirror websocket production check: fail fast at bootstrap if NODE_ENV=production and ALLOWED_ORIGINS missing/empty. Use explicit origin callback, never '*' with credentials."
+    },
+    {
+      "id": "SEC-AUD-005",
+      "unit_id": "UNIT-017",
+      "title": "Conformance harness exposes public loopback HTTP proxy on non-production stacks",
+      "severity": "Medium",
+      "cwe_owasp": "CWE-918 / OWASP A10:2021 SSRF",
+      "location": "src/conformance/conformance-http-client.controller.ts:10",
+      "verdict": "needs_validation",
+      "exploit_path": "CONFORMANCE_HARNESS_ENABLED=true on staging (allowed by validateEnv) → unauthenticated POST /conformance/http-client with targetUrl http://127.0.0.1:<port>/... → server-side GET to loopback services (metadata, admin panels) when HTTP client permits private URLs.",
+      "disprover_notes": "Production blocks harness via validateEnv. assertLoopbackTargetUrl limits host to localhost/127.0.0.1. Outbound call still subject to HttpClient SSRF unless HTTP_CLIENT_ALLOW_PRIVATE_URLS=true (common in test harness docs). Exploit requires harness enabled and reachable staging URL.",
+      "remediation": "Bind conformance controllers to 127.0.0.1-only middleware, require mTLS/admin token, or compile out ConformanceModule outside test profiles. Document forbidden pairing with HTTP_CLIENT_ALLOW_PRIVATE_URLS on internet-facing hosts."
+    },
+    {
+      "id": "SEC-AUD-006",
+      "unit_id": "UNIT-009",
+      "title": "Detailed health checks publicly expose infrastructure state",
+      "severity": "Low",
+      "cwe_owasp": "CWE-200 / OWASP A05:2021 Security Misconfiguration",
+      "location": "src/core/health/health.controller.ts:78",
+      "verdict": "needs_validation",
+      "exploit_path": "GET /health or /health/ready without auth → returns Mongo/Redis/Postgres/disk/memory/feature-flag status → attacker maps dependencies and failure modes.",
+      "disprover_notes": "Intentional for ALB (SkipRateLimit, SkipCountryAccess). Risk depends on edge network policy (internal-only ALB vs public). /health/live is minimal.",
+      "remediation": "Split public liveness from authenticated or internal-network readiness. Restrict detailed checks via security group or separate admin port."
+    },
+    {
+      "id": "SEC-AUD-007",
+      "unit_id": "UNIT-003",
+      "title": "Login/refresh returns bearer access token in JSON body",
+      "severity": "Low",
+      "cwe_owasp": "CWE-522 / OWASP A04:2021 Insecure Design",
+      "location": "src/auth/auth.controller.ts:88",
+      "verdict": "rejected",
+      "exploit_path": "XSS on same site reads login JSON and exfiltrates accessToken.",
+      "disprover_notes": "Dual cookie (httpOnly) + body supports non-browser API clients. Exploit requires separate XSS; cookies are httpOnly/sameSite strict. Documented boilerplate pattern, not standalone vuln.",
+      "remediation": "Optional: omit accessToken from body when Accept indicates browser client; keep body for mobile only."
+    },
+    {
+      "id": "SEC-AUD-008",
+      "unit_id": "UNIT-006",
+      "title": "Auth endpoints lack dedicated brute-force rate limits",
+      "severity": "Low",
+      "cwe_owasp": "CWE-307 / OWASP A07:2021 Identification and Authentication Failures",
+      "location": "src/app.module.ts:143",
+      "verdict": "rejected",
+      "exploit_path": "Credential stuffing against POST /auth/login at global 10 req/min/IP.",
+      "disprover_notes": "Global fixed-window IP limit applies to login. PasswordHashBulkhead adds CPU cost. Edge rate limiting documented in architecture.md as deployment concern.",
+      "remediation": "Add stricter auth-specific rate limit metadata on login/register if edge limits absent."
+    },
+    {
+      "id": "SEC-AUD-009",
+      "unit_id": "UNIT-010",
+      "title": "GraphQL category IDOR via Mongo query",
+      "severity": "Medium",
+      "cwe_owasp": "CWE-639 / OWASP A01:2021 Broken Access Control",
+      "location": "src/categories/categories.service.ts:16",
+      "verdict": "rejected",
+      "exploit_path": "Query category(id) for other tenants' data.",
+      "disprover_notes": "In-memory demo data only; no tenant model or persistence. Public read is intentional boilerplate sample.",
+      "remediation": "N/A until real multi-tenant category store is added."
+    },
+    {
+      "id": "SEC-AUD-010",
+      "unit_id": "UNIT-013",
+      "title": "HTTP client private URL bypass via env flag",
+      "severity": "High",
+      "cwe_owasp": "CWE-918 / OWASP A10:2021 SSRF",
+      "location": "src/core/http-client/transport/request-builder.ts:64",
+      "verdict": "rejected",
+      "exploit_path": "Attacker sets HTTP_CLIENT_ALLOW_PRIVATE_URLS without privilege.",
+      "disprover_notes": "Flag is process env operator-controlled, not user input. Default path uses assertPublicHttpUrl. Misconfiguration is ops risk, not remote exploit without existing SSRF vector.",
+      "remediation": "Document in threat model; refuse true in production validateEnv if desired."
+    },
+    {
+      "id": "SEC-AUD-011",
+      "unit_id": "UNIT-014",
+      "title": "JWT in WebSocket query string",
+      "severity": "Medium",
+      "cwe_owasp": "CWE-598 / OWASP A07:2021 Identification and Authentication Failures",
+      "location": "src/core/websocket/auth/ws-handshake.service.ts:28",
+      "verdict": "rejected",
+      "exploit_path": "Token in ?token= leaks via logs and Referer.",
+      "disprover_notes": "allowQueryToken defaults false in parseWebSocketConfig. Query path only when WEBSOCKET_ALLOW_QUERY_TOKEN=true (operator choice).",
+      "remediation": "Keep default false; warn in docs when enabling."
+    },
+    {
+      "id": "SEC-AUD-012",
+      "unit_id": "UNIT-012",
+      "title": "Unrestricted file upload content execution",
+      "severity": "High",
+      "cwe_owasp": "CWE-434 / OWASP A04:2021 Insecure Design",
+      "location": "src/common/uploads/uploads.controller.ts:27",
+      "verdict": "rejected",
+      "exploit_path": "Upload malware; server stores and serves executable.",
+      "disprover_notes": "Endpoint JWT-protected. Response returns metadata only; buffers discarded after validation. Optional ClamAV scan via UPLOAD_VIRUS_SCAN. No static file serving of uploads in controller.",
+      "remediation": "Ensure virus scan enabled in production uploads feature doc."
+    }
+  ]
+}

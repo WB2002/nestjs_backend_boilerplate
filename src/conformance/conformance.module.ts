@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { HttpClientModule } from '@/core/http-client';
+import { ConformanceHarnessAuthGuard } from './guards/conformance-harness-auth.guard';
 import { ConformanceCacheController } from './conformance-cache.controller';
 import { ConformanceCacheService } from './conformance-cache.service';
 import { ConformanceDeadlineController } from './conformance-deadline.controller';
@@ -19,7 +20,11 @@ import { ConformanceRedactionController } from './conformance-redaction.controll
     ConformanceRateLimitController,
     ConformanceRedactionController,
   ],
-  providers: [ConformanceCacheService, ConformanceHttpClientService],
+  providers: [
+    ConformanceCacheService,
+    ConformanceHttpClientService,
+    ConformanceHarnessAuthGuard,
+  ],
   exports: [ConformanceCacheService, ConformanceHttpClientService],
 })
 export class ConformanceModule {}

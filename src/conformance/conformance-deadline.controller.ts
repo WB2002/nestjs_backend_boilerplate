@@ -1,5 +1,5 @@
-import { Controller, Get, Query } from '@nestjs/common';
-import { Public } from '@/common/decorators';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { ConformanceHarnessAuthGuard } from './guards/conformance-harness-auth.guard';
 import {
   getRequestSignal,
   remainingMs,
@@ -13,7 +13,7 @@ export interface ConformanceDeadlineResponse {
   remainingBudgetMs: number | null;
 }
 
-@Public()
+@UseGuards(ConformanceHarnessAuthGuard)
 @Controller('conformance/deadline')
 export class ConformanceDeadlineController {
   @Get('slow')

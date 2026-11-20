@@ -40,7 +40,7 @@ psql "$POSTGRES_URL" -f migrations/postgres/002_create_background_jobs.sql
 
 ## Demo API
 
-`POST /example/jobs/echo` (public, like other example routes)
+`POST /example/jobs/echo` requires a valid JWT. The route is not registered when `NODE_ENV=production` unless `EXAMPLE_JOBS_API_ENABLED=true` (default off in production).
 
 ```json
 { "message": "hello", "dedupeKey": "optional-key" }

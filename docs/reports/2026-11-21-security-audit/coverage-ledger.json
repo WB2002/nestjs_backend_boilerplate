@@ -1,0 +1,261 @@
+{
+  "scope": "repository-wide",
+  "units": [
+    {
+      "unit_id": "UNIT-001",
+      "surface": "api-route",
+      "files": ["src/main.ts"],
+      "trust_boundary": "public-to-app",
+      "status": "audited",
+      "checks_performed": ["SEC-AUTH", "SEC-SHARP", "SEC-OPS"]
+    },
+    {
+      "unit_id": "UNIT-002",
+      "surface": "api-route",
+      "files": ["src/app.module.ts"],
+      "trust_boundary": "public-to-app",
+      "status": "audited",
+      "checks_performed": ["SEC-AUTH", "SEC-AUTHZ", "SEC-INJ", "SEC-SHARP"]
+    },
+    {
+      "unit_id": "UNIT-003",
+      "surface": "auth-boundary",
+      "files": [
+        "src/auth/auth.controller.ts",
+        "src/auth/auth.service.ts",
+        "src/auth/guards/jwt-auth.guard.ts",
+        "src/auth/guards/local-auth.guard.ts",
+        "src/auth/strategies/jwt.strategy.ts"
+      ],
+      "trust_boundary": "public-to-app",
+      "status": "audited",
+      "checks_performed": ["SEC-AUTH", "SEC-AUTHZ", "SEC-SHARP"]
+    },
+    {
+      "unit_id": "UNIT-004",
+      "surface": "auth-boundary",
+      "files": [
+        "src/auth/access-token-authenticator.service.ts",
+        "src/auth/password/password-hash-bulkhead.ts"
+      ],
+      "trust_boundary": "public-to-app",
+      "status": "audited",
+      "checks_performed": ["SEC-AUTH", "SEC-AUTHZ"]
+    },
+    {
+      "unit_id": "UNIT-005",
+      "surface": "auth-boundary",
+      "files": [
+        "src/core/csrf/middleware/csrf.middleware.ts",
+        "src/core/csrf/csrf-token.service.ts",
+        "src/core/csrf/helpers/should-enforce-csrf.ts"
+      ],
+      "trust_boundary": "public-to-app",
+      "status": "audited",
+      "checks_performed": ["SEC-AUTH", "SEC-SHARP"]
+    },
+    {
+      "unit_id": "UNIT-006",
+      "surface": "api-route",
+      "files": [
+        "src/core/rate-limiter/guards/rate-limit.guard.ts",
+        "src/core/rate-limiter/rate-limiter.module.ts",
+        "src/core/rate-limiter/backends/fallback.backend.ts"
+      ],
+      "trust_boundary": "public-to-app",
+      "status": "audited",
+      "checks_performed": ["SEC-SHARP", "SEC-AUTH"]
+    },
+    {
+      "unit_id": "UNIT-007",
+      "surface": "api-route",
+      "files": ["src/common/country-access/guards/country-access.guard.ts"],
+      "trust_boundary": "public-to-app",
+      "status": "audited",
+      "checks_performed": ["SEC-AUTHZ", "SEC-SHARP"]
+    },
+    {
+      "unit_id": "UNIT-008",
+      "surface": "api-route",
+      "files": [
+        "src/core/overload/guards/inbound-priority-bulkhead.guard.ts",
+        "src/core/overload/register-under-pressure.ts"
+      ],
+      "trust_boundary": "public-to-app",
+      "status": "audited",
+      "checks_performed": ["SEC-SHARP"]
+    },
+    {
+      "unit_id": "UNIT-009",
+      "surface": "api-route",
+      "files": ["src/core/health/health.controller.ts"],
+      "trust_boundary": "public-to-app",
+      "status": "audited",
+      "checks_performed": ["SEC-AUTHZ", "SEC-SHARP", "SEC-OPS"]
+    },
+    {
+      "unit_id": "UNIT-010",
+      "surface": "api-route",
+      "files": [
+        "src/categories/categories.resolver.ts",
+        "src/categories/categories.service.ts"
+      ],
+      "trust_boundary": "public-to-app",
+      "status": "audited",
+      "checks_performed": ["SEC-AUTHZ", "SEC-INJ"]
+    },
+    {
+      "unit_id": "UNIT-011",
+      "surface": "api-route",
+      "files": ["src/common/plugins/complexity.plugin.ts"],
+      "trust_boundary": "public-to-app",
+      "status": "audited",
+      "checks_performed": ["SEC-SHARP", "SEC-AUTH"]
+    },
+    {
+      "unit_id": "UNIT-012",
+      "surface": "api-route",
+      "files": [
+        "src/common/uploads/uploads.controller.ts",
+        "src/common/uploads/uploads.service.ts"
+      ],
+      "trust_boundary": "public-to-app",
+      "status": "audited",
+      "checks_performed": ["SEC-AUTH", "SEC-INJ", "SEC-SHARP"]
+    },
+    {
+      "unit_id": "UNIT-013",
+      "surface": "egress-ai",
+      "files": [
+        "src/core/http-client/transport/request-builder.ts",
+        "src/common/sanitization/utils/ssrf.utils.ts"
+      ],
+      "trust_boundary": "app-to-external-api",
+      "status": "audited",
+      "checks_performed": ["SEC-EGRESS", "SEC-INJ"]
+    },
+    {
+      "unit_id": "UNIT-014",
+      "surface": "api-route",
+      "files": [
+        "src/core/websocket/auth/ws-handshake.service.ts",
+        "src/example/example-realtime.gateway.ts"
+      ],
+      "trust_boundary": "public-to-app",
+      "status": "audited",
+      "checks_performed": ["SEC-AUTH", "SEC-AUTHZ", "SEC-SHARP"]
+    },
+    {
+      "unit_id": "UNIT-015",
+      "surface": "api-route",
+      "files": [
+        "src/core/feature-flag/feature-flag.controller.ts",
+        "src/core/feature-flag/guards/feature-flag-permissions.guard.ts"
+      ],
+      "trust_boundary": "tenant-to-tenant",
+      "status": "audited",
+      "checks_performed": ["SEC-AUTHZ"]
+    },
+    {
+      "unit_id": "UNIT-016",
+      "surface": "worker",
+      "files": [
+        "src/example/example-jobs.controller.ts",
+        "src/core/background-jobs/processors/background-jobs-run.processor.ts"
+      ],
+      "trust_boundary": "public-to-app",
+      "status": "audited",
+      "checks_performed": ["SEC-AUTHZ", "SEC-SHARP"]
+    },
+    {
+      "unit_id": "UNIT-017",
+      "surface": "api-route",
+      "files": [
+        "src/conformance/conformance-http-client.controller.ts",
+        "src/conformance/conformance-redaction.controller.ts",
+        "src/conformance/assert-loopback-target-url.ts",
+        "src/common/config/validate-env.ts"
+      ],
+      "trust_boundary": "public-to-app",
+      "status": "audited",
+      "checks_performed": ["SEC-EGRESS", "SEC-SHARP", "SEC-AUTHZ"]
+    },
+    {
+      "unit_id": "UNIT-018",
+      "surface": "api-route",
+      "files": [
+        "src/example/example-captcha.controller.ts",
+        "src/example/example-notification.controller.ts"
+      ],
+      "trust_boundary": "public-to-app",
+      "status": "audited",
+      "checks_performed": ["SEC-AUTH", "SEC-EGRESS"]
+    },
+    {
+      "unit_id": "UNIT-019",
+      "surface": "egress-ai",
+      "files": [
+        "src/core/notification/providers/slack-notification.service.ts"
+      ],
+      "trust_boundary": "app-to-external-api",
+      "status": "audited",
+      "checks_performed": ["SEC-EGRESS", "SEC-OPS"]
+    },
+    {
+      "unit_id": "UNIT-020",
+      "surface": "data-access",
+      "files": ["src/auth/schemas", "src/common/redis/redis.service.ts"],
+      "trust_boundary": "app-to-db",
+      "status": "audited",
+      "checks_performed": ["SEC-AUTHZ", "SEC-INJ"]
+    },
+    {
+      "unit_id": "UNIT-021",
+      "surface": "infra-ci",
+      "files": ["src/core/logger/logging.interceptor.ts", "src/core/redaction"],
+      "trust_boundary": "app-to-db",
+      "status": "audited",
+      "checks_performed": ["SEC-OPS"]
+    },
+    {
+      "unit_id": "UNIT-022",
+      "surface": "infra-ci",
+      "files": [
+        ".github/workflows/quality.yml",
+        ".github/workflows/dependency-review.yml",
+        ".github/workflows/codeql.yml",
+        ".github/workflows/ai-sdlc.yml"
+      ],
+      "trust_boundary": "public-to-app",
+      "status": "audited",
+      "checks_performed": ["SEC-OPS"]
+    },
+    {
+      "unit_id": "UNIT-023",
+      "surface": "infra-ci",
+      "files": [
+        "src/common/config/env.schema.ts",
+        "src/common/config/validate-env.ts"
+      ],
+      "trust_boundary": "public-to-app",
+      "status": "audited",
+      "checks_performed": ["SEC-SHARP", "SEC-OPS"]
+    },
+    {
+      "unit_id": "UNIT-024",
+      "surface": "api-route",
+      "files": ["src/app.controller.ts"],
+      "trust_boundary": "public-to-app",
+      "status": "audited",
+      "checks_performed": ["SEC-AUTH"]
+    },
+    {
+      "unit_id": "UNIT-025",
+      "surface": "api-route",
+      "files": ["src/core/feature-flag/feature-flag.controller.ts"],
+      "trust_boundary": "tenant-to-tenant",
+      "status": "audited",
+      "checks_performed": ["SEC-AUTHZ"]
+    }
+  ]
+}

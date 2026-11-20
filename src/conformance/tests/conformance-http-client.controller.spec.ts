@@ -6,6 +6,7 @@ import {
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConformanceHttpClientController } from '../conformance-http-client.controller';
 import { ConformanceHttpClientService } from '../conformance-http-client.service';
+import { withConformanceHarnessGuardStub } from './conformance-harness-guard-test.provider';
 
 describe('ConformanceHttpClientController (HTTP)', () => {
   let testingModule: TestingModule;
@@ -22,15 +23,17 @@ describe('ConformanceHttpClientController (HTTP)', () => {
       }),
     };
 
-    testingModule = await Test.createTestingModule({
-      controllers: [ConformanceHttpClientController],
-      providers: [
-        {
-          provide: ConformanceHttpClientService,
-          useValue: mockService,
-        },
-      ],
-    }).compile();
+    testingModule = await withConformanceHarnessGuardStub(
+      Test.createTestingModule({
+        controllers: [ConformanceHttpClientController],
+        providers: [
+          {
+            provide: ConformanceHttpClientService,
+            useValue: mockService,
+          },
+        ],
+      }),
+    ).compile();
 
     testApplication =
       testingModule.createNestApplication<NestFastifyApplication>(

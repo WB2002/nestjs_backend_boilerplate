@@ -25,6 +25,8 @@ The harness is strictly isolated from production environments:
    CONFORMANCE_HARNESS_ENABLED cannot be true when NODE_ENV=production
    ```
 3. **No production bundle leakage:** No production business logic depends on conformance controllers or services.
+4. **Bearer token:** When the harness is enabled, set `CONFORMANCE_HARNESS_TOKEN` (required at boot). Every `/conformance/*` request must include `Authorization: Bearer <token>`.
+5. **Private URL pairing:** Boot fails when `CONFORMANCE_HARNESS_ENABLED=true`, `HTTP_CLIENT_ALLOW_PRIVATE_URLS=true`, and `NODE_ENV` is not `test`.
 
 ---
 

@@ -1,5 +1,5 @@
-import { Controller, Get } from '@nestjs/common';
-import { Public } from '@/common/decorators';
+import { Controller, Get, UseGuards } from '@nestjs/common';
+import { ConformanceHarnessAuthGuard } from './guards/conformance-harness-auth.guard';
 import {
   RateLimit,
   RateLimitAlgorithm,
@@ -15,6 +15,7 @@ export interface ConformanceRateLimitResponse {
   identifierKind: ConformanceRateLimitIdentifierKind;
 }
 
+@UseGuards(ConformanceHarnessAuthGuard)
 @Controller('conformance/rate-limit')
 export class ConformanceRateLimitController {
   @Get('user')
@@ -33,7 +34,6 @@ export class ConformanceRateLimitController {
     return { identifierKind: 'user' };
   }
 
-  @Public()
   @Get('fingerprint')
   @RateLimit({
     algorithm: RateLimitAlgorithm.FixedWindowCounter,
@@ -50,7 +50,6 @@ export class ConformanceRateLimitController {
     return { identifierKind: 'fingerprint' };
   }
 
-  @Public()
   @Get('guest')
   @RateLimit({
     algorithm: RateLimitAlgorithm.FixedWindowCounter,

@@ -98,6 +98,31 @@ describe('HealthController', () => {
       expect(secondCheckResponse).toEqual({ status: 'ok' });
       expect(health.check).toHaveBeenCalledTimes(1);
     });
+
+    it('strips dependency details in production minimal mode', async () => {
+      const productionController = new HealthController(
+        health as unknown as HealthCheckService,
+        mongoose as any,
+        memory as any,
+        disk as any,
+        {} as any,
+        {
+          get: jest.fn((key: string) =>
+            key === 'NODE_ENV' ? 'production' : undefined,
+          ),
+        } as unknown as ConfigService,
+        shutdownState,
+        featureFlagHealth as any,
+      );
+      health.check.mockResolvedValue({
+        status: 'ok',
+        details: { mongo: { status: 'up' } },
+      });
+      await expect(productionController.ready()).resolves.toEqual({
+        status: 'ok',
+        details: {},
+      });
+    });
   });
 
   describe('onModuleDestroy()', () => {

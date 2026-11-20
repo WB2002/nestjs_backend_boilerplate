@@ -1,6 +1,5 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
-import { Public } from '@/common/decorators/public.decorator';
 import { JobEnqueueService } from '@/core/background-jobs';
 import { EXAMPLE_ECHO_JOB_NAME } from './jobs/example-echo.job-handler';
 
@@ -18,7 +17,6 @@ class EnqueueEchoJobDto {
 export class ExampleJobsController {
   constructor(private readonly jobEnqueue: JobEnqueueService) {}
 
-  @Public()
   @Post('echo')
   async enqueueEcho(@Body() body: EnqueueEchoJobDto) {
     return this.jobEnqueue.enqueue({

@@ -5,7 +5,8 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { Test, TestingModule } from '@nestjs/testing';
-import { IS_PUBLIC_KEY } from '@/common/constants';
+import { GUARDS_METADATA } from '@nestjs/common/constants';
+import { ConformanceHarnessAuthGuard } from '../guards/conformance-harness-auth.guard';
 import { RequestDeadlineExceededError } from '@/core/request-deadline';
 import { DeadlineContext } from '@/core/request-deadline/context/deadline.context';
 import {
@@ -13,6 +14,7 @@ import {
   RequestDeadlineStore,
 } from '@/core/request-deadline/types/request-deadline.types';
 import { ConformanceDeadlineController } from '../conformance-deadline.controller';
+import { withConformanceHarnessGuardStub } from './conformance-harness-guard-test.provider';
 
 const noopInternals: RequestDeadlineInternals = {
   clearTimer: () => undefined,
@@ -28,9 +30,11 @@ describe('ConformanceDeadlineController', () => {
   let reflector: Reflector;
 
   beforeEach(async () => {
-    testingModule = await Test.createTestingModule({
-      controllers: [ConformanceDeadlineController],
-    }).compile();
+    testingModule = await withConformanceHarnessGuardStub(
+      Test.createTestingModule({
+        controllers: [ConformanceDeadlineController],
+      }),
+    ).compile();
 
     reflector = new Reflector();
     controller = testingModule.get<ConformanceDeadlineController>(
@@ -57,12 +61,12 @@ describe('ConformanceDeadlineController', () => {
   });
 
   describe('metadata', () => {
-    it('decorates the controller class with @Public()', () => {
-      const isPublic = reflector.get<boolean>(
-        IS_PUBLIC_KEY,
+    it('protects the controller with ConformanceHarnessAuthGuard', () => {
+      const guards = reflector.get<unknown[] | undefined>(
+        GUARDS_METADATA,
         ConformanceDeadlineController,
       );
-      expect(isPublic).toBe(true);
+      expect(guards).toContain(ConformanceHarnessAuthGuard);
     });
   });
 

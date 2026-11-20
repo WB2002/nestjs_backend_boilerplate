@@ -1,5 +1,12 @@
-import { Body, Controller, HttpCode, Logger, Post } from '@nestjs/common';
-import { Public } from '@/common/decorators';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  Logger,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
+import { ConformanceHarnessAuthGuard } from './guards/conformance-harness-auth.guard';
 import { redactForLog, redactOtelAttributes } from '@/core/redaction';
 import { ConformanceRedactionRequestDto } from './dto';
 
@@ -65,7 +72,7 @@ export interface ConformanceRedactionResponse {
   redactedSpanAttributes: ReturnType<typeof redactOtelAttributes>;
 }
 
-@Public()
+@UseGuards(ConformanceHarnessAuthGuard)
 @Controller('conformance/redaction')
 export class ConformanceRedactionController {
   private readonly logger = new Logger(ConformanceRedactionController.name);
