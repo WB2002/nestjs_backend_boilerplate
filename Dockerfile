@@ -1,43 +1,68 @@
-# Stage 1: Build
-FROM node:24-alpine AS builder
+# syntax=docker/dockerfile:1.7
+
+ARG NODE_VERSION=24-alpine
+
+# ------------------------------------------------------------------------------
+# Stage 1: Dependencies & Build
+# ------------------------------------------------------------------------------
+FROM node:${NODE_VERSION} AS builder
+
+# Enable corepack and use the exact pnpm version pinned in package.json
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+ENV HUSKY=0
+ENV CI=true
+
+RUN corepack enable
 
 WORKDIR /app
 
-# Install dependencies (using pnpm as seen in lockfile, but standard npm install works too if pnpm not enforced, 
-# but better to use npm ci if lockfile is present. The user has pnpm-lock.yaml.
-# I will check if pnpm is available or just use npm for simplicity as requested "create a dockerfile". 
-# Usually if pnpm-lock is present, we should use pnpm.
-# However, to avoid complexity if pnpm is not in the base image, I'll install it or just use npm if the user is okay with it.
-# Wait, the user has pnpm-lock.yaml. I should probably use pnpm.
-# Let's check if I can just use npm to keep it simple, or installing pnpm in the container.
-# node:22-alpine comes with corepack enabled often, or I can enable it.
-# Let's try to stick to npm for standard boilerplate unless I see strict pnpm usage.
-# Actually, mixing package managers is bad. I should use pnpm if pnpm-lock.yaml exists.
-# I will enable codecore pack or install pnpm.
-
-RUN corepack enable && corepack prepare pnpm@latest --activate
-
+# Copy dependency manifests first for optimal layer caching
 COPY package.json pnpm-lock.yaml ./
 
-RUN pnpm install --frozen-lockfile
+# Fast, cached dependency installation using BuildKit store cache
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
+    pnpm install --frozen-lockfile
 
+# Copy application source code
 COPY . .
 
+# Compile TypeScript to JavaScript in /app/dist
 RUN pnpm run build
 
-# Stage 2: Production
-FROM node:24-alpine AS production
+# Prune devDependencies in-place without triggering dev lifecycle scripts like husky
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
+    pnpm prune --prod --ignore-scripts
+
+# ------------------------------------------------------------------------------
+# Stage 2: Minimal Production Runtime
+# ------------------------------------------------------------------------------
+FROM node:${NODE_VERSION} AS production
+
+# Install dumb-init for proper PID 1 signal forwarding and zombie process reaping
+RUN apk add --no-cache dumb-init curl && \
+    rm -rf /var/cache/apk/*
 
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# Enable production V8 optimizations and framework caching
+ENV NODE_ENV=production
+ENV PORT=3000
 
-COPY package.json pnpm-lock.yaml ./
+# Copy only the pruned node_modules and compiled dist from builder
+COPY --from=builder --chown=node:node /app/node_modules ./node_modules
+COPY --from=builder --chown=node:node /app/dist ./dist
+COPY --from=builder --chown=node:node /app/package.json ./package.json
 
-RUN pnpm install --prod --frozen-lockfile
-
-COPY --from=builder /app/dist ./dist
+# Run as unprivileged built-in 'node' user (UID 1000)
+USER node
 
 EXPOSE 3000
 
+# Container liveness check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:3000/health/live || exit 1
+
+# dumb-init forwards SIGTERM for graceful connection draining
+ENTRYPOINT ["dumb-init", "--"]
 CMD ["node", "-r", "./dist/instrumentation.js", "dist/main"]
