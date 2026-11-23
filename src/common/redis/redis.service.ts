@@ -12,17 +12,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   constructor(private configService: ConfigService) {}
 
   onModuleInit() {
-    this.client = new Redis({
-      host: this.configService.get<string>('REDIS_HOST', 'localhost'),
-      port: this.configService.get<number>('REDIS_PORT', 6379),
-      maxRetriesPerRequest: 1,
-      enableOfflineQueue: false,
-      connectTimeout: 2_000,
-      retryStrategy: (times: number) => Math.min(times * 200, 2_000),
-    });
-    this.client.on('error', () => {
-      // Suppress unhandled error events when Redis is temporarily unavailable.
-    });
+    this.ensureClient();
   }
 
   async onModuleDestroy(): Promise<void> {
@@ -50,16 +40,34 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   }
 
   getClient(): Redis {
-    if (!this.client) {
-      throw new Error('Redis client is not initialized');
-    }
-    return this.client;
+    return this.ensureClient();
   }
 
   duplicate(overrides?: RedisOptions): Redis {
-    return this.getClient().duplicate({
+    const duplicated = this.getClient().duplicate({
       enableOfflineQueue: false,
       ...overrides,
     });
+    duplicated.on('error', () => {
+      // Suppress unhandled error events when Redis is temporarily unavailable.
+    });
+    return duplicated;
+  }
+
+  private ensureClient(): Redis {
+    if (!this.client) {
+      this.client = new Redis({
+        host: this.configService.get<string>('REDIS_HOST', 'localhost'),
+        port: this.configService.get<number>('REDIS_PORT', 6379),
+        maxRetriesPerRequest: 1,
+        enableOfflineQueue: false,
+        connectTimeout: 2_000,
+        retryStrategy: (times: number) => Math.min(times * 200, 2_000),
+      });
+      this.client.on('error', () => {
+        // Suppress unhandled error events when Redis is temporarily unavailable.
+      });
+    }
+    return this.client;
   }
 }
