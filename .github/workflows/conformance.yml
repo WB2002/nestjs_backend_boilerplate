@@ -44,7 +44,7 @@ jobs:
       - name: Checkout conformance runner
         uses: actions/checkout@v4
         with:
-          repository: ${{ vars.CONFORMANCE_REPO || format('{0}/backend_boilerplate_conformance_tests', github.repository_owner) }}
+          repository: ${{ vars.CONFORMANCE_REPO || format('{0}/backend_security_and_conformance_tests', github.repository_owner) }}
           token: ${{ secrets.CONFORMANCE_REPO_TOKEN || github.token }}
           path: .conformance-runner
 

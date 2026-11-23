@@ -12,6 +12,7 @@ resolve_audit_bin() {
 
   local candidates=(
     "${ROOT_DIR}/.conformance-runner/bin/conformance-audit"
+    "${ROOT_DIR}/../backend_security_and_conformance_tests/bin/conformance-audit"
     "${ROOT_DIR}/../backend_boilerplate_conformance_tests/bin/conformance-audit"
   )
   for candidate in "${candidates[@]}"; do
@@ -28,6 +29,7 @@ resolve_audit_bin() {
 
   local src_dirs=(
     "${ROOT_DIR}/.conformance-runner"
+    "${ROOT_DIR}/../backend_security_and_conformance_tests"
     "${ROOT_DIR}/../backend_boilerplate_conformance_tests"
   )
   if command -v go >/dev/null 2>&1; then
