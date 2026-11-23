@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+import { TerminusModule } from '@nestjs/terminus';
 import { RedisModule } from '@/common/redis/redis.module';
 import { FeatureFlagAuditService } from './feature-flag.audit.service';
 import { FeatureFlagController } from './feature-flag.controller';
@@ -15,6 +16,7 @@ import { FeatureFlagAudit, FeatureFlagAuditSchema } from './schemas';
 @Module({
   imports: [
     RedisModule,
+    TerminusModule,
     MongooseModule.forFeature([
       { name: FeatureFlagAudit.name, schema: FeatureFlagAuditSchema },
     ]),
