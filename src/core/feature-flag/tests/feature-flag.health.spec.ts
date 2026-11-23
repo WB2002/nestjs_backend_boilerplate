@@ -1,8 +1,35 @@
-import { FeatureFlagHealthIndicator } from '../feature-flag.health';
-import { FeatureFlagService } from '../feature-flag.service';
+import { ConfigModule } from '@nestjs/config';
+import { getModelToken } from '@nestjs/mongoose';
+import { Test } from '@nestjs/testing';
 import { HealthIndicatorService } from '@nestjs/terminus';
+import { RedisService } from '@/common/redis/redis.service';
+import { FeatureFlagHealthIndicator } from '../feature-flag.health';
+import { FeatureFlagModule } from '../feature-flag.module';
+import { FeatureFlagService } from '../feature-flag.service';
+import { FeatureFlagAudit } from '../schemas';
 
 describe('FeatureFlagHealthIndicator', () => {
+  it('resolves FeatureFlagHealthIndicator via FeatureFlagModule DI container', async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [
+        ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true }),
+        FeatureFlagModule,
+      ],
+    })
+      .overrideProvider(getModelToken(FeatureFlagAudit.name))
+      .useValue({ create: jest.fn() })
+      .overrideProvider(RedisService)
+      .useValue({
+        getClient: jest.fn(),
+        createSubscriber: jest.fn(),
+      })
+      .compile();
+
+    const indicator = moduleRef.get(FeatureFlagHealthIndicator);
+    expect(indicator).toBeInstanceOf(FeatureFlagHealthIndicator);
+    await moduleRef.close();
+  });
+
   it('isHealthy always reports up with feature-flag metadata', async () => {
     const status = {
       stale: false,
