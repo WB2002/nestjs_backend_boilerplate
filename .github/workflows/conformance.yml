@@ -54,7 +54,10 @@ jobs:
           go-version: '1.23'
 
       - name: Build conformance-audit
-        run: cd .conformance-runner && go build -o bin/conformance-audit ./cmd/conformance-audit
+        run: |
+          cd .conformance-runner && go build -o "${RUNNER_TEMP}/conformance-audit" ./cmd/conformance-audit
+          cd "${GITHUB_WORKSPACE}" && rm -rf .conformance-runner
+          echo "CONFORMANCE_AUDIT_BIN=${RUNNER_TEMP}/conformance-audit" >> "${GITHUB_ENV}"
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -70,14 +73,18 @@ jobs:
 
       - name: Run PR/Push Conformance Gate
         if: github.event_name != 'schedule'
+        env:
+          SKIP_APP_BUILD: 'true'
         run: ./scripts/ci/run-conformance-audit.sh --stages sast,graph,pentest,load --profile baseline --output reports
 
       - name: Run Nightly Full Soak & DAST Audit
         if: github.event_name == 'schedule'
+        env:
+          SKIP_APP_BUILD: 'true'
         run: ./scripts/ci/run-conformance-audit.sh --stages all --profile soak --output reports
 
       - name: Upload SARIF to GitHub Security
-        if: always()
+        if: always() && hashFiles('reports/nestjs-backend-boilerplate/results.sarif') != ''
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: reports/nestjs-backend-boilerplate/results.sarif

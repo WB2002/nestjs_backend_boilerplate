@@ -108,12 +108,14 @@ export COOKIE_SECRET="${COOKIE_SECRET:-conformance-cookie-secret-32-chars-min}"
 export ACCESS_TOKEN_TTL=900
 export SESSION_TTL=604800
 export CONFORMANCE_HARNESS_TOKEN="${CONFORMANCE_HARNESS_TOKEN:-conformance-harness-secret-token}"
-export GEOIP_DATABASE_PATH="${GEOIP_DATABASE_PATH:-${ROOT_DIR}/test/fixtures/geoip/placeholder.mmdb}"
 export OTEL_ENABLED=false
 export BACKGROUND_JOBS_ENABLED=false
 export BACKGROUND_WORKER_ENABLED=false
+export INBOUND_MAX_IN_FLIGHT="${INBOUND_MAX_IN_FLIGHT:-16}"
+export INBOUND_LOAD_LEVEL_MAX_QUEUE="${INBOUND_LOAD_LEVEL_MAX_QUEUE:-16}"
+export INBOUND_LOAD_LEVEL_MAX_WAIT_MS="${INBOUND_LOAD_LEVEL_MAX_WAIT_MS:-5000}"
 
-TMP_KEY_DIR=""
+TMP_RUNTIME_DIR=""
 APP_PID=""
 
 cleanup() {
@@ -121,23 +123,59 @@ cleanup() {
     kill "${APP_PID}" 2>/dev/null || true
     wait "${APP_PID}" 2>/dev/null || true
   fi
-  if [[ -n "${TMP_KEY_DIR}" && -d "${TMP_KEY_DIR}" ]]; then
-    rm -rf "${TMP_KEY_DIR}"
+  if [[ -n "${TMP_RUNTIME_DIR}" && -d "${TMP_RUNTIME_DIR}" ]]; then
+    rm -rf "${TMP_RUNTIME_DIR}"
   fi
 }
 trap cleanup EXIT
 
-if [[ -z "${JWT_PRIVATE_KEY:-}" || -z "${JWT_PUBLIC_KEY:-}" ]]; then
-  TMP_KEY_DIR="$(mktemp -d)"
-  openssl genrsa -out "${TMP_KEY_DIR}/private.pem" 2048 >/dev/null 2>&1
-  openssl rsa -in "${TMP_KEY_DIR}/private.pem" -pubout -out "${TMP_KEY_DIR}/public.pem" >/dev/null 2>&1
-  export JWT_PRIVATE_KEY
-  export JWT_PUBLIC_KEY
-  JWT_PRIVATE_KEY="$(cat "${TMP_KEY_DIR}/private.pem")"
-  JWT_PUBLIC_KEY="$(cat "${TMP_KEY_DIR}/public.pem")"
+ensure_tmp_runtime_dir() {
+  if [[ -z "${TMP_RUNTIME_DIR}" ]]; then
+    TMP_RUNTIME_DIR="$(mktemp -d)"
+  fi
+}
+
+if [[ -z "${GEOIP_DATABASE_PATH:-}" ]]; then
+  ensure_tmp_runtime_dir
+  export GEOIP_DATABASE_PATH="${TMP_RUNTIME_DIR}/conformance.mmdb"
+  node -e '
+    const fs = require("fs");
+    function encStr(s) { const b = Buffer.from(s, "utf8"); return Buffer.concat([Buffer.from([(2 << 5) | b.length]), b]); }
+    function encUint16(v) {
+      if (v === 0) return Buffer.from([5 << 5]);
+      const buf = Buffer.alloc(v <= 255 ? 2 : 3);
+      buf[0] = (5 << 5) | (v <= 255 ? 1 : 2);
+      if (v <= 255) buf[1] = v; else buf.writeUInt16BE(v, 1);
+      return buf;
+    }
+    const tree = Buffer.from([0,0,1, 0,0,1]);
+    const sep = Buffer.alloc(16, 0);
+    const marker = Buffer.from("\xab\xcd\xefMaxMind.com", "latin1");
+    const meta = Buffer.concat([
+      Buffer.from([(7 << 5) | 7]),
+      encStr("binary_format_major_version"), encUint16(2),
+      encStr("binary_format_minor_version"), encUint16(0),
+      encStr("build_epoch"), Buffer.from([0x00, 0x02]),
+      encStr("database_type"), encStr("GeoLite2-Country"),
+      encStr("ip_version"), encUint16(4),
+      encStr("node_count"), Buffer.from([(6 << 5) | 1, 1]),
+      encStr("record_size"), encUint16(24),
+    ]);
+    fs.writeFileSync(process.argv[1], Buffer.concat([tree, sep, marker, meta]));
+  ' "${GEOIP_DATABASE_PATH}"
 fi
 
-if [[ ! -f "${ROOT_DIR}/dist/main.js" ]]; then
+if [[ -z "${JWT_PRIVATE_KEY:-}" || -z "${JWT_PUBLIC_KEY:-}" ]]; then
+  ensure_tmp_runtime_dir
+  openssl genrsa -out "${TMP_RUNTIME_DIR}/private.pem" 2048 >/dev/null 2>&1
+  openssl rsa -in "${TMP_RUNTIME_DIR}/private.pem" -pubout -out "${TMP_RUNTIME_DIR}/public.pem" >/dev/null 2>&1
+  export JWT_PRIVATE_KEY
+  export JWT_PUBLIC_KEY
+  JWT_PRIVATE_KEY="$(cat "${TMP_RUNTIME_DIR}/private.pem")"
+  JWT_PUBLIC_KEY="$(cat "${TMP_RUNTIME_DIR}/public.pem")"
+fi
+
+if [[ "${SKIP_APP_BUILD:-false}" != "true" ]]; then
   pnpm build
 fi
 
