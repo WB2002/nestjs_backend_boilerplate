@@ -50,7 +50,7 @@ export class RedisIoAdapter extends IoAdapter {
                     ? req.headers.authorization
                     : undefined,
               },
-              query,
+              ...(query ? { query } : {}),
             },
             { allowQueryToken: this.wsConfig.allowQueryToken },
           );

@@ -38,6 +38,7 @@ export function assertProductionAllowedOrigins(
   }
 }
 
+// eslint-disable-next-line sonarjs/function-return-type -- @fastify/cors origin requires true (reflect) or string[] allowlist
 export function toFastifyCorsOrigin(
   resolveResult: CorsOriginsResolveResult,
 ): true | string[] {
