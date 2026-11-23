@@ -5,6 +5,7 @@ const mutateFiles = process.env.MUTATE_FILES
 
 export default {
   packageManager: 'pnpm',
+  ignorePatterns: ['.agents'],
   plugins: ['@stryker-mutator/jest-runner'],
   testRunner: 'jest',
   jest: {
