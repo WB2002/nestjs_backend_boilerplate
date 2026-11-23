@@ -1,0 +1,97 @@
+name: Polyglot Conformance Audit
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  conformance:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+
+    services:
+      mongo:
+        image: mongo:8.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval \"db.adminCommand('ping')\""
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Checkout conformance runner
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.CONFORMANCE_REPO || format('{0}/backend_boilerplate_conformance_tests', github.repository_owner) }}
+          token: ${{ secrets.CONFORMANCE_REPO_TOKEN || github.token }}
+          path: .conformance-runner
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+
+      - name: Build conformance-audit
+        run: |
+          cd .conformance-runner && go build -o "${RUNNER_TEMP}/conformance-audit" ./cmd/conformance-audit
+          cd "${GITHUB_WORKSPACE}" && rm -rf .conformance-runner
+          echo "CONFORMANCE_AUDIT_BIN=${RUNNER_TEMP}/conformance-audit" >> "${GITHUB_ENV}"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies and build
+        run: pnpm install --frozen-lockfile && pnpm build
+
+      - name: Run PR/Push Conformance Gate
+        if: github.event_name != 'schedule'
+        env:
+          SKIP_APP_BUILD: 'true'
+        run: ./scripts/ci/run-conformance-audit.sh --stages sast,graph,pentest,load --profile baseline --output reports
+
+      - name: Run Nightly Full Soak & DAST Audit
+        if: github.event_name == 'schedule'
+        env:
+          SKIP_APP_BUILD: 'true'
+        run: ./scripts/ci/run-conformance-audit.sh --stages all --profile soak --output reports
+
+      - name: Upload SARIF to GitHub Security
+        if: always() && hashFiles('reports/nestjs-backend-boilerplate/results.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: reports/nestjs-backend-boilerplate/results.sarif
+
+      - name: Upload 4-part Conformance Bundle
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: conformance-report
+          path: reports/nestjs-backend-boilerplate/

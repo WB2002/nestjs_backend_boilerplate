@@ -34,7 +34,9 @@
     "quality:contract:update-snapshot": "./scripts/ci/merge-graphql-sdl.sh > test/contracts/graphql/schema.snapshot.graphql",
     "quality:osv": "./scripts/ci/run-osv-scanner.sh",
     "quality:supply-chain": "pnpm install --frozen-lockfile && ./scripts/ci/run-pnpm-audit.sh && ./scripts/ci/run-osv-scanner.sh && ./scripts/ci/run-trivy.sh && ./scripts/ci/run-trivy-app-secrets.sh",
-    "quality:supply-chain:check": "./scripts/ci/run-pnpm-audit.sh && ./scripts/ci/run-osv-scanner.sh"
+    "quality:supply-chain:check": "./scripts/ci/run-pnpm-audit.sh && ./scripts/ci/run-osv-scanner.sh",
+    "quality:conformance:static": "./scripts/ci/run-conformance-audit.sh --stages sast,graph",
+    "quality:conformance": "./scripts/ci/run-conformance-audit.sh --stages sast,graph,pentest,load --profile baseline"
   },
   "dependencies": {
     "@apollo/server": "^5.5.0",

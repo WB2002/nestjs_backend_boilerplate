@@ -8,6 +8,12 @@ description = "Placeholders and test fixtures that are not real secrets"
 paths = [
   '''\.env\.example$''',
   '''.*\.spec\.ts$''',
+  '''(^|/)node_modules/''',
+  '''(^|/)dist/''',
+  '''(^|/)\.worktrees/''',
+  '''(^|/)\.tsd-emit/''',
+  '''(^|/)coverage/''',
+  '''(^|/)\.conformance-runner/''',
 ]
 regexes = [
   '''your-random-secret''',

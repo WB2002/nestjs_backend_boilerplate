@@ -1,3 +1,4 @@
+import { ConflictException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Model } from 'mongoose';
@@ -23,8 +24,10 @@ describe('AuthService with PasswordHashBulkhead', () => {
   let configService: Partial<ConfigService>;
   let redisService: Partial<RedisService>;
   let bulkhead: PasswordHashBulkhead;
+  let saveMock: jest.Mock;
 
   beforeEach(() => {
+    saveMock = jest.fn();
     userModel = {
       findOne: jest.fn().mockReturnValue({
         exec: jest.fn().mockResolvedValue(null),
@@ -50,8 +53,9 @@ describe('AuthService with PasswordHashBulkhead', () => {
       this: unknown,
       doc: Record<string, unknown>,
     ) {
+      saveMock.mockResolvedValueOnce(doc);
       Object.assign(this as object, doc, {
-        save: jest.fn().mockResolvedValue(doc),
+        save: saveMock,
       });
     } as unknown as Model<User>;
     UserModelConstructor.findOne = (
@@ -133,5 +137,19 @@ describe('AuthService with PasswordHashBulkhead', () => {
         password: 'password123',
       }),
     ).rejects.toThrow(OverloadRejectedError);
+  });
+
+  it('translates concurrent MongoDB E11000 duplicate key error on save into ConflictException', async () => {
+    saveMock.mockReset();
+    saveMock.mockRejectedValueOnce(
+      Object.assign(new Error('E11000 duplicate key error'), { code: 11000 }),
+    );
+
+    await expect(
+      authService.register({
+        email: 'race@example.com',
+        password: 'Password123!',
+      }),
+    ).rejects.toThrow(ConflictException);
   });
 });

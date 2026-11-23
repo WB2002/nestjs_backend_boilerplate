@@ -55,7 +55,19 @@ export class AuthService {
       role: this.resolveRoleForEmail(email),
     });
 
-    await newUser.save();
+    try {
+      await newUser.save();
+    } catch (error: unknown) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        (error as { code?: unknown }).code === 11000
+      ) {
+        throw new ConflictException('Email already in use');
+      }
+      throw error;
+    }
   }
 
   async validateUser(

@@ -1,0 +1,42 @@
+{
+  "name": "nestjs-backend-boilerplate",
+  "language": "typescript",
+  "capabilities": {
+    "health": {
+      "method": "GET",
+      "path": "/health/live"
+    },
+    "auth": {
+      "register": {
+        "method": "POST",
+        "path": "/auth/register",
+        "emailField": "email",
+        "passwordField": "password"
+      },
+      "login": {
+        "method": "POST",
+        "path": "/auth/login",
+        "emailField": "email",
+        "passwordField": "password",
+        "tokenPath": "accessToken",
+        "refreshPath": "sessionId"
+      },
+      "me": {
+        "method": "GET",
+        "path": "/"
+      },
+      "refresh": {
+        "method": "POST",
+        "path": "/auth/refresh"
+      }
+    },
+    "rbac": {
+      "adminMethod": "GET",
+      "adminPath": "/feature-flags"
+    },
+    "websockets": {
+      "enabled": true,
+      "path": "/socket.io/?EIO=4&transport=websocket"
+    }
+  }
+}
