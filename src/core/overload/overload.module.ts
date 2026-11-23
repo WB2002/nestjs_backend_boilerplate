@@ -39,6 +39,9 @@ export class OverloadModule {
         InboundPriorityBulkheadGuard,
       ],
       exports: [
+        INBOUND_BULKHEAD_OPTIONS,
+        INBOUND_LOAD_LEVEL_OPTIONS,
+        PRIORITY_SHEDDING_OPTIONS,
         InboundBulkheadService,
         InboundBulkheadMiddleware,
         InboundPriorityBulkheadGuard,

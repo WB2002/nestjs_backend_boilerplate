@@ -103,6 +103,7 @@ const repositoryProvider: Provider = {
     ClientIpService,
     GEO_LOCATION_SERVICE,
     COUNTRY_ACCESS_REPOSITORY,
+    CountryAccessTelemetry,
     CountryAccessGuard,
   ],
 })

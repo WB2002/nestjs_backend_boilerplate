@@ -8,7 +8,7 @@ import {
   OnModuleDestroy,
   Provider,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
 import {
   CACHE_BACKEND,
@@ -60,6 +60,7 @@ export class CacheModule {
 
     return {
       module: CacheModule,
+      imports: [ConfigModule],
       providers: [
         {
           provide: CACHE_OPTIONS,
@@ -100,7 +101,7 @@ export class CacheModule {
 
     return {
       module: CacheModule,
-      imports: [...(options.imports ?? [])],
+      imports: [ConfigModule, ...(options.imports ?? [])],
       providers: [
         optionsProvider,
         this.createBackendProvider(),

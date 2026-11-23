@@ -8,7 +8,7 @@ import {
   OnModuleDestroy,
   Provider,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import Redis from 'ioredis';
 import {
@@ -66,6 +66,7 @@ export class RateLimiterModule {
     return {
       module: RateLimiterModule,
       imports: [
+        ConfigModule,
         // ThrottlerModule is a DI shim so RateLimitGuard can extend ThrottlerGuard.
         ThrottlerModule.forRoot([
           {
@@ -123,6 +124,7 @@ export class RateLimiterModule {
     return {
       module: RateLimiterModule,
       imports: [
+        ConfigModule,
         ...(options.imports ?? []),
         ThrottlerModule.forRoot([
           {
