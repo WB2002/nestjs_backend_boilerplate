@@ -73,3 +73,6 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 # Cursor AI-SDLC local guardrail markers (see docs/ai-sdlc.md)
 .cursor/.fix-mode
 .cursor/.guardrails-edit
+
+# Conformance runner checkout
+.conformance-runner/
