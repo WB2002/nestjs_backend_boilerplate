@@ -14,6 +14,7 @@ jobs:
   conformance:
     runs-on: ubuntu-latest
     permissions:
+      actions: read
       contents: read
       security-events: write
 
@@ -88,7 +89,8 @@ jobs:
         run: ./scripts/ci/run-conformance-audit.sh --stages all --profile soak --output reports
 
       - name: Upload SARIF to GitHub Security
-        if: always() && hashFiles('reports/nestjs-backend-boilerplate/results.sarif') != ''
+        # SARIF upload needs Settings -> Security -> Code scanning enabled on the repo (matches codeql.yml).
+        if: always() && vars.CODEQL_UPLOAD == 'true' && hashFiles('reports/nestjs-backend-boilerplate/results.sarif') != ''
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: reports/nestjs-backend-boilerplate/results.sarif
