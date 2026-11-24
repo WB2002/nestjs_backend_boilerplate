@@ -38,6 +38,15 @@ export class DeadlineContext {
     return key ? this.internalsBySignal.get(key) : undefined;
   }
 
+  /**
+   * Package-internal: remove WeakMap ephemeron entry immediately on request finish
+   * so the value→controller→signal cycle is reclaimed in V8 New Space instead of
+   * being promoted to Old Space until a Major GC.
+   */
+  static deleteInternals(signal: AbortSignal): void {
+    this.internalsBySignal.delete(signal);
+  }
+
   static setReason(reason: NonNullable<RequestDeadlineStore['reason']>): void {
     const store = this.storage.getStore();
     if (store) {

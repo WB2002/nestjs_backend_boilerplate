@@ -91,7 +91,13 @@ export class AuthService {
         argon2.verify(user.passwordHash, pass),
       );
       if (isValid) {
-        const plain = user.toObject() as unknown as Record<string, unknown>;
+        const plain = user.toObject({ virtuals: true }) as unknown as Record<
+          string,
+          unknown
+        >;
+        if (!plain.id && plain._id != null) {
+          plain.id = String(plain._id);
+        }
         delete plain.passwordHash;
         return plain;
       }

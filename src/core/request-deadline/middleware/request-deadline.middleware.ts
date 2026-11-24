@@ -1,4 +1,5 @@
 import { Injectable, NestMiddleware, Inject, Optional } from '@nestjs/common';
+import { isHealthProbePath } from '@/common/http/health-probe-paths';
 import {
   DEFAULT_REQUEST_DEADLINE_OPTIONS,
   REQUEST_DEADLINE_OPTIONS,
@@ -27,8 +28,12 @@ type EventEmitterLike = {
 };
 
 interface DeadlineRequest extends EventEmitterLike {
+  url?: string;
   headers?: HeaderBag;
-  raw?: EventEmitterLike;
+  complete?: boolean;
+  raw?: EventEmitterLike & {
+    complete?: boolean;
+  };
 }
 
 interface DeadlineResponse extends EventEmitterLike {
@@ -79,6 +84,11 @@ export class RequestDeadlineMiddleware implements NestMiddleware {
     res: DeadlineResponse,
     next: (error?: Error) => void,
   ): void {
+    if (typeof req.url === 'string' && isHealthProbePath(req.url)) {
+      next();
+      return;
+    }
+
     const controller = new AbortController();
     let timer: ReturnType<typeof setTimeout> | undefined;
     let hasRequestFinished = false;
@@ -161,18 +171,31 @@ export class RequestDeadlineMiddleware implements NestMiddleware {
     const isResponseEnded = (): boolean =>
       Boolean(res.raw?.writableEnded ?? res.writableEnded);
 
+    const isRequestComplete = (): boolean =>
+      Boolean(req.raw?.complete ?? req.complete);
+
     const cleanupListeners = (): void => {
-      detachListener(reqEmitter, 'close', onClientClose);
-      detachListener(reqEmitter, 'aborted', onClientClose);
+      detachListener(reqEmitter, 'close', onRequestClose);
+      detachListener(reqEmitter, 'aborted', onRequestAborted);
       detachListener(resEmitter, 'finish', onFinish);
       detachListener(resEmitter, 'close', onResponseClose);
+      DeadlineContext.deleteInternals(store.signal);
     };
 
-    const onClientClose = (): void => {
-      if (hasRequestFinished) {
+    const onRequestAborted = (): void => {
+      if (hasRequestFinished || isResponseEnded()) {
         return;
       }
-      if (isResponseEnded()) {
+      hasRequestFinished = true;
+      abort('client_disconnected');
+      cleanupListeners();
+    };
+
+    // In Node 16+, IncomingMessage emits 'close' once the request body finishes
+    // being read (complete === true). Only treat it as a client disconnect when
+    // the body was not completely received.
+    const onRequestClose = (): void => {
+      if (hasRequestFinished || isResponseEnded() || isRequestComplete()) {
         return;
       }
       hasRequestFinished = true;
@@ -202,8 +225,8 @@ export class RequestDeadlineMiddleware implements NestMiddleware {
       cleanupListeners();
     };
 
-    reqEmitter.on?.('close', onClientClose);
-    reqEmitter.on?.('aborted', onClientClose);
+    reqEmitter.on?.('close', onRequestClose);
+    reqEmitter.on?.('aborted', onRequestAborted);
     resEmitter.on?.('finish', onFinish);
     resEmitter.on?.('close', onResponseClose);
 

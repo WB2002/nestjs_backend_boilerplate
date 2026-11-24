@@ -116,6 +116,17 @@ describe('CountryAccessService', () => {
     expect(service.getSnapshotVersion()).toBe(2);
   });
 
+  it('suppresses redundant refreshSuccess telemetry when snapshot is unchanged', async () => {
+    repository.getAll.mockResolvedValue([createConfig('US', true)]);
+    await service.onApplicationBootstrap();
+    expect(telemetry.refreshSuccess).toHaveBeenCalledTimes(1);
+
+    await service.refreshSnapshot();
+    expect(telemetry.refreshSuccess).toHaveBeenCalledTimes(1);
+    expect(service.getSnapshotVersion()).toBe(1);
+    expect(service.getLastSuccessfulRefreshAt()).not.toBeNull();
+  });
+
   it('retains the previous snapshot when refresh fails', async () => {
     repository.getAll
       .mockResolvedValueOnce([createConfig('US', true)])

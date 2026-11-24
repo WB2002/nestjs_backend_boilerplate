@@ -8,12 +8,15 @@ import { IRequest, IResponse } from '@/types';
 @Injectable()
 export class LoggerMiddleware implements NestMiddleware {
   use(req: IRequest, res: IResponse, next: (error?: Error) => void) {
+    const url = typeof req.url === 'string' ? req.url : '';
+    if (isTraceExemptPath(url)) {
+      next();
+      return;
+    }
+
     const requestId = (req.headers['x-request-id'] as string) || uuidv4();
     const userId = req.user?.id || 'anonymous';
-    const url = typeof req.url === 'string' ? req.url : '';
-    const spanContext = !isTraceExemptPath(url)
-      ? trace.getActiveSpan()?.spanContext()
-      : undefined;
+    const spanContext = trace.getActiveSpan()?.spanContext();
 
     LoggerContext.run(
       {

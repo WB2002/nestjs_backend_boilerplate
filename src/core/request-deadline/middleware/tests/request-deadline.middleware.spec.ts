@@ -109,6 +109,23 @@ describe('RequestDeadlineMiddleware', () => {
     expect(signal!.aborted).toBe(true);
   });
 
+  it('does not abort when req emits close after body read completes (Node 16+ behavior)', () => {
+    const mw = new RequestDeadlineMiddleware({
+      defaultTimeoutMs: 60_000,
+      maxTimeoutMs: 120_000,
+    });
+    const { req, res, closeListeners } = createReqRes();
+    let signal: AbortSignal | undefined;
+
+    mw.use({ ...req, raw: { ...req.raw, complete: true } }, res, () => {
+      signal = getRequestSignal();
+    });
+
+    expect(closeListeners).toHaveLength(1);
+    closeListeners[0]!();
+    expect(signal!.aborted).toBe(false);
+  });
+
   it('cleans up timer on response finish', () => {
     const mw = new RequestDeadlineMiddleware({
       defaultTimeoutMs: 1000,
@@ -124,6 +141,28 @@ describe('RequestDeadlineMiddleware', () => {
     finishListeners[0]!();
     jest.advanceTimersByTime(5000);
     expect(signal!.aborted).toBe(false);
+    expect(DeadlineContext.getInternals(signal)).toBeUndefined();
+  });
+
+  it('bypasses deadline allocation for health probe paths', () => {
+    const mw = new RequestDeadlineMiddleware({
+      defaultTimeoutMs: 1000,
+      maxTimeoutMs: 5000,
+    });
+    const { req, res, closeListeners, finishListeners } = createReqRes();
+    let signal: AbortSignal | undefined;
+    let hasCalledNext = false;
+
+    mw.use({ ...req, url: '/health/live' }, res, () => {
+      hasCalledNext = true;
+      signal = getRequestSignal();
+    });
+
+    expect(hasCalledNext).toBe(true);
+    expect(signal).toBeUndefined();
+    expect(closeListeners).toHaveLength(0);
+    expect(finishListeners).toHaveLength(0);
+    expect(res.headers['x-request-deadline']).toBeUndefined();
   });
 
   it('sets x-request-deadline response header', () => {

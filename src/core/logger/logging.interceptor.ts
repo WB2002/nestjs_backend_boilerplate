@@ -8,6 +8,7 @@ import {
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { IRequest, IResponse } from '@/types';
+import { isHealthProbePath } from '@/common/http/health-probe-paths';
 import { redactUrl } from '@/core/redaction';
 import { parseLogRedactionConfig } from '@/core/redaction/parse-log-redaction-config';
 
@@ -24,8 +25,12 @@ export class LoggingInterceptor implements NestInterceptor {
 
     const ctx = context.switchToHttp();
     const req = ctx.getRequest<IRequest>();
-    const res = ctx.getResponse<IResponse>();
     const { method, url } = req;
+    if (typeof url === 'string' && isHealthProbePath(url)) {
+      return next.handle();
+    }
+
+    const res = ctx.getResponse<IResponse>();
     const now = Date.now();
 
     return next.handle().pipe(

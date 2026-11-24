@@ -65,11 +65,12 @@ export class AuthController {
       req.ip,
     );
 
-    const accessTokenTtl = this.configService.get<number>(
-      'ACCESS_TOKEN_TTL',
-      900,
+    const accessTokenTtl = Number(
+      this.configService.get<number | string>('ACCESS_TOKEN_TTL', 900),
     );
-    const sessionTtl = this.configService.get<number>('SESSION_TTL', 604800);
+    const sessionTtl = Number(
+      this.configService.get<number | string>('SESSION_TTL', 604800),
+    );
 
     res.setCookie(
       ACCESS_TOKEN_COOKIE,
@@ -105,11 +106,12 @@ export class AuthController {
     const { accessToken, sessionId } =
       await this.authService.refreshSession(incomingSessionId);
 
-    const accessTokenTtl = this.configService.get<number>(
-      'ACCESS_TOKEN_TTL',
-      900,
+    const accessTokenTtl = Number(
+      this.configService.get<number | string>('ACCESS_TOKEN_TTL', 900),
     );
-    const sessionTtl = this.configService.get<number>('SESSION_TTL', 604800);
+    const sessionTtl = Number(
+      this.configService.get<number | string>('SESSION_TTL', 604800),
+    );
 
     res.setCookie(
       ACCESS_TOKEN_COOKIE,

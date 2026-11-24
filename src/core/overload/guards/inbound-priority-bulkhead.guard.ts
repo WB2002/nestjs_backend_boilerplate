@@ -98,6 +98,8 @@ export class InboundPriorityBulkheadGuard implements CanActivate {
         return;
       }
       hasReleased = true;
+      raw.off?.('finish', releaseOnce);
+      raw.off?.('close', releaseOnce);
       this.bulkhead.release();
     };
     raw.once('finish', releaseOnce);

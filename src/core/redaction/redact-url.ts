@@ -4,6 +4,9 @@ import { isSensitiveQueryKey } from './sensitive-keys';
 const REDACT_RELATIVE_URL_BASE = 'https://redact.invalid';
 
 export function redactUrl(url: string): string {
+  if (!url.includes('?') && !url.includes('@') && url.startsWith('/')) {
+    return url;
+  }
   try {
     const parsed = /^https?:\/\//i.test(url)
       ? new URL(url)

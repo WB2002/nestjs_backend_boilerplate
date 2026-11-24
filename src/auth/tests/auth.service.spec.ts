@@ -150,6 +150,30 @@ describe('AuthService with PasswordHashBulkhead', () => {
     expect(user).toEqual({ id: '1', email: 'test@example.com' });
   });
 
+  it('populates id from _id when Mongoose toObject returns only _id', async () => {
+    userModel.findOne = jest.fn().mockReturnValue({
+      exec: jest.fn().mockResolvedValue({
+        isActive: true,
+        passwordHash: 'hashed',
+        toObject: () => ({
+          _id: '507f1f77bcf86cd799439011',
+          email: 'test@example.com',
+          passwordHash: 'hashed',
+        }),
+      }),
+    });
+
+    const user = await authService.validateUser(
+      'test@example.com',
+      'password123',
+    );
+
+    expect(user).toMatchObject({
+      id: '507f1f77bcf86cd799439011',
+      email: 'test@example.com',
+    });
+  });
+
   it('propagates OverloadRejectedError when bulkhead capacity is exceeded', async () => {
     jest
       .spyOn(bulkhead, 'run')

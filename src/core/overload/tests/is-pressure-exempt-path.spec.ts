@@ -15,6 +15,7 @@ describe('normalizeRequestPath', () => {
 describe('isPressureExemptPath', () => {
   it('exempts Terminus probe paths', () => {
     expect(isPressureExemptPath('/health')).toBe(true);
+    expect(isPressureExemptPath('/health/live')).toBe(true);
     expect(isPressureExemptPath('/health/ready')).toBe(true);
     expect(isPressureExemptPath('/health/ready?x=1')).toBe(true);
   });

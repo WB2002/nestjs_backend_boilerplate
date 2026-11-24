@@ -30,4 +30,28 @@ describe('LoggingInterceptor', () => {
 
     interceptor.intercept(ctx, next).subscribe();
   });
+
+  it('skips logging for health probe paths', (done) => {
+    const interceptor = new LoggingInterceptor();
+    const logSpy = jest.spyOn(interceptor['logger'], 'log');
+
+    const req = { method: 'GET', url: '/health/live' };
+    const res = { statusCode: 200 };
+    const ctx = {
+      getType: () => 'http',
+      switchToHttp: () => ({
+        getRequest: () => req,
+        getResponse: () => res,
+      }),
+    } as unknown as ExecutionContext;
+    const next: CallHandler = { handle: () => of({ status: 'ok' }) };
+
+    interceptor.intercept(ctx, next).subscribe({
+      complete: () => {
+        expect(logSpy).not.toHaveBeenCalled();
+        logSpy.mockRestore();
+        done();
+      },
+    });
+  });
 });

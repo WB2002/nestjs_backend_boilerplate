@@ -7,7 +7,7 @@ export const getAccessTokenCookieOptions = (
   secure: process.env.NODE_ENV === 'production',
   sameSite: 'strict',
   path: '/',
-  maxAge: ttl,
+  maxAge: Number(ttl),
 });
 
 export const getSessionIdCookieOptions = (
@@ -17,7 +17,7 @@ export const getSessionIdCookieOptions = (
   secure: process.env.NODE_ENV === 'production',
   sameSite: 'strict',
   path: '/auth/refresh',
-  maxAge: ttl,
+  maxAge: Number(ttl),
 });
 
 export const getCsrfTokenCookieOptions = (): CookieSerializeOptions => ({

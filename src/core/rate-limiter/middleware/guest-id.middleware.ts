@@ -15,6 +15,7 @@ import {
   RATE_LIMIT_OPTIONS,
 } from '../constants/rate-limit.constants';
 import { RateLimiterModuleOptions } from '../types/rate-limit.types';
+import { isHealthProbePath } from '@/common/http/health-probe-paths';
 import { mergeCookieRecord, readCookieField } from '@/common/utils';
 
 /**
@@ -39,6 +40,9 @@ export class GuestIdMiddleware implements NestMiddleware, OnModuleInit {
     const instance =
       this.httpAdapterHost.httpAdapter.getInstance() as FastifyInstance;
     instance.addHook('onRequest', async (req, reply) => {
+      if (typeof req.url === 'string' && isHealthProbePath(req.url)) {
+        return;
+      }
       this.ensureGuestId(req, reply);
     });
     this.isHookRegistered = true;

@@ -22,23 +22,27 @@ export function createRedactionFormat(config: LogRedactionConfig) {
     if (typeof info.stack === 'string') {
       info.stack = redactLogMessage(info.stack);
     }
-    const entries = Object.entries(info);
-    let hasCustomKeys = false;
-    for (const [key] of entries) {
-      if (!WINSTON_RESERVED.has(key)) {
-        hasCustomKeys = true;
-        break;
+    let redactedEntries: Array<[string, unknown]> | undefined;
+    for (const [key, value] of Object.entries(info)) {
+      if (WINSTON_RESERVED.has(key)) {
+        continue;
+      }
+      if (
+        (key === 'context' || key === 'method') &&
+        typeof value === 'string'
+      ) {
+        continue;
+      }
+      const nextValue = redactForLog(value);
+      if (nextValue !== value) {
+        redactedEntries ??= [];
+        redactedEntries.push([key, nextValue]);
       }
     }
-    if (!hasCustomKeys) {
+    if (!redactedEntries) {
       return info;
     }
-    const redactedCustomFields = Object.fromEntries(
-      entries
-        .filter(([key]) => !WINSTON_RESERVED.has(key))
-        .map(([key, value]) => [key, redactForLog(value)]),
-    );
-    return { ...info, ...redactedCustomFields };
+    return { ...info, ...Object.fromEntries(redactedEntries) };
   });
 }
 

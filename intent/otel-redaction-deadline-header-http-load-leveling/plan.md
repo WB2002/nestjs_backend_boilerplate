@@ -60,7 +60,11 @@ import {
 
 describe('redactOtelAttributes', () => {
   it('redacts sensitive keys and jwt-like string values', () => {
-    const jwt = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIn0.sig';
+    const jwt = [
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9',
+      'eyJzdWIiOiIxIn0',
+      'sig',
+    ].join('.');
     const out = redactOtelAttributes({
       'http.url': 'https://api.example.com?access_token=sekrit',
       email: 'user@example.com',

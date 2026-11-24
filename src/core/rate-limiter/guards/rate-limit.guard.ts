@@ -53,9 +53,12 @@ export class RateLimitGuard extends ThrottlerGuard {
       SKIP_RATE_LIMIT_KEY,
       [context.getHandler(), context.getClass()],
     );
-    const methods = this.resolveMethods(context);
-    if (shouldSkip || !methods.length) {
+    if (shouldSkip) {
       // Nest ThrottlerGuard contract: bypass paths resolve true; limits exceeded throw.
+      return true;
+    }
+    const methods = this.resolveMethods(context);
+    if (!methods.length) {
       return true;
     }
 

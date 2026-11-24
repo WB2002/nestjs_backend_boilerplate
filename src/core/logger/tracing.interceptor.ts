@@ -19,22 +19,7 @@ export class TracingInterceptor implements NestInterceptor {
     const methodName = ctx.getHandler().name;
 
     if (shouldSkipTracing(ctx, this.reflector)) {
-      return new Observable((observer) => {
-        let subscription: Subscription | undefined;
-        LoggerContext.run(
-          { ...LoggerContext.get(), context: className, method: methodName },
-          () => {
-            subscription = next.handle().subscribe({
-              next: (streamedChunk) => observer.next(streamedChunk),
-              error: (err) => observer.error(err),
-              complete: () => observer.complete(),
-            });
-          },
-        );
-        return () => {
-          subscription?.unsubscribe();
-        };
-      });
+      return next.handle();
     }
 
     const activeSpan = trace.getActiveSpan();

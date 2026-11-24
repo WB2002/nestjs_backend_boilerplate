@@ -126,18 +126,26 @@ export class CountryAccessService
         }
       }
 
-      const newSnapshot: ReadonlySet<string> = enabledCountryCodes;
-      this.allowedCountries = newSnapshot;
-      this.snapshotVersion += 1;
+      const isPreviouslyActive = this.status === 'active';
+      const hasChanged =
+        !isPreviouslyActive ||
+        !this.areCountrySetsEqual(this.allowedCountries, enabledCountryCodes);
+
       this.lastSuccessfulRefreshAt = new Date();
       this.status = 'active';
 
-      await this.telemetry.refreshSuccess({
-        provider: this.options.persistenceProvider,
-        snapshotVersion: this.snapshotVersion,
-        allowedCount: newSnapshot.size,
-        lastSuccessfulRefreshAt: this.lastSuccessfulRefreshAt.toISOString(),
-      });
+      if (hasChanged) {
+        const newSnapshot: ReadonlySet<string> = enabledCountryCodes;
+        this.allowedCountries = newSnapshot;
+        this.snapshotVersion += 1;
+
+        await this.telemetry.refreshSuccess({
+          provider: this.options.persistenceProvider,
+          snapshotVersion: this.snapshotVersion,
+          allowedCount: newSnapshot.size,
+          lastSuccessfulRefreshAt: this.lastSuccessfulRefreshAt.toISOString(),
+        });
+      }
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err);
       this.logger.error(
@@ -149,5 +157,20 @@ export class CountryAccessService
       );
       // Keep inactive on first failure; keep last-known-good when already active.
     }
+  }
+
+  private areCountrySetsEqual(
+    left: ReadonlySet<string>,
+    right: ReadonlySet<string>,
+  ): boolean {
+    if (left.size !== right.size) {
+      return false;
+    }
+    for (const code of left) {
+      if (!right.has(code)) {
+        return false;
+      }
+    }
+    return true;
   }
 }
