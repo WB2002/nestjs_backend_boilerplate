@@ -13,20 +13,53 @@ describe('NoopFileScanner', () => {
 
 describe('ClamAvFileScanner', () => {
   it('parses OK and FOUND responses without waiting for socket end', async () => {
+    const activeSockets = new Set<net.Socket>();
     const server = net.createServer((socket) => {
+      activeSockets.add(socket);
+      socket.on('close', () => {
+        activeSockets.delete(socket);
+      });
+      socket.on('error', () => {
+        // Client destroys the socket as soon as a complete status line arrives;
+        // ignore peer resets such as ECONNRESET on the mock server side.
+        socket.destroy();
+      });
+
       const chunks: Buffer[] = [];
-      socket.on('data', (c) => {
-        chunks.push(c);
+      let hasReplied = false;
+      socket.on('data', (chunk) => {
+        if (hasReplied) {
+          return;
+        }
+        chunks.push(chunk);
         const buf = Buffer.concat(chunks);
-        // Wait until zero-size trailer arrives
-        if (buf.includes(Buffer.from([0, 0, 0, 0]))) {
-          const payload = buf.toString('utf8');
-          // Mimic real clamd: write reply and keep the connection open.
-          if (payload.includes('virus')) {
-            socket.write('stream: Eicar-Test-Signature FOUND\n');
-          } else {
-            socket.write('stream: OK\n');
+        const header = Buffer.from('zINSTREAM\0');
+        if (buf.length < header.length) {
+          return;
+        }
+
+        // Parse INSTREAM length-prefixed frames until the 4-byte zero trailer.
+        let offset = header.length;
+        const payloadParts: Buffer[] = [];
+        while (offset + 4 <= buf.length) {
+          const frameLength = buf.readUInt32BE(offset);
+          offset += 4;
+          if (frameLength === 0) {
+            hasReplied = true;
+            const payload = Buffer.concat(payloadParts).toString('utf8');
+            // Mimic real clamd: write reply and keep the connection open.
+            if (payload.includes('virus')) {
+              socket.write('stream: Eicar-Test-Signature FOUND\n');
+            } else {
+              socket.write('stream: OK\n');
+            }
+            return;
           }
+          if (offset + frameLength > buf.length) {
+            return;
+          }
+          payloadParts.push(buf.subarray(offset, offset + frameLength));
+          offset += frameLength;
         }
       });
     });
@@ -57,6 +90,9 @@ describe('ClamAvFileScanner', () => {
         signature: 'Eicar-Test-Signature',
       });
     } finally {
+      for (const socket of activeSockets) {
+        socket.destroy();
+      }
       await new Promise<void>((resolve, reject) =>
         server.close((err) => (err ? reject(err) : resolve())),
       );
