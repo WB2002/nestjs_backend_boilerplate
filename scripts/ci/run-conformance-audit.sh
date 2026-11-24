@@ -71,8 +71,16 @@ for ((i = 0; i < ${#args[@]}; i++)); do
 done
 
 is_static_only() {
-  local IFS=','
-  for stage in $1; do
+  local remaining="$1"
+  local stage=""
+  while [[ -n "${remaining}" ]]; do
+    if [[ "${remaining}" == *,* ]]; then
+      stage="${remaining%%,*}"
+      remaining="${remaining#*,}"
+    else
+      stage="${remaining}"
+      remaining=""
+    fi
     case "${stage}" in
       sast|graph) ;;
       *) return 1 ;;
