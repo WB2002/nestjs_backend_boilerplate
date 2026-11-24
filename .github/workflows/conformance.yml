@@ -39,13 +39,13 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Free runner disk space
         run: ./scripts/ci/free-disk-space.sh
 
       - name: Checkout conformance runner
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: ${{ vars.CONFORMANCE_REPO || format('{0}/backend_security_and_conformance_tests', github.repository_owner) }}
           token: ${{ secrets.CONFORMANCE_REPO_TOKEN || github.token }}
