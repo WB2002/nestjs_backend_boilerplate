@@ -41,6 +41,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Free runner disk space
+        run: ./scripts/ci/free-disk-space.sh
+
       - name: Checkout conformance runner
         uses: actions/checkout@v4
         with:
@@ -56,6 +59,7 @@ jobs:
       - name: Build conformance-audit
         run: |
           cd .conformance-runner && go build -o "${RUNNER_TEMP}/conformance-audit" ./cmd/conformance-audit
+          go clean -cache -modcache
           cd "${GITHUB_WORKSPACE}" && rm -rf .conformance-runner
           echo "CONFORMANCE_AUDIT_BIN=${RUNNER_TEMP}/conformance-audit" >> "${GITHUB_ENV}"
 
