@@ -164,10 +164,14 @@ async function bootstrap() {
     wsConfig,
     configService.get<string>('NODE_ENV') ?? 'development',
   );
+  let wsPubClient: ReturnType<RedisService['duplicate']> | undefined;
+  let wsSubClient: ReturnType<RedisService['duplicate']> | undefined;
   if (wsConfig.enabled) {
     const redisService = app.get(RedisService);
     const pubClient = redisService.duplicate();
     const subClient = redisService.duplicate();
+    wsPubClient = pubClient;
+    wsSubClient = subClient;
     const redisIoAdapter = new RedisIoAdapter(
       app,
       pubClient,
@@ -200,6 +204,10 @@ async function bootstrap() {
     beforeClose: async () => {
       if (wsConfig.enabled) {
         await app.get(WebSocketShutdownService).closeAll();
+        await Promise.allSettled([
+          wsPubClient?.quit().catch(() => wsPubClient?.disconnect()),
+          wsSubClient?.quit().catch(() => wsSubClient?.disconnect()),
+        ]);
       }
       // Abort pending Mongo connect attempts so Nest mongoose teardown cannot hang.
       try {

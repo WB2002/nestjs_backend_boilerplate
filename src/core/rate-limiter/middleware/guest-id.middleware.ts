@@ -39,11 +39,17 @@ export class GuestIdMiddleware implements NestMiddleware, OnModuleInit {
     }
     const instance =
       this.httpAdapterHost.httpAdapter.getInstance() as FastifyInstance;
-    instance.addHook('onRequest', async (req, reply) => {
+    instance.addHook('onRequest', (req, reply, done) => {
       if (typeof req.url === 'string' && isHealthProbePath(req.url)) {
+        if (typeof done === 'function') {
+          done();
+        }
         return;
       }
       this.ensureGuestId(req, reply);
+      if (typeof done === 'function') {
+        done();
+      }
     });
     this.isHookRegistered = true;
   }

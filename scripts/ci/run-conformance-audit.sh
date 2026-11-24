@@ -101,6 +101,7 @@ USER_INBOUND_LOAD_LEVEL_MAX_WAIT_MS="${INBOUND_LOAD_LEVEL_MAX_WAIT_MS:-}"
 USER_AUTH_PASSWORD_HASH_MAX_CONCURRENT="${AUTH_PASSWORD_HASH_MAX_CONCURRENT:-}"
 USER_AUTH_PASSWORD_HASH_MAX_WAIT_MS="${AUTH_PASSWORD_HASH_MAX_WAIT_MS:-}"
 USER_REQUEST_TIMEOUT_MS="${REQUEST_TIMEOUT_MS:-}"
+USER_COUNTRY_ACCESS_REFRESH_INTERVAL_MS="${COUNTRY_ACCESS_REFRESH_INTERVAL_MS:-}"
 
 if [[ -f "${ROOT_DIR}/.env.conformance.example" ]]; then
   set -a
@@ -122,7 +123,9 @@ export APP_METRICS_ENABLED="${APP_METRICS_ENABLED:-false}"
 export FEATURE_FLAG_METRICS="${FEATURE_FLAG_METRICS:-false}"
 export AWS_EMF_ENVIRONMENT="${AWS_EMF_ENVIRONMENT:-local}"
 export COUNTRY_ACCESS_PERSISTENCE_PROVIDER="${COUNTRY_ACCESS_PERSISTENCE_PROVIDER:-mongodb}"
+export COUNTRY_ACCESS_REFRESH_INTERVAL_MS="${USER_COUNTRY_ACCESS_REFRESH_INTERVAL_MS:-60000}"
 export MALLOC_ARENA_MAX="${MALLOC_ARENA_MAX:-2}"
+APP_NODE_OPTIONS="${APP_NODE_OPTIONS:---max-old-space-size=256 --max-semi-space-size=8}"
 export BACKGROUND_JOBS_ENABLED=false
 export BACKGROUND_WORKER_ENABLED=false
 export INBOUND_MAX_IN_FLIGHT="${USER_INBOUND_MAX_IN_FLIGHT:-16}"
@@ -196,7 +199,7 @@ if [[ "${SKIP_APP_BUILD:-false}" != "true" ]]; then
   pnpm build
 fi
 
-node "${ROOT_DIR}/dist/main.js" > /tmp/nestjs-conformance.log 2>&1 &
+NODE_OPTIONS="${NODE_OPTIONS:+${NODE_OPTIONS} }${APP_NODE_OPTIONS}" node "${ROOT_DIR}/dist/main.js" > /tmp/nestjs-conformance.log 2>&1 &
 APP_PID=$!
 
 HEALTH_URL="http://127.0.0.1:${PORT}/health/live"
@@ -220,6 +223,36 @@ if [[ "${READY}" != "true" ]]; then
   cat /tmp/nestjs-conformance.log >&2 || true
   exit 1
 fi
+
+# Warm up V8 JIT, Fastify routes/hooks, and semi-space pages before RSS baseline sampling.
+node -e '
+  const http = require("http");
+  const port = process.env.PORT || 3000;
+  const agent = new http.Agent({ keepAlive: true, maxSockets: 16 });
+  const paths = ["/health/live", "/"];
+  let completed = 0;
+  const total = 400;
+  const concurrency = 16;
+  function next(idx) {
+    if (idx >= total) return;
+    const path = paths[idx % paths.length];
+    const req = http.get({ host: "127.0.0.1", port, path, agent }, (res) => {
+      res.resume();
+      res.on("end", () => {
+        completed++;
+        if (completed < total) next(idx + concurrency);
+        else agent.destroy();
+      });
+    });
+    req.on("error", () => {
+      completed++;
+      if (completed < total) next(idx + concurrency);
+      else agent.destroy();
+    });
+  }
+  for (let i = 0; i < concurrency; i++) next(i);
+' || true
+sleep 1
 
 export CONFORMANCE_TARGET_PID="${APP_PID}"
 

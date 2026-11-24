@@ -43,8 +43,11 @@ export class CsrfMiddleware implements NestMiddleware, OnModuleInit {
     }
     const instance =
       this.httpAdapterHost.httpAdapter.getInstance() as FastifyInstance;
-    instance.addHook('onRequest', async (req, reply) => {
+    instance.addHook('onRequest', (req, reply, done) => {
       this.enforceOnRequest(req, reply);
+      if (typeof done === 'function') {
+        done();
+      }
     });
     this.isHookRegistered = true;
   }

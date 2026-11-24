@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   OnModuleDestroy,
+  Optional,
   ServiceUnavailableException,
 } from '@nestjs/common';
 import {
@@ -28,6 +29,7 @@ import { SkipCountryAccess } from '@/common/country-access';
 import { SkipInboundBulkhead } from '@/core/overload';
 import { SkipTracing } from '@/core/telemetry';
 import { FeatureFlagHealthIndicator } from '@/core/feature-flag';
+import { RedisService } from '@/common/redis/redis.service';
 import { HealthSnapshot } from './health-snapshot';
 import { resolveHealthResponseMode } from './resolve-health-response-mode';
 
@@ -55,6 +57,7 @@ export class HealthController implements OnModuleDestroy {
     private configService: ConfigService,
     private shutdownState: ShutdownState,
     private featureFlagHealth: FeatureFlagHealthIndicator,
+    @Optional() private redisService?: RedisService,
   ) {
     const rawTtl = this.configService.get<string | number>(
       'HEALTH_CHECK_CACHE_TTL_MS',
@@ -155,17 +158,21 @@ export class HealthController implements OnModuleDestroy {
     // Redis check (only when Redis is configured in docker-compose / env)
     const redisHost = this.configService.get<string>('REDIS_HOST');
     if (redisHost) {
-      checks.push(() =>
-        this.microservice
-          .pingCheck<RedisOptions>('redis', {
-            transport: Transport.REDIS,
-            options: {
-              host: redisHost,
-              port: this.configService.get<number>('REDIS_PORT', 6379),
-            },
-          })
-          .withTimeout(3000),
-      );
+      if (this.redisService) {
+        checks.push(() => this.pingRedis());
+      } else {
+        checks.push(() =>
+          this.microservice
+            .pingCheck<RedisOptions>('redis', {
+              transport: Transport.REDIS,
+              options: {
+                host: redisHost,
+                port: this.configService.get<number>('REDIS_PORT', 6379),
+              },
+            })
+            .withTimeout(3000),
+        );
+      }
     }
 
     // Postgres check (only when Postgres is configured in docker-compose / env)
@@ -194,6 +201,27 @@ export class HealthController implements OnModuleDestroy {
       });
     }
     return this.pgPool;
+  }
+
+  private async pingRedis(): Promise<HealthIndicatorResult<'redis'>> {
+    try {
+      const client = this.redisService!.getClient();
+      await Promise.race([
+        client.ping(),
+        new Promise<never>((_, reject) => {
+          const timer = setTimeout(
+            () => reject(new Error('Redis ping timeout')),
+            3000,
+          );
+          timer.unref?.();
+        }),
+      ]);
+      return { redis: { status: 'up' as const } };
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Connection failed';
+      return { redis: { status: 'down' as const, message } };
+    }
   }
 
   private async pingPostgres(): Promise<HealthIndicatorResult<'postgres'>> {

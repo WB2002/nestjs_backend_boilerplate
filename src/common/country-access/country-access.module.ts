@@ -89,7 +89,9 @@ const repositoryProvider: Provider = {
       provide: POSTGRES_POOL,
       inject: [COUNTRY_ACCESS_OPTIONS],
       useFactory: (options: CountryAccessModuleOptions) =>
-        createPostgresPool(options.postgres),
+        options.persistenceProvider === 'mongodb'
+          ? null
+          : createPostgresPool(options.postgres),
     },
     PostgresPoolLifecycle,
     PostgresCountryAccessRepository,

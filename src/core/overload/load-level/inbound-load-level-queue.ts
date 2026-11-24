@@ -6,6 +6,7 @@ import { ApiPriorityLevel } from '../priority/api-priority-level.enum';
 type Waiter = {
   priority: ApiPriorityLevel;
   enqueuedAt: number;
+  isDequeued?: boolean;
   resolve: () => void;
   reject: (error: Error) => void;
 };
@@ -59,12 +60,16 @@ export class InboundLoadLevelQueue {
         enqueuedAt: startedAt,
         resolve: () => {
           cleanup();
-          removeWaiter(waiter);
+          if (!waiter.isDequeued) {
+            removeWaiter(waiter);
+          }
           resolve();
         },
         reject: (error: Error) => {
           cleanup();
-          removeWaiter(waiter);
+          if (!waiter.isDequeued) {
+            removeWaiter(waiter);
+          }
           reject(error);
         },
       };
@@ -96,20 +101,30 @@ export class InboundLoadLevelQueue {
     if (!next) {
       return undefined;
     }
+    next.isDequeued = true;
     return () => next.resolve();
   }
 
   private insertSorted(waiter: Waiter): void {
-    const index = this.waiters.findIndex(
-      (existing) =>
+    let low = 0;
+    let high = this.waiters.length;
+    while (low < high) {
+      const mid = (low + high) >>> 1;
+      const existing = this.waiters.at(mid)!;
+      const isHigherPriority =
         existing.priority > waiter.priority ||
         (existing.priority === waiter.priority &&
-          existing.enqueuedAt > waiter.enqueuedAt),
-    );
-    if (index === -1) {
+          existing.enqueuedAt > waiter.enqueuedAt);
+      if (isHigherPriority) {
+        high = mid;
+      } else {
+        low = mid + 1;
+      }
+    }
+    if (low === this.waiters.length) {
       this.waiters.push(waiter);
       return;
     }
-    this.waiters.splice(index, 0, waiter);
+    this.waiters.splice(low, 0, waiter);
   }
 }

@@ -5,10 +5,16 @@
  */
 
 /* tslint:disable */
+/* eslint-disable */
+
+export class CategoryFilterInput {
+  name: string;
+  websiteUrl?: Nullable<string>;
+}
 
 export class Category {
-  declare id: string;
-  declare name: string;
+  id: string;
+  name: string;
   description?: Nullable<string>;
 }
 
@@ -18,6 +24,10 @@ export abstract class IQuery {
   abstract category(
     id: string,
   ): Nullable<Category> | Promise<Nullable<Category>>;
+
+  abstract searchCategories(
+    filter: CategoryFilterInput,
+  ): Category[] | Promise<Category[]>;
 }
 
 type Nullable<T> = T | null;

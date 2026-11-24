@@ -2,6 +2,7 @@ export interface DnsCacheOptions {
   ttlMs?: number;
   family?: 0 | 4 | 6;
   hints?: number;
+  maxEntries?: number;
 }
 
 export interface CacheEntry {

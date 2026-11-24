@@ -9,6 +9,8 @@ function noopLookup(): void {
   return;
 }
 
+const DEFAULT_DNS_CACHE_MAX_ENTRIES = 1_000;
+
 export class DnsCache {
   private readonly cache = new Map<string, CacheEntry>();
 
@@ -30,9 +32,12 @@ export class DnsCache {
     const key = `${hostname}|${family}`;
     const now = Date.now();
     const cached = this.cache.get(key);
-    if (cached && cached.expiresAt > now) {
-      cb(null, cached.address, cached.family);
-      return;
+    if (cached) {
+      if (cached.expiresAt > now) {
+        cb(null, cached.address, cached.family);
+        return;
+      }
+      this.cache.delete(key);
     }
 
     lookupAsync(hostname, {
@@ -49,10 +54,12 @@ export class DnsCache {
           typeof resolvedAddresses === 'string'
             ? family || 4
             : resolvedAddresses.family;
+        const storedAt = Date.now();
+        this.evictIfNeeded(storedAt);
         this.cache.set(key, {
           address,
           family: resultFamily,
-          expiresAt: now + (this.options.ttlMs ?? 30_000),
+          expiresAt: storedAt + (this.options.ttlMs ?? 30_000),
         });
         cb(null, address, resultFamily);
       })
@@ -63,5 +70,24 @@ export class DnsCache {
 
   clear(): void {
     this.cache.clear();
+  }
+
+  private evictIfNeeded(nowMs: number): void {
+    const maxEntries = this.options.maxEntries ?? DEFAULT_DNS_CACHE_MAX_ENTRIES;
+    if (this.cache.size < maxEntries) {
+      return;
+    }
+    for (const [cacheKey, cachedRecord] of this.cache) {
+      if (cachedRecord.expiresAt <= nowMs) {
+        this.cache.delete(cacheKey);
+      }
+    }
+    while (this.cache.size >= maxEntries) {
+      const oldestKey = this.cache.keys().next();
+      if (oldestKey.done) {
+        break;
+      }
+      this.cache.delete(oldestKey.value);
+    }
   }
 }

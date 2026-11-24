@@ -6,7 +6,7 @@ import { BACKGROUND_JOBS_POSTGRES_POOL } from '../../constants/background-jobs.c
 export function createBackgroundJobsPostgresPool(
   options: BackgroundJobsPostgresConfig,
 ): Pool {
-  return new Pool({
+  const pool = new Pool({
     host: options.host,
     port: options.port,
     user: options.user,
@@ -16,6 +16,10 @@ export function createBackgroundJobsPostgresPool(
     connectionTimeoutMillis: 3_000,
     idleTimeoutMillis: 30_000,
   });
+  pool.on?.('error', () => {
+    // Prevent unhandled error event on idle client disconnect
+  });
+  return pool;
 }
 
 @Injectable()

@@ -6,7 +6,7 @@ import type { CountryAccessModuleOptions } from '../../config/country-access.con
 export function createPostgresPool(
   options: CountryAccessModuleOptions['postgres'],
 ): Pool {
-  return new Pool({
+  const pool = new Pool({
     host: options.host,
     port: options.port,
     user: options.user,
@@ -16,15 +16,22 @@ export function createPostgresPool(
     connectionTimeoutMillis: 3_000,
     idleTimeoutMillis: 30_000,
   });
+  pool.on?.('error', () => {
+    // Prevent unhandled error event on idle client disconnect
+  });
+  return pool;
 }
 
 @Injectable()
 export class PostgresPoolLifecycle implements OnModuleDestroy {
   private readonly logger = new Logger(PostgresPoolLifecycle.name);
 
-  constructor(@Inject(POSTGRES_POOL) private readonly pool: Pool) {}
+  constructor(@Inject(POSTGRES_POOL) private readonly pool: Pool | null) {}
 
   async onModuleDestroy(): Promise<void> {
+    if (!this.pool) {
+      return;
+    }
     try {
       await this.pool.end();
     } catch (err) {
