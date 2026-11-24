@@ -115,6 +115,18 @@ export class FeatureFlagReconciler {
   }
 
   private metricsEnabled(): boolean {
-    return this.configService.get<string>('FEATURE_FLAG_METRICS') !== 'false';
+    if (this.configService.get<string>('FEATURE_FLAG_METRICS') === 'false') {
+      return false;
+    }
+    const appMetrics =
+      this.configService.get<string>('APP_METRICS_ENABLED') ??
+      process.env.APP_METRICS_ENABLED;
+    if (appMetrics != null) {
+      const normalized = appMetrics.trim().toLowerCase();
+      if (normalized === 'false' || normalized === '0') {
+        return false;
+      }
+    }
+    return true;
   }
 }

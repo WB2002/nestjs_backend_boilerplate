@@ -140,6 +140,10 @@ export class CacheModule {
             port: configService.get<number>('REDIS_PORT', 6379),
             lazyConnect: true,
             maxRetriesPerRequest: 1,
+            enableOfflineQueue: false,
+          });
+          redis.on('error', (err: Error) => {
+            logger.warn(`Redis cache error: ${err.message}`);
           });
           redis.connect().catch((err: unknown) => {
             logger.error(

@@ -95,7 +95,33 @@ describe('AuthService with PasswordHashBulkhead', () => {
       'secure-password',
       expect.objectContaining({
         type: argon2.argon2id,
-        memoryCost: 64 * 1024,
+        memoryCost: 19_456,
+        timeCost: 2,
+        parallelism: 1,
+      }),
+    );
+  });
+
+  it('allows overriding Argon2id parameters via config env vars', async () => {
+    (configService.get as jest.Mock).mockImplementation((key: string) => {
+      if (key === 'ARGON2_MEMORY_COST_KIB') return '32768';
+      if (key === 'ARGON2_TIME_COST') return '3';
+      if (key === 'ARGON2_PARALLELISM') return '2';
+      return undefined;
+    });
+
+    await authService.register({
+      email: 'custom@example.com',
+      password: 'secure-password',
+    });
+
+    expect(argon2.hash).toHaveBeenCalledWith(
+      'secure-password',
+      expect.objectContaining({
+        type: argon2.argon2id,
+        memoryCost: 32_768,
+        timeCost: 3,
+        parallelism: 2,
       }),
     );
   });

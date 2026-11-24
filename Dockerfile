@@ -49,6 +49,7 @@ WORKDIR /app
 # Enable production V8 optimizations and framework caching
 ENV NODE_ENV=production
 ENV PORT=3000
+ENV MALLOC_ARENA_MAX=2
 
 # Copy only the pruned node_modules and compiled dist from builder
 COPY --from=builder --chown=node:node /app/node_modules ./node_modules

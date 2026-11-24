@@ -34,6 +34,19 @@ export class RuntimeRegistry {
     return runtime;
   }
 
+  async closeRuntime(
+    policy: ClientPolicySnapshot,
+    graceMs = 1_000,
+  ): Promise<void> {
+    const key = runtimeKey(policy.identity, policy);
+    const runtime = this.runtimes.get(key);
+    if (!runtime) {
+      return;
+    }
+    this.runtimes.delete(key);
+    await runtime.close(graceMs);
+  }
+
   async close(graceMs: number): Promise<void> {
     this.isClosed = true;
     const closing = [...this.runtimes.values()].map((runtime) =>

@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { context, trace } from '@opentelemetry/api';
-import { Observable } from 'rxjs';
+import { Observable, Subscription } from 'rxjs';
 import { shouldSkipTracing } from '@/core/telemetry/should-skip-tracing';
 import { LoggerContext } from './logger.context';
 
@@ -20,16 +20,20 @@ export class TracingInterceptor implements NestInterceptor {
 
     if (shouldSkipTracing(ctx, this.reflector)) {
       return new Observable((observer) => {
+        let subscription: Subscription | undefined;
         LoggerContext.run(
           { ...LoggerContext.get(), context: className, method: methodName },
           () => {
-            next.handle().subscribe({
+            subscription = next.handle().subscribe({
               next: (streamedChunk) => observer.next(streamedChunk),
               error: (err) => observer.error(err),
               complete: () => observer.complete(),
             });
           },
         );
+        return () => {
+          subscription?.unsubscribe();
+        };
       });
     }
 
@@ -45,6 +49,7 @@ export class TracingInterceptor implements NestInterceptor {
     const spanContext = activeSpan?.spanContext();
 
     return new Observable((observer) => {
+      let subscription: Subscription | undefined;
       LoggerContext.run(
         {
           ...LoggerContext.get(),
@@ -59,7 +64,7 @@ export class TracingInterceptor implements NestInterceptor {
               ? trace.setSpan(context.active(), activeSpan)
               : context.active(),
             () => {
-              next.handle().subscribe({
+              subscription = next.handle().subscribe({
                 next: (streamedChunk) => observer.next(streamedChunk),
                 error: (err) => observer.error(err),
                 complete: () => observer.complete(),
@@ -68,6 +73,9 @@ export class TracingInterceptor implements NestInterceptor {
           );
         },
       );
+      return () => {
+        subscription?.unsubscribe();
+      };
     });
   }
 }

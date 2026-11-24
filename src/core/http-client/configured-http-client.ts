@@ -210,6 +210,10 @@ export class ConfiguredHttpClient {
     return runtime.request<T>(request);
   }
 
+  async close(graceMs = 1_000): Promise<void> {
+    await this.registry.closeRuntime(this.policy, graceMs);
+  }
+
   private withAuth(auth: AuthPolicy): ConfiguredHttpClient {
     if (this.policy.auth && this.policy.auth.type !== auth.type) {
       const existing = this.policy.auth.type;

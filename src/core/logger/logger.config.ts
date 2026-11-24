@@ -22,8 +22,19 @@ export function createRedactionFormat(config: LogRedactionConfig) {
     if (typeof info.stack === 'string') {
       info.stack = redactLogMessage(info.stack);
     }
+    const entries = Object.entries(info);
+    let hasCustomKeys = false;
+    for (const [key] of entries) {
+      if (!WINSTON_RESERVED.has(key)) {
+        hasCustomKeys = true;
+        break;
+      }
+    }
+    if (!hasCustomKeys) {
+      return info;
+    }
     const redactedCustomFields = Object.fromEntries(
-      Object.entries(info)
+      entries
         .filter(([key]) => !WINSTON_RESERVED.has(key))
         .map(([key, value]) => [key, redactForLog(value)]),
     );

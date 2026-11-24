@@ -17,8 +17,18 @@ import { PasswordHashBulkhead } from './password/password-hash-bulkhead';
 import { CacheService } from '@/core/cache';
 import type { CacheTtl } from '@/core/cache/types/cache.types';
 
+const DEFAULT_ARGON2_MEMORY_COST_KIB = 19_456;
+const MIN_ARGON2_MEMORY_COST_KIB = 12_288;
+const DEFAULT_ARGON2_TIME_COST = 2;
+const MIN_ARGON2_TIME_COST = 2;
+const DEFAULT_ARGON2_PARALLELISM = 1;
+const MIN_ARGON2_PARALLELISM = 1;
+
 @Injectable()
 export class AuthService {
+  private cachedAdminEmailsRaw: string | undefined;
+  private cachedAdminEmailsSet: ReadonlySet<string> = new Set();
+
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
     @InjectModel(Session.name) private sessionModel: Model<Session>,
@@ -40,12 +50,13 @@ export class AuthService {
       throw new ConflictException('Email already in use');
     }
 
+    const argon2Options = this.resolveArgon2HashOptions();
     const passwordHash = await this.passwordHashBulkhead.run(() =>
       argon2.hash(password, {
         type: argon2.argon2id,
-        memoryCost: 64 * 1024,
-        timeCost: 3,
-        parallelism: 4,
+        memoryCost: argon2Options.memoryCost,
+        timeCost: argon2Options.timeCost,
+        parallelism: argon2Options.parallelism,
       }),
     );
 
@@ -246,16 +257,62 @@ export class AuthService {
     return this.isAdminEmail(email) ? UserRole.ADMIN : UserRole.USER;
   }
 
+  private resolveArgon2HashOptions(): {
+    memoryCost: number;
+    timeCost: number;
+    parallelism: number;
+  } {
+    return {
+      memoryCost: this.parseBoundedPositiveInt(
+        'ARGON2_MEMORY_COST_KIB',
+        DEFAULT_ARGON2_MEMORY_COST_KIB,
+        MIN_ARGON2_MEMORY_COST_KIB,
+      ),
+      timeCost: this.parseBoundedPositiveInt(
+        'ARGON2_TIME_COST',
+        DEFAULT_ARGON2_TIME_COST,
+        MIN_ARGON2_TIME_COST,
+      ),
+      parallelism: this.parseBoundedPositiveInt(
+        'ARGON2_PARALLELISM',
+        DEFAULT_ARGON2_PARALLELISM,
+        MIN_ARGON2_PARALLELISM,
+      ),
+    };
+  }
+
+  private parseBoundedPositiveInt(
+    envKey: string,
+    defaultValue: number,
+    minValue: number,
+  ): number {
+    const raw = this.configService.get<string | number>(envKey);
+    if (raw == null || raw === '') {
+      return defaultValue;
+    }
+    const parsed =
+      typeof raw === 'number' ? raw : Number.parseInt(String(raw), 10);
+    if (!Number.isFinite(parsed) || parsed < minValue) {
+      return defaultValue;
+    }
+    return Math.floor(parsed);
+  }
+
   private isAdminEmail(email: string): boolean {
     const raw = this.configService.get<string>('FEATURE_FLAG_ADMIN_EMAILS', '');
     if (!raw) {
       return false;
     }
-    const allowlist = raw
-      .split(',')
-      .map((value) => value.trim().toLowerCase())
-      .filter(Boolean);
-    return allowlist.includes(email.trim().toLowerCase());
+    if (raw !== this.cachedAdminEmailsRaw) {
+      this.cachedAdminEmailsRaw = raw;
+      this.cachedAdminEmailsSet = new Set(
+        raw
+          .split(',')
+          .map((value) => value.trim().toLowerCase())
+          .filter(Boolean),
+      );
+    }
+    return this.cachedAdminEmailsSet.has(email.trim().toLowerCase());
   }
 
   private async ensureAdminRoleIfAllowlisted(user: User): Promise<UserRole> {

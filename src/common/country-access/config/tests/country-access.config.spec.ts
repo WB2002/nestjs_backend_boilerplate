@@ -52,4 +52,19 @@ describe('parseCountryAccessOptions', () => {
       }),
     ).toThrow(/Invalid positive integer/);
   });
+
+  it('parses COUNTRY_ACCESS_PERSISTENCE_PROVIDER override and rejects invalid values', () => {
+    const mongoOptions = parseCountryAccessOptions({
+      ...baseEnv,
+      COUNTRY_ACCESS_PERSISTENCE_PROVIDER: 'mongodb',
+    });
+    expect(mongoOptions.persistenceProvider).toBe('mongodb');
+
+    expect(() =>
+      parseCountryAccessOptions({
+        ...baseEnv,
+        COUNTRY_ACCESS_PERSISTENCE_PROVIDER: 'sqlite',
+      }),
+    ).toThrow(/COUNTRY_ACCESS_PERSISTENCE_PROVIDER/);
+  });
 });

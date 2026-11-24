@@ -28,6 +28,7 @@ export interface CountryAccessEnvInput {
   GEOIP_DATABASE_PATH?: string | undefined;
   COUNTRY_ACCESS_UNKNOWN_COUNTRY_POLICY?: string | undefined;
   COUNTRY_ACCESS_BYPASS_PATHS?: string | undefined;
+  COUNTRY_ACCESS_PERSISTENCE_PROVIDER?: string | undefined;
   POSTGRES_HOST?: string | undefined;
   POSTGRES_PORT?: string | undefined;
   POSTGRES_USER?: string | undefined;
@@ -69,6 +70,22 @@ function parseBypassPaths(raw: string | undefined): string[] {
     .map((path) => (path.startsWith('/') ? path : `/${path}`));
 }
 
+function parsePersistenceProvider(
+  raw: string | undefined,
+  fallback: CountryAccessPersistenceProvider,
+): CountryAccessPersistenceProvider {
+  if (raw == null || raw.trim() === '') {
+    return fallback;
+  }
+  const normalized = raw.trim().toLowerCase();
+  if (normalized === 'postgres' || normalized === 'mongodb') {
+    return normalized;
+  }
+  throw new Error(
+    `Invalid COUNTRY_ACCESS_PERSISTENCE_PROVIDER: ${raw}. Expected "postgres" or "mongodb".`,
+  );
+}
+
 export function parseCountryAccessOptions(
   env: CountryAccessEnvInput,
   persistenceProvider: CountryAccessPersistenceProvider = 'postgres',
@@ -77,6 +94,11 @@ export function parseCountryAccessOptions(
   if (!geoipDatabasePath) {
     throw new Error('GEOIP_DATABASE_PATH is required');
   }
+
+  const resolvedProvider = parsePersistenceProvider(
+    env.COUNTRY_ACCESS_PERSISTENCE_PROVIDER,
+    persistenceProvider,
+  );
 
   return {
     refreshIntervalMs: parsePositiveInt(
@@ -88,7 +110,7 @@ export function parseCountryAccessOptions(
       env.COUNTRY_ACCESS_UNKNOWN_COUNTRY_POLICY,
     ),
     bypassPaths: parseBypassPaths(env.COUNTRY_ACCESS_BYPASS_PATHS),
-    persistenceProvider,
+    persistenceProvider: resolvedProvider,
     postgres: {
       host: env.POSTGRES_HOST?.trim() || 'localhost',
       port: parsePositiveInt(env.POSTGRES_PORT, 5432),

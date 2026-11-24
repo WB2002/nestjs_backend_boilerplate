@@ -137,4 +137,58 @@ describe('RequestDeadlineMiddleware', () => {
 
     expect(res.headers['x-request-deadline']).toBeDefined();
   });
+
+  it('aborts and cleans up on raw IncomingMessage/ServerResponse close without .raw wrapper', () => {
+    const mw = new RequestDeadlineMiddleware({
+      defaultTimeoutMs: 10_000,
+      maxTimeoutMs: 20_000,
+    });
+    const reqEvents = new Map<string, Array<(...args: unknown[]) => void>>();
+    const resEvents = new Map<string, Array<(...args: unknown[]) => void>>();
+
+    const req = {
+      headers: {} as Record<string, unknown>,
+      on: (event: string, listener: (...args: unknown[]) => void) => {
+        const list = reqEvents.get(event) ?? [];
+        list.push(listener);
+        reqEvents.set(event, list);
+      },
+      off: (event: string, listener: (...args: unknown[]) => void) => {
+        const list = reqEvents.get(event);
+        if (list) {
+          const idx = list.indexOf(listener);
+          if (idx >= 0) list.splice(idx, 1);
+        }
+      },
+    };
+    const res = {
+      writableEnded: false,
+      on: (event: string, listener: (...args: unknown[]) => void) => {
+        const list = resEvents.get(event) ?? [];
+        list.push(listener);
+        resEvents.set(event, list);
+      },
+      off: (event: string, listener: (...args: unknown[]) => void) => {
+        const list = resEvents.get(event);
+        if (list) {
+          const idx = list.indexOf(listener);
+          if (idx >= 0) list.splice(idx, 1);
+        }
+      },
+    };
+
+    let signal: AbortSignal | undefined;
+    mw.use(req, res, () => {
+      signal = getRequestSignal();
+    });
+
+    expect(reqEvents.get('close')).toHaveLength(1);
+    expect(resEvents.get('close')).toHaveLength(1);
+
+    // Emit response close before finish (early disconnect)
+    resEvents.get('close')?.[0]?.();
+    expect(signal!.aborted).toBe(true);
+    expect(reqEvents.get('close')).toHaveLength(0);
+    expect(resEvents.get('close')).toHaveLength(0);
+  });
 });

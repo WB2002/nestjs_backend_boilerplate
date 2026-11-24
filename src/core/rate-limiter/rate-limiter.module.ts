@@ -166,6 +166,9 @@ export class RateLimiterModule {
             maxRetriesPerRequest: 1,
             enableOfflineQueue: false,
           });
+          redis.on('error', (err: Error) => {
+            logger.warn(`Redis rate-limit error: ${err.message}`);
+          });
           redis.connect().catch((err: unknown) => {
             logger.error(
               `Redis rate-limit connect failed: ${err instanceof Error ? err.message : err}`,

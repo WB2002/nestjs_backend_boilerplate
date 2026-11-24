@@ -8,11 +8,25 @@ export interface ConformanceCacheResponse {
   isFromLoader: boolean;
 }
 
+const MAX_LOADER_CALL_COUNT_ENTRIES = 1_000;
+
 @Injectable()
 export class ConformanceCacheService {
   private readonly loaderCallCounts = new Map<string, number>();
 
   constructor(private readonly cacheService: CacheService) {}
+
+  private recordLoaderCallCount(key: string, nextCount: number): void {
+    if (this.loaderCallCounts.has(key)) {
+      this.loaderCallCounts.delete(key);
+    } else if (this.loaderCallCounts.size >= MAX_LOADER_CALL_COUNT_ENTRIES) {
+      const oldestKey = this.loaderCallCounts.keys().next();
+      if (!oldestKey.done) {
+        this.loaderCallCounts.delete(oldestKey.value);
+      }
+    }
+    this.loaderCallCounts.set(key, nextCount);
+  }
 
   async getOrSet(
     request: ConformanceCacheRequestDto,
@@ -22,7 +36,7 @@ export class ConformanceCacheService {
 
     const loader = async (): Promise<string | null> => {
       const nextCount = (this.loaderCallCounts.get(request.key) ?? 0) + 1;
-      this.loaderCallCounts.set(request.key, nextCount);
+      this.recordLoaderCallCount(request.key, nextCount);
 
       if (request.loaderDelayMs && request.loaderDelayMs > 0) {
         await new Promise((resolve) =>

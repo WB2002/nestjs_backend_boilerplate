@@ -31,15 +31,23 @@ import {
 import { CountryAccessTelemetry } from './telemetry/country-access.telemetry';
 
 /**
- * Default binding uses PostgreSQL. To swap to MongoDB:
- * 1. Change ACTIVE_PERSISTENCE_PROVIDER to 'mongodb'
- * 2. Change repositoryProvider useExisting to MongoCountryAccessRepository
+ * Default binding uses PostgreSQL. Set COUNTRY_ACCESS_PERSISTENCE_PROVIDER=mongodb
+ * to use MongoDB (e.g. when running without Postgres).
  */
-const ACTIVE_PERSISTENCE_PROVIDER = 'postgres' as const;
+const DEFAULT_PERSISTENCE_PROVIDER = 'postgres' as const;
 
 const repositoryProvider: Provider = {
   provide: COUNTRY_ACCESS_REPOSITORY,
-  useExisting: PostgresCountryAccessRepository,
+  inject: [
+    COUNTRY_ACCESS_OPTIONS,
+    PostgresCountryAccessRepository,
+    MongoCountryAccessRepository,
+  ],
+  useFactory: (
+    options: CountryAccessModuleOptions,
+    postgresRepo: PostgresCountryAccessRepository,
+    mongoRepo: MongoCountryAccessRepository,
+  ) => (options.persistenceProvider === 'mongodb' ? mongoRepo : postgresRepo),
 };
 
 @Module({
@@ -65,13 +73,16 @@ const repositoryProvider: Provider = {
             COUNTRY_ACCESS_BYPASS_PATHS: config.get<string>(
               'COUNTRY_ACCESS_BYPASS_PATHS',
             ),
+            COUNTRY_ACCESS_PERSISTENCE_PROVIDER: config.get<string>(
+              'COUNTRY_ACCESS_PERSISTENCE_PROVIDER',
+            ),
             POSTGRES_HOST: config.get<string>('POSTGRES_HOST'),
             POSTGRES_PORT: config.get<string>('POSTGRES_PORT'),
             POSTGRES_USER: config.get<string>('POSTGRES_USER'),
             POSTGRES_PASSWORD: config.get<string>('POSTGRES_PASSWORD'),
             POSTGRES_DB: config.get<string>('POSTGRES_DB'),
           },
-          ACTIVE_PERSISTENCE_PROVIDER,
+          DEFAULT_PERSISTENCE_PROVIDER,
         ),
     },
     {

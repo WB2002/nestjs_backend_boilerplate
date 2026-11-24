@@ -2,6 +2,7 @@ import {
   BadGatewayException,
   GatewayTimeoutException,
   Injectable,
+  OnModuleDestroy,
   ServiceUnavailableException,
 } from '@nestjs/common';
 import {
@@ -38,11 +39,17 @@ function isHandledHttpClientErrorName(
 }
 
 @Injectable()
-export class ConformanceHttpClientService {
+export class ConformanceHttpClientService implements OnModuleDestroy {
   private readonly configuredClients = new Map<string, ConfiguredHttpClient>();
   private readonly maxCacheEntries = 50;
 
   constructor(private readonly httpClient: HttpClient) {}
+
+  async onModuleDestroy(): Promise<void> {
+    const clients = [...this.configuredClients.values()];
+    this.configuredClients.clear();
+    await Promise.allSettled(clients.map((client) => client.close(1_000)));
+  }
 
   async execute(
     request: ConformanceHttpClientRequestDto,
@@ -79,9 +86,11 @@ export class ConformanceHttpClientService {
     }
 
     if (this.configuredClients.size >= this.maxCacheEntries) {
-      const oldestEntry = this.configuredClients.keys().next();
+      const oldestEntry = this.configuredClients.entries().next();
       if (!oldestEntry.done) {
-        this.configuredClients.delete(oldestEntry.value);
+        const [oldestKey, oldestClient] = oldestEntry.value;
+        this.configuredClients.delete(oldestKey);
+        void oldestClient.close(1_000);
       }
     }
 

@@ -17,30 +17,40 @@ import {
 
 type HeaderBag = Record<string, unknown>;
 
-interface DeadlineRequest {
-  headers?: HeaderBag;
-  raw?: {
-    on?: (event: string, listener: (...args: unknown[]) => void) => void;
-    off?: (event: string, listener: (...args: unknown[]) => void) => void;
-    removeListener?: (
-      event: string,
-      listener: (...args: unknown[]) => void,
-    ) => void;
-  };
-}
-
-interface DeadlineResponse {
-  setHeader?: (name: string, value: string | number) => void;
+type EventEmitterLike = {
   on?: (event: string, listener: (...args: unknown[]) => void) => void;
   off?: (event: string, listener: (...args: unknown[]) => void) => void;
   removeListener?: (
     event: string,
     listener: (...args: unknown[]) => void,
   ) => void;
-  raw?: {
+};
+
+interface DeadlineRequest extends EventEmitterLike {
+  headers?: HeaderBag;
+  raw?: EventEmitterLike;
+}
+
+interface DeadlineResponse extends EventEmitterLike {
+  setHeader?: (name: string, value: string | number) => void;
+  destroyed?: boolean;
+  writableEnded?: boolean;
+  raw?: EventEmitterLike & {
     destroyed?: boolean;
     writableEnded?: boolean;
   };
+}
+
+function detachListener(
+  emitter: EventEmitterLike | undefined,
+  event: string,
+  listener: (...args: unknown[]) => void,
+): void {
+  if (emitter?.off) {
+    emitter.off(event, listener);
+  } else if (emitter?.removeListener) {
+    emitter.removeListener(event, listener);
+  }
 }
 
 /**
@@ -145,34 +155,57 @@ export class RequestDeadlineMiddleware implements NestMiddleware {
       armTimerForDeadline();
     }
 
+    const reqEmitter: EventEmitterLike = req.raw ?? req;
+    const resEmitter: EventEmitterLike = res.on ? res : (res.raw ?? res);
+
+    const isResponseEnded = (): boolean =>
+      Boolean(res.raw?.writableEnded ?? res.writableEnded);
+
+    const cleanupListeners = (): void => {
+      detachListener(reqEmitter, 'close', onClientClose);
+      detachListener(reqEmitter, 'aborted', onClientClose);
+      detachListener(resEmitter, 'finish', onFinish);
+      detachListener(resEmitter, 'close', onResponseClose);
+    };
+
     const onClientClose = (): void => {
       if (hasRequestFinished) {
         return;
       }
-      if (res.raw?.writableEnded) {
+      if (isResponseEnded()) {
         return;
       }
+      hasRequestFinished = true;
       abort('client_disconnected');
+      cleanupListeners();
     };
 
     const onFinish = (): void => {
+      if (hasRequestFinished) {
+        return;
+      }
       hasRequestFinished = true;
       clearTimer();
-      const raw = req.raw;
-      if (raw?.off) {
-        raw.off('close', onClientClose);
-      } else if (raw?.removeListener) {
-        raw.removeListener('close', onClientClose);
-      }
-      if (res.off) {
-        res.off('finish', onFinish);
-      } else if (res.removeListener) {
-        res.removeListener('finish', onFinish);
-      }
+      cleanupListeners();
     };
 
-    req.raw?.on?.('close', onClientClose);
-    res.on?.('finish', onFinish);
+    const onResponseClose = (): void => {
+      if (hasRequestFinished) {
+        return;
+      }
+      hasRequestFinished = true;
+      if (!isResponseEnded()) {
+        abort('client_disconnected');
+      } else {
+        clearTimer();
+      }
+      cleanupListeners();
+    };
+
+    reqEmitter.on?.('close', onClientClose);
+    reqEmitter.on?.('aborted', onClientClose);
+    resEmitter.on?.('finish', onFinish);
+    resEmitter.on?.('close', onResponseClose);
 
     if (typeof res.setHeader === 'function') {
       res.setHeader('x-request-deadline', String(store.deadlineAt));

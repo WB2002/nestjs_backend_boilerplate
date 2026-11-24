@@ -15,7 +15,7 @@ export class InboundLoadLevelQueue {
 
   constructor(
     readonly maxQueue: number,
-    private readonly pollIntervalMs: number,
+    _pollIntervalMs = 0,
   ) {}
 
   get size(): number {
@@ -33,12 +33,12 @@ export class InboundLoadLevelQueue {
 
     return new Promise((resolve, reject) => {
       const startedAt = Date.now();
-      let timer: ReturnType<typeof setInterval> | undefined;
+      let timer: ReturnType<typeof setTimeout> | undefined;
       let abortListener: (() => void) | undefined;
 
       const cleanup = (): void => {
         if (timer !== undefined) {
-          clearInterval(timer);
+          clearTimeout(timer);
           timer = undefined;
         }
         if (options.signal && abortListener) {
@@ -81,11 +81,13 @@ export class InboundLoadLevelQueue {
       };
       options.signal?.addEventListener('abort', abortListener, { once: true });
 
-      timer = setInterval(() => {
-        if (Date.now() - startedAt >= options.maxWaitMs) {
+      timer = setTimeout(
+        () => {
           waiter.reject(new LoadLevelWaitTimeoutError());
-        }
-      }, this.pollIntervalMs);
+        },
+        Math.max(0, options.maxWaitMs),
+      );
+      timer.unref?.();
     });
   }
 

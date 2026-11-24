@@ -8,6 +8,9 @@ import { AuthenticatedUser } from './types/authenticated-user.types';
 
 @Injectable()
 export class AccessTokenAuthenticator {
+  private cachedRawPublicKey: string | undefined;
+  private cachedNormalizedPublicKey = '';
+
   constructor(
     private readonly jwtService: JwtService,
     private readonly authService: AuthService,
@@ -20,9 +23,7 @@ export class AccessTokenAuthenticator {
       throw new UnauthorizedException('Missing access token');
     }
 
-    const publicKey = (
-      this.configService.get<string>('JWT_PUBLIC_KEY') ?? ''
-    ).replace(/\\n/g, '\n');
+    const publicKey = this.getPublicKey();
 
     let payload: JwtPayload;
     try {
@@ -53,6 +54,15 @@ export class AccessTokenAuthenticator {
       jti: payload.jti,
       role,
     };
+  }
+
+  private getPublicKey(): string {
+    const rawKey = this.configService.get<string>('JWT_PUBLIC_KEY') ?? '';
+    if (rawKey !== this.cachedRawPublicKey) {
+      this.cachedRawPublicKey = rawKey;
+      this.cachedNormalizedPublicKey = rawKey.replace(/\\n/g, '\n');
+    }
+    return this.cachedNormalizedPublicKey;
   }
 
   private async resolveRoleForPayload(payload: JwtPayload): Promise<UserRole> {

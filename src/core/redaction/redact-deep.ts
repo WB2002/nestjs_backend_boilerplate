@@ -12,7 +12,7 @@ function redactString(value: string): string {
 export function redactForLog(
   value: unknown,
   depth = 0,
-  seen: WeakSet<object> = new WeakSet(),
+  seen?: WeakSet<object>,
 ): unknown {
   if (depth > MAX_DEPTH) {
     return REDACTED_DEPTH;
@@ -28,28 +28,30 @@ export function redactForLog(
     return redactString(value);
   }
   if (Array.isArray(value)) {
-    if (seen.has(value)) {
+    const visited = seen ?? new WeakSet<object>();
+    if (visited.has(value)) {
       return REDACTED;
     }
-    seen.add(value);
+    visited.add(value);
     return value.map((nestedValue) =>
-      redactForLog(nestedValue, depth + 1, seen),
+      redactForLog(nestedValue, depth + 1, visited),
     );
   }
   if (value instanceof Date || Buffer.isBuffer(value)) {
     return value;
   }
   if (typeof value === 'object') {
-    if (seen.has(value)) {
+    const visited = seen ?? new WeakSet<object>();
+    if (visited.has(value)) {
       return REDACTED;
     }
-    seen.add(value);
+    visited.add(value);
     return Object.fromEntries(
       Object.entries(value as Record<string, unknown>).map(([key, child]) => [
         key,
         isSensitiveLogKey(key)
           ? REDACTED
-          : redactForLog(child, depth + 1, seen),
+          : redactForLog(child, depth + 1, visited),
       ]),
     );
   }

@@ -46,6 +46,10 @@ export class MemoryRateLimitBackend implements RateLimitBackend {
     clearInterval(this.sweeper);
   }
 
+  async quit(): Promise<void> {
+    this.dispose();
+  }
+
   async consume(context: ConsumeContext): Promise<ConsumeResult> {
     this.expireKeyIfStale(context.key, context.nowMs);
     this.enforceCap();

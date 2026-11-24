@@ -15,6 +15,7 @@ export class FeatureFlagSubscriber {
   private subscriber: Redis | null = null;
   private isPubSubConnected = false;
   private isIntentionalStop = false;
+  private isReconnecting = false;
   private environment = '';
   private cache: FeatureFlagCache | null = null;
   private onReconnect: (() => Promise<void>) | null = null;
@@ -100,12 +101,13 @@ export class FeatureFlagSubscriber {
   }
 
   private async handleDisconnect(): Promise<void> {
-    if (this.isIntentionalStop) {
+    if (this.isIntentionalStop || this.isReconnecting) {
       return;
     }
     if (!this.isPubSubConnected && !this.subscriber) {
       return;
     }
+    this.isReconnecting = true;
     this.isPubSubConnected = false;
     this.logger.warn(FeatureFlagLogEvent.PUBSUB_DISCONNECTED);
     void emitFeatureFlagMetrics({
@@ -113,12 +115,12 @@ export class FeatureFlagSubscriber {
       name: 'feature_flag_pubsub_disconnects',
     });
 
-    await this.delay(1_000);
-    if (this.isIntentionalStop) {
-      return;
-    }
-
     try {
+      await this.delay(1_000);
+      if (this.isIntentionalStop) {
+        return;
+      }
+
       if (this.subscriber) {
         try {
           await this.subscriber.quit();
@@ -134,6 +136,8 @@ export class FeatureFlagSubscriber {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       this.logger.warn(`Pub/Sub reconnect failed: ${message}`);
+    } finally {
+      this.isReconnecting = false;
     }
   }
 
@@ -192,7 +196,19 @@ export class FeatureFlagSubscriber {
   }
 
   private metricsEnabled(): boolean {
-    return this.configService.get<string>('FEATURE_FLAG_METRICS') !== 'false';
+    if (this.configService.get<string>('FEATURE_FLAG_METRICS') === 'false') {
+      return false;
+    }
+    const appMetrics =
+      this.configService.get<string>('APP_METRICS_ENABLED') ??
+      process.env.APP_METRICS_ENABLED;
+    if (appMetrics != null) {
+      const normalized = appMetrics.trim().toLowerCase();
+      if (normalized === 'false' || normalized === '0') {
+        return false;
+      }
+    }
+    return true;
   }
 
   private delay(ms: number): Promise<void> {

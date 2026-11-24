@@ -1,10 +1,16 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { createMetricsLogger, Unit } from 'aws-embedded-metrics';
 import type { CountryAccessPersistenceProvider } from '../domain';
+
+const INACTIVE_BYPASS_COOLDOWN_MS = 60_000;
 
 @Injectable()
 export class CountryAccessTelemetry {
   private readonly logger = new Logger(CountryAccessTelemetry.name);
+  private lastInactiveBypassEmittedAtMs = 0;
+
+  constructor(@Optional() private readonly configService?: ConfigService) {}
 
   async emit(
     event: string,
@@ -15,6 +21,18 @@ export class CountryAccessTelemetry {
       ...properties,
     });
 
+    if (!this.isMetricsEnabled()) {
+      return;
+    }
+
+    // Fire-and-forget so EMF flushing never blocks the HTTP request hot path.
+    void this.flushMetric(event, properties);
+  }
+
+  private async flushMetric(
+    event: string,
+    properties: Record<string, string | number | boolean>,
+  ): Promise<void> {
     try {
       const metrics = createMetricsLogger();
       metrics.setNamespace('CountryAccess');
@@ -29,6 +47,17 @@ export class CountryAccessTelemetry {
         `Failed to emit country-access metric ${event}: ${err instanceof Error ? err.message : err}`,
       );
     }
+  }
+
+  private isMetricsEnabled(): boolean {
+    const raw =
+      this.configService?.get<string>('APP_METRICS_ENABLED') ??
+      process.env.APP_METRICS_ENABLED;
+    if (raw == null || raw === '') {
+      return true;
+    }
+    const normalized = raw.trim().toLowerCase();
+    return normalized !== 'false' && normalized !== '0';
   }
 
   accessDenied(countryCode: string | null, reason: string): Promise<void> {
@@ -51,6 +80,14 @@ export class CountryAccessTelemetry {
   }
 
   inactiveBypass(): Promise<void> {
+    const nowMs = Date.now();
+    if (
+      this.lastInactiveBypassEmittedAtMs > 0 &&
+      nowMs - this.lastInactiveBypassEmittedAtMs < INACTIVE_BYPASS_COOLDOWN_MS
+    ) {
+      return Promise.resolve();
+    }
+    this.lastInactiveBypassEmittedAtMs = nowMs;
     return this.emit('country_access_inactive_bypass', {});
   }
 

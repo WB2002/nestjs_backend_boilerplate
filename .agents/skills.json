@@ -3,6 +3,9 @@
     {
       "path": ".cursor/skills",
       "exclude": ["_overlay"]
+    },
+    {
+      "path": ".agents/agent-skills"
     }
   ]
 }

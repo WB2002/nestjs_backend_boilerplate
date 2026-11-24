@@ -1,4 +1,4 @@
-import { of } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { ExecutionContext, CallHandler } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { context, trace } from '@opentelemetry/api';
@@ -67,5 +67,29 @@ describe('TracingInterceptor', () => {
         },
       });
     });
+  });
+
+  it('tears down inner subscription when outer observable is unsubscribed', () => {
+    const interceptor = new TracingInterceptor(reflector);
+    let isInnerUnsubscribed = false;
+    const executionContext = {
+      getType: () => 'http',
+      getClass: () => ({ name: 'ExampleController' }),
+      getHandler: () => ({ name: 'stream' }),
+      switchToHttp: () => ({
+        getRequest: () => ({ url: '/stream' }),
+      }),
+    } as unknown as ExecutionContext;
+    const next: CallHandler = {
+      handle: () =>
+        new Observable(() => () => {
+          isInnerUnsubscribed = true;
+        }),
+    };
+
+    const sub = interceptor.intercept(executionContext, next).subscribe();
+    expect(isInnerUnsubscribed).toBe(false);
+    sub.unsubscribe();
+    expect(isInnerUnsubscribed).toBe(true);
   });
 });
