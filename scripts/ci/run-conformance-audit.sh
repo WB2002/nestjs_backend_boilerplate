@@ -216,9 +216,17 @@ if [[ "${READY}" != "true" ]]; then
   exit 1
 fi
 
+export CONFORMANCE_TARGET_PID="${APP_PID}"
+
+AUDIT_HELP="$("${AUDIT_BIN}" --help 2>&1 || true)"
+EXTRA_AUDIT_ARGS=()
+if grep -qE '(^|[[:space:]])--?pid([[:space:]=]|$)' <<< "${AUDIT_HELP}"; then
+  EXTRA_AUDIT_ARGS+=(--pid "${APP_PID}")
+fi
+
 "${AUDIT_BIN}" \
   --target "${ROOT_DIR}" \
   --manifest "${ROOT_DIR}/boilerplate.manifest.json" \
   --url "http://127.0.0.1:${PORT}" \
-  --pid "${APP_PID}" \
+  ${EXTRA_AUDIT_ARGS[@]+"${EXTRA_AUDIT_ARGS[@]}"} \
   "$@"
