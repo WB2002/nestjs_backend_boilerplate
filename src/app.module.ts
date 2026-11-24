@@ -195,7 +195,7 @@ import { parseCsvPaths } from './core/csrf/helpers/parse-csv-paths';
           }) => ({ req: request, res: reply }),
           definitions: {
             path: join(process.cwd(), 'src/graphql.ts'),
-            outputAs: 'class',
+            outputAs: 'interface',
           },
           graphiql: security.graphiql,
           introspection: security.introspection,

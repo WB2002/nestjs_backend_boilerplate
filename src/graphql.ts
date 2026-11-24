@@ -7,25 +7,21 @@
 /* tslint:disable */
 /* eslint-disable */
 
-export class CategoryFilterInput {
+export interface CategoryFilterInput {
   name: string;
   websiteUrl?: Nullable<string>;
 }
 
-export class Category {
+export interface Category {
   id: string;
   name: string;
   description?: Nullable<string>;
 }
 
-export abstract class IQuery {
-  abstract categories(): Category[] | Promise<Category[]>;
-
-  abstract category(
-    id: string,
-  ): Nullable<Category> | Promise<Nullable<Category>>;
-
-  abstract searchCategories(
+export interface IQuery {
+  categories(): Category[] | Promise<Category[]>;
+  category(id: string): Nullable<Category> | Promise<Nullable<Category>>;
+  searchCategories(
     filter: CategoryFilterInput,
   ): Category[] | Promise<Category[]>;
 }
