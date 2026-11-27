@@ -26,6 +26,11 @@ import { AuthenticatedUser } from './types/authenticated-user.types';
 import { CsrfTokenService } from '@/core/csrf/csrf-token.service';
 import { setCsrfCookie } from '@/core/csrf/helpers/set-csrf-cookie';
 import { ApiPriority, ApiPriorityLevel } from '@/core/overload';
+import {
+  DEFAULT_ACCESS_TOKEN_TTL_SECONDS,
+  DEFAULT_SESSION_TTL_SECONDS,
+  resolveAuthTtlSeconds,
+} from './resolve-auth-ttl-seconds';
 
 @ApiPriority(ApiPriorityLevel.Critical)
 @Controller('auth')
@@ -66,11 +71,15 @@ export class AuthController {
       req.ip,
     );
 
-    const accessTokenTtl = Number(
-      this.configService.get<number | string>('ACCESS_TOKEN_TTL', 900),
+    const accessTokenTtl = resolveAuthTtlSeconds(
+      this.configService,
+      'ACCESS_TOKEN_TTL',
+      DEFAULT_ACCESS_TOKEN_TTL_SECONDS,
     );
-    const sessionTtl = Number(
-      this.configService.get<number | string>('SESSION_TTL', 604800),
+    const sessionTtl = resolveAuthTtlSeconds(
+      this.configService,
+      'SESSION_TTL',
+      DEFAULT_SESSION_TTL_SECONDS,
     );
 
     res.setCookie(
@@ -107,11 +116,15 @@ export class AuthController {
     const { accessToken, sessionId } =
       await this.authService.refreshSession(incomingSessionId);
 
-    const accessTokenTtl = Number(
-      this.configService.get<number | string>('ACCESS_TOKEN_TTL', 900),
+    const accessTokenTtl = resolveAuthTtlSeconds(
+      this.configService,
+      'ACCESS_TOKEN_TTL',
+      DEFAULT_ACCESS_TOKEN_TTL_SECONDS,
     );
-    const sessionTtl = Number(
-      this.configService.get<number | string>('SESSION_TTL', 604800),
+    const sessionTtl = resolveAuthTtlSeconds(
+      this.configService,
+      'SESSION_TTL',
+      DEFAULT_SESSION_TTL_SECONDS,
     );
 
     res.setCookie(

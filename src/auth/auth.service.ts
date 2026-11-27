@@ -16,6 +16,11 @@ import { UserRole } from './constants';
 import { PasswordHashBulkhead } from './password/password-hash-bulkhead';
 import { CacheService } from '@/core/cache';
 import type { CacheTtl } from '@/core/cache/types/cache.types';
+import {
+  DEFAULT_ACCESS_TOKEN_TTL_SECONDS,
+  DEFAULT_SESSION_TTL_SECONDS,
+  resolveAuthTtlSeconds,
+} from './resolve-auth-ttl-seconds';
 
 const DEFAULT_ARGON2_MEMORY_COST_KIB = 19_456;
 const MIN_ARGON2_MEMORY_COST_KIB = 12_288;
@@ -107,7 +112,11 @@ export class AuthService {
 
   async createSession(userId: string, userAgent: string, ip: string) {
     const token = uuidv4();
-    const sessionTtl = this.configService.get<number>('SESSION_TTL', 604800);
+    const sessionTtl = resolveAuthTtlSeconds(
+      this.configService,
+      'SESSION_TTL',
+      DEFAULT_SESSION_TTL_SECONDS,
+    );
     const expiresAt = new Date(Date.now() + sessionTtl * 1000);
 
     const session = new this.sessionModel({
@@ -143,7 +152,11 @@ export class AuthService {
 
   async refreshSession(incomingToken: string) {
     const newToken = uuidv4();
-    const sessionTtl = this.configService.get<number>('SESSION_TTL', 604800);
+    const sessionTtl = resolveAuthTtlSeconds(
+      this.configService,
+      'SESSION_TTL',
+      DEFAULT_SESSION_TTL_SECONDS,
+    );
     const newExpiresAt = new Date(Date.now() + sessionTtl * 1000);
 
     // Atomic update to prevent replay attacks
@@ -186,9 +199,10 @@ export class AuthService {
       .exec();
 
     if (session) {
-      const accessTokenTtl = this.configService.get<number>(
+      const accessTokenTtl = resolveAuthTtlSeconds(
+        this.configService,
         'ACCESS_TOKEN_TTL',
-        900,
+        DEFAULT_ACCESS_TOKEN_TTL_SECONDS,
       );
       // Revoke the JTI in Redis for the remaining lifetime of the access token
       await this.redis.setex(

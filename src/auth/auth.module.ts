@@ -11,6 +11,10 @@ import { LocalStrategy } from './strategies/local.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { AccessTokenAuthenticator } from './access-token-authenticator.service';
 import { PasswordHashBulkhead } from './password/password-hash-bulkhead';
+import {
+  DEFAULT_ACCESS_TOKEN_TTL_SECONDS,
+  resolveAuthTtlSeconds,
+} from './resolve-auth-ttl-seconds';
 
 @Module({
   imports: [
@@ -29,7 +33,11 @@ import { PasswordHashBulkhead } from './password/password-hash-bulkhead';
           '\n',
         ),
         signOptions: {
-          expiresIn: configService.get<number>('ACCESS_TOKEN_TTL', 900),
+          expiresIn: resolveAuthTtlSeconds(
+            configService,
+            'ACCESS_TOKEN_TTL',
+            DEFAULT_ACCESS_TOKEN_TTL_SECONDS,
+          ),
           algorithm: 'RS256',
         },
       }),
