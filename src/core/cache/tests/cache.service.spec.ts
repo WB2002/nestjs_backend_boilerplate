@@ -24,12 +24,16 @@ async function expectFreshEventually(
   service: CacheService,
   key: string,
   value: string,
-  timeoutMs = 500,
+  maxAttempts = 100,
 ): Promise<void> {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
     const entry = await service.get<string>(key);
-    if (entry?.status === 'fresh' && entry.value === value) {
+    if (
+      entry &&
+      !('absent' in entry) &&
+      entry.status === 'fresh' &&
+      entry.value === value
+    ) {
       expect(entry).toEqual({ value, status: 'fresh' });
       return;
     }
@@ -43,6 +47,16 @@ async function expectFreshEventually(
 
 describe('CacheService SWR', () => {
   const ttl = { softTtlMs: 50, hardTtlMs: 200 };
+  let currentTimeMs: number;
+
+  beforeEach(() => {
+    currentTimeMs = 1_000_000;
+    jest.spyOn(Date, 'now').mockImplementation(() => currentTimeMs);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
 
   it('returns fresh value without calling loader again', async () => {
     const { service } = createService();
@@ -65,7 +79,7 @@ describe('CacheService SWR', () => {
     });
 
     await service.set('k', 'v0', ttl);
-    await new Promise((r) => setTimeout(r, ttl.softTtlMs + 10));
+    currentTimeMs += ttl.softTtlMs + 10;
 
     const stale = await service.getOrSet('k', loader, ttl);
     expect(stale).toBe('v0');
@@ -77,7 +91,7 @@ describe('CacheService SWR', () => {
   it('awaits loader synchronously after hard TTL', async () => {
     const { service } = createService();
     await service.set('k', 'old', { softTtlMs: 10, hardTtlMs: 20 });
-    await new Promise((r) => setTimeout(r, 30));
+    currentTimeMs += 30;
 
     const loader = jest.fn(async () => 'new');
     await expect(
@@ -109,7 +123,7 @@ describe('CacheService SWR', () => {
   it('coalesces concurrent stale revalidations', async () => {
     const { service } = createService();
     await service.set('k', 'stale-val', ttl);
-    await new Promise((r) => setTimeout(r, ttl.softTtlMs + 10));
+    currentTimeMs += ttl.softTtlMs + 10;
 
     let resolveLoader!: (v: string) => void;
     const loader = jest.fn(
