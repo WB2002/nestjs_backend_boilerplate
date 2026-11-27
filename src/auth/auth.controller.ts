@@ -32,7 +32,10 @@ import {
   resolveAuthTtlSeconds,
 } from './resolve-auth-ttl-seconds';
 
-/** Register/login DTOs use class-validator; global ValidationPipe enforces them on mutating routes. */
+/**
+ * Register/login DTOs use class-validator; global ValidationPipe enforces them on mutating routes.
+ * Logout resolves session ids from cookie, body, then JWT jti in that order.
+ */
 @ApiPriority(ApiPriorityLevel.Critical)
 @Controller('auth')
 export class AuthController {

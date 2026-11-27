@@ -130,17 +130,17 @@ describe('ConformanceRateLimitController', () => {
 
   describe('handler invocations', () => {
     it('returns { identifierKind: "user" } from user handler', () => {
-      const userResponse = controller.user();
+      const userResponse = controller.user({});
       expect(userResponse).toEqual({ identifierKind: 'user' });
     });
 
     it('returns { identifierKind: "fingerprint" } from fingerprint handler', () => {
-      const fingerprintResponse = controller.fingerprint();
+      const fingerprintResponse = controller.fingerprint({});
       expect(fingerprintResponse).toEqual({ identifierKind: 'fingerprint' });
     });
 
     it('returns { identifierKind: "guest" } from guest handler', () => {
-      const guestResponse = controller.guest();
+      const guestResponse = controller.guest({});
       expect(guestResponse).toEqual({ identifierKind: 'guest' });
     });
   });

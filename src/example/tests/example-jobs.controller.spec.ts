@@ -20,4 +20,19 @@ describe('ExampleJobsController', () => {
     });
     expect(outcome.enqueued).toBe(true);
   });
+
+  it('passes dedupeKey when provided', async () => {
+    const jobEnqueue = {
+      enqueue: jest.fn().mockResolvedValue({ enqueued: true }),
+    } as unknown as JobEnqueueService;
+    const controller = new ExampleJobsController(jobEnqueue);
+
+    await controller.enqueueEcho({ message: 'hello', dedupeKey: 'dup-1' });
+
+    expect(jobEnqueue.enqueue).toHaveBeenCalledWith({
+      jobName: EXAMPLE_ECHO_JOB_NAME,
+      payload: { message: 'hello' },
+      dedupeKey: 'dup-1',
+    });
+  });
 });

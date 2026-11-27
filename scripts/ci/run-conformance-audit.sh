@@ -139,7 +139,7 @@ export MALLOC_ARENA_MAX="${MALLOC_ARENA_MAX:-2}"
 APP_NODE_OPTIONS="${APP_NODE_OPTIONS:---max-old-space-size=256 --max-semi-space-size=8 --expose-gc}"
 export BACKGROUND_JOBS_ENABLED=false
 export BACKGROUND_WORKER_ENABLED=false
-export EXAMPLE_JOBS_API_ENABLED=false
+export EXAMPLE_JOBS_API_ENABLED=true
 export INBOUND_MAX_IN_FLIGHT="${USER_INBOUND_MAX_IN_FLIGHT:-16}"
 export INBOUND_LOAD_LEVEL_MAX_QUEUE="${USER_INBOUND_LOAD_LEVEL_MAX_QUEUE:-16}"
 export INBOUND_LOAD_LEVEL_MAX_WAIT_MS="${USER_INBOUND_LOAD_LEVEL_MAX_WAIT_MS:-5000}"
@@ -241,9 +241,9 @@ node -e '
   const http = require("http");
   const port = process.env.PORT || 3000;
   const agent = new http.Agent({ keepAlive: true, maxSockets: 16 });
-  const paths = ["/health/live", "/"];
+  const paths = ["/health/live", "/health/ready", "/"];
   let completed = 0;
-  const total = 1200;
+  const total = 3200;
   const concurrency = 16;
   function next(idx) {
     if (idx >= total) return;
@@ -264,7 +264,13 @@ node -e '
   }
   for (let i = 0; i < concurrency; i++) next(i);
 ' || true
-sleep 2
+if command -v curl >/dev/null 2>&1; then
+  for _ in $(seq 1 20); do
+    curl -fsS -o /dev/null "http://127.0.0.1:${PORT}/health/ready" || true
+  done
+fi
+NODE_OPTIONS="${NODE_OPTIONS:+${NODE_OPTIONS} }${APP_NODE_OPTIONS}" node -e 'if (typeof global.gc === "function") { global.gc(); global.gc(); }' || true
+sleep 5
 
 export CONFORMANCE_TARGET_PID="${APP_PID}"
 

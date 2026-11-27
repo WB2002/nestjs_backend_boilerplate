@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  InternalServerErrorException,
-  ServiceUnavailableException,
-  ValidationPipe,
-} from '@nestjs/common';
+import { InternalServerErrorException, ValidationPipe } from '@nestjs/common';
 import { FastifyRequest } from 'fastify';
 import { validate } from 'class-validator';
 import {
@@ -53,7 +48,9 @@ describe('ExampleCaptchaController', () => {
 
     await expect(
       controller.verifyCaptcha({ captchaToken: 'bad' }, req()),
-    ).rejects.toBeInstanceOf(BadRequestException);
+    ).rejects.toMatchObject({
+      response: { message: 'Captcha verification failed', statusCode: 400 },
+    });
     expect(verify).toHaveBeenCalledWith('bad', { remoteIp: '127.0.0.1' });
   });
 
@@ -71,7 +68,12 @@ describe('ExampleCaptchaController', () => {
 
     await expect(
       controller.verifyCaptcha({ captchaToken: 'token' }, req()),
-    ).rejects.toBeInstanceOf(ServiceUnavailableException);
+    ).rejects.toMatchObject({
+      response: {
+        message: 'Captcha verification unavailable',
+        statusCode: 503,
+      },
+    });
   });
 
   it('returns 500 when captcha configuration is missing', async () => {

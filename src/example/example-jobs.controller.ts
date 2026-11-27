@@ -15,6 +15,10 @@ class EnqueueEchoJobDto {
   declare dedupeKey?: string;
 }
 
+/**
+ * Demo job enqueue API (non-production unless EXAMPLE_JOBS_API_ENABLED=true).
+ * Body validated with class-validator and the global ValidationPipe.
+ */
 @ApiTags('example-jobs')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)

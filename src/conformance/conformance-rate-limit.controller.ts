@@ -1,4 +1,5 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { ConformancePriorityQueryDto } from './dto';
 import { ConformanceHarnessAuthGuard } from './guards/conformance-harness-auth.guard';
 import {
   RateLimit,
@@ -15,7 +16,7 @@ export interface ConformanceRateLimitResponse {
   identifierKind: ConformanceRateLimitIdentifierKind;
 }
 
-/** Read-only harness probes for rate-limit identifiers. */
+/** Harness rate-limit probes; query DTOs use class-validator where applicable. */
 @UseGuards(ConformanceHarnessAuthGuard)
 @Controller('conformance/rate-limit')
 export class ConformanceRateLimitController {
@@ -31,7 +32,9 @@ export class ConformanceRateLimitController {
       },
     ],
   })
-  user(): ConformanceRateLimitResponse {
+  user(
+    @Query() _query: ConformancePriorityQueryDto,
+  ): ConformanceRateLimitResponse {
     return { identifierKind: 'user' };
   }
 
@@ -47,7 +50,9 @@ export class ConformanceRateLimitController {
       },
     ],
   })
-  fingerprint(): ConformanceRateLimitResponse {
+  fingerprint(
+    @Query() _query: ConformancePriorityQueryDto,
+  ): ConformanceRateLimitResponse {
     return { identifierKind: 'fingerprint' };
   }
 
@@ -63,7 +68,9 @@ export class ConformanceRateLimitController {
       },
     ],
   })
-  guest(): ConformanceRateLimitResponse {
+  guest(
+    @Query() _query: ConformancePriorityQueryDto,
+  ): ConformanceRateLimitResponse {
     return { identifierKind: 'guest' };
   }
 }

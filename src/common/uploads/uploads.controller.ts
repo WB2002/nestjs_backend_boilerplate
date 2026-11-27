@@ -1,6 +1,7 @@
 import {
   Controller,
   Post,
+  Query,
   Req,
   BadRequestException,
   UseGuards,
@@ -14,6 +15,8 @@ import { removeTempUpload, streamMultipartToTempFile } from './read-file-bytes';
 import type { IncomingUploadFile } from './upload.types';
 import { UPLOAD_REJECT_CODES } from './upload.types';
 import { UploadValidationError } from './validate-upload-files';
+import { AjvValidationPipe } from '@/common/validation';
+import { type UploadQuery, uploadQuerySchema } from './dto/upload-query.dto';
 
 /**
  * Example multi-file upload endpoint.
@@ -28,6 +31,7 @@ import { UploadValidationError } from './validate-upload-files';
  * Virus scan: set UPLOAD_VIRUS_SCAN=true and run the clamav compose service.
  *
  * Response is metadata only (buffers are discarded after validation/scan).
+ * Query parameters are validated with AJV before upload processing.
  */
 @ApiPriority(ApiPriorityLevel.Low)
 @UseGuards(JwtAuthGuard)
@@ -36,7 +40,10 @@ export class UploadsController {
   constructor(private readonly uploadsService: UploadsService) {}
 
   @Post()
-  async upload(@Req() req: FastifyRequest) {
+  async upload(
+    @Query(new AjvValidationPipe(uploadQuerySchema)) _query: UploadQuery,
+    @Req() req: FastifyRequest,
+  ) {
     const options = this.uploadsService.resolveOptions();
     const files = await readMultipartFiles(req, options);
     const accepted = await this.uploadsService.processFiles(files, options);
