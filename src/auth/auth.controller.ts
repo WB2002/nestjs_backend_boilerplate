@@ -32,6 +32,7 @@ import {
   resolveAuthTtlSeconds,
 } from './resolve-auth-ttl-seconds';
 
+/** Register/login DTOs use class-validator; global ValidationPipe enforces them on mutating routes. */
 @ApiPriority(ApiPriorityLevel.Critical)
 @Controller('auth')
 export class AuthController {

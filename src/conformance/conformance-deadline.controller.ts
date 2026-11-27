@@ -13,6 +13,7 @@ export interface ConformanceDeadlineResponse {
   remainingBudgetMs: number | null;
 }
 
+/** Harness JSON/query payloads validated with class-validator DTOs. */
 @UseGuards(ConformanceHarnessAuthGuard)
 @Controller('conformance/deadline')
 export class ConformanceDeadlineController {

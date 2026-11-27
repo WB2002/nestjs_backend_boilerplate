@@ -33,6 +33,7 @@ import { RedisService } from '@/common/redis/redis.service';
 import { HealthSnapshot } from './health-snapshot';
 import { resolveHealthResponseMode } from './resolve-health-response-mode';
 
+/** Read-only probes; mutating APIs use class-validator via the global ValidationPipe. */
 // Probes must never be throttled: load balancers share source IPs, and a 429
 // during a rolling deploy looks like an unhealthy instance.
 // SkipRequestDeadline: LB probes must not be 504'd by client/default timeouts.

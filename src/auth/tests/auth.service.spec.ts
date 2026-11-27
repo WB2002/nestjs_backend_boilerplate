@@ -189,6 +189,58 @@ describe('AuthService with PasswordHashBulkhead', () => {
     ).rejects.toThrow(OverloadRejectedError);
   });
 
+  it('uses coerced SESSION_TTL seconds when creating a session expiry', async () => {
+    const expiresAtValues: Date[] = [];
+    const SessionConstructor = function (
+      this: unknown,
+      doc: Record<string, unknown>,
+    ) {
+      Object.assign(this as object, doc, {
+        save: jest.fn().mockResolvedValue(doc),
+      });
+      if (doc.expiresAt instanceof Date) {
+        expiresAtValues.push(doc.expiresAt);
+      }
+    } as unknown as Model<Session>;
+
+    (configService.get as jest.Mock).mockImplementation((key: string) => {
+      if (key === 'SESSION_TTL') return '120';
+      return undefined;
+    });
+
+    userModel.findById = jest.fn().mockReturnValue({
+      exec: jest.fn().mockResolvedValue({
+        id: 'user-1',
+        email: 'ttl@example.com',
+        role: 'user',
+      }),
+    });
+
+    const serviceWithSession = new AuthService(
+      userModel as Model<User>,
+      SessionConstructor as Model<Session>,
+      jwtService as JwtService,
+      configService as ConfigService,
+      redisService as RedisService,
+      bulkhead,
+      {
+        getOrSet: jest.fn(),
+        get: jest.fn(),
+        set: jest.fn(),
+        delete: jest.fn(),
+      } as unknown as CacheService,
+    );
+
+    const beforeMs = Date.now();
+    await serviceWithSession.createSession('user-1', 'jest', '127.0.0.1');
+    const afterMs = Date.now();
+
+    expect(expiresAtValues).toHaveLength(1);
+    const ttlMs = expiresAtValues[0]!.getTime() - beforeMs;
+    expect(ttlMs).toBeGreaterThanOrEqual(115_000);
+    expect(ttlMs).toBeLessThanOrEqual(afterMs - beforeMs + 125_000);
+  });
+
   it('translates concurrent MongoDB E11000 duplicate key error on save into ConflictException', async () => {
     saveMock.mockReset();
     saveMock.mockRejectedValueOnce(

@@ -1,11 +1,13 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
 import { CreateExampleNotificationDto } from './dto';
 import { ExampleNotificationService } from './example-notification.service';
 
 /**
  * Example endpoint demonstrating NotificationService usage.
- * Remains JWT-protected by the global JwtAuthGuard.
+ * Request body validated with class-validator (global ValidationPipe).
  */
+@UseGuards(JwtAuthGuard)
 @Controller('example')
 export class ExampleNotificationController {
   constructor(

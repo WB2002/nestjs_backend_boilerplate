@@ -1,4 +1,11 @@
-import { Controller, Post, Req, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Req,
+  BadRequestException,
+  UseGuards,
+} from '@nestjs/common';
+import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
 import type { FastifyRequest } from 'fastify';
 import '@fastify/multipart';
 import { ApiPriority, ApiPriorityLevel } from '@/core/overload';
@@ -23,6 +30,7 @@ import { UploadValidationError } from './validate-upload-files';
  * Response is metadata only (buffers are discarded after validation/scan).
  */
 @ApiPriority(ApiPriorityLevel.Low)
+@UseGuards(JwtAuthGuard)
 @Controller('uploads')
 export class UploadsController {
   constructor(private readonly uploadsService: UploadsService) {}

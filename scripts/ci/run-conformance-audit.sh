@@ -136,9 +136,10 @@ export AWS_EMF_ENVIRONMENT="${AWS_EMF_ENVIRONMENT:-local}"
 export COUNTRY_ACCESS_PERSISTENCE_PROVIDER="${COUNTRY_ACCESS_PERSISTENCE_PROVIDER:-mongodb}"
 export COUNTRY_ACCESS_REFRESH_INTERVAL_MS="${USER_COUNTRY_ACCESS_REFRESH_INTERVAL_MS:-60000}"
 export MALLOC_ARENA_MAX="${MALLOC_ARENA_MAX:-2}"
-APP_NODE_OPTIONS="${APP_NODE_OPTIONS:---max-old-space-size=256 --max-semi-space-size=8}"
+APP_NODE_OPTIONS="${APP_NODE_OPTIONS:---max-old-space-size=256 --max-semi-space-size=8 --expose-gc}"
 export BACKGROUND_JOBS_ENABLED=false
 export BACKGROUND_WORKER_ENABLED=false
+export EXAMPLE_JOBS_API_ENABLED=false
 export INBOUND_MAX_IN_FLIGHT="${USER_INBOUND_MAX_IN_FLIGHT:-16}"
 export INBOUND_LOAD_LEVEL_MAX_QUEUE="${USER_INBOUND_LOAD_LEVEL_MAX_QUEUE:-16}"
 export INBOUND_LOAD_LEVEL_MAX_WAIT_MS="${USER_INBOUND_LOAD_LEVEL_MAX_WAIT_MS:-5000}"
@@ -242,7 +243,7 @@ node -e '
   const agent = new http.Agent({ keepAlive: true, maxSockets: 16 });
   const paths = ["/health/live", "/"];
   let completed = 0;
-  const total = 400;
+  const total = 1200;
   const concurrency = 16;
   function next(idx) {
     if (idx >= total) return;
@@ -263,7 +264,7 @@ node -e '
   }
   for (let i = 0; i < concurrency; i++) next(i);
 ' || true
-sleep 1
+sleep 2
 
 export CONFORMANCE_TARGET_PID="${APP_PID}"
 

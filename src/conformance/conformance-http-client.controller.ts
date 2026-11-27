@@ -7,6 +7,7 @@ import {
 } from './conformance-http-client.service';
 import { ConformanceHttpClientRequestDto } from './dto';
 
+/** Harness JSON payloads validated with class-validator DTOs. */
 @UseGuards(ConformanceHarnessAuthGuard)
 @Controller('conformance/http-client')
 export class ConformanceHttpClientController {

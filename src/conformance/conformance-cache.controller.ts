@@ -18,6 +18,7 @@ export interface ConformanceCacheDeleteResponse {
   deleted: boolean;
 }
 
+/** Harness cache POST bodies validated with class-validator DTOs. */
 @UseGuards(ConformanceHarnessAuthGuard)
 @Controller('conformance/cache')
 export class ConformanceCacheController {

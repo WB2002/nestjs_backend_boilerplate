@@ -42,6 +42,7 @@
   },
   "architecture": {
     "publicRoutes": [
+      "/",
       "/health",
       "/health/live",
       "/health/ready",

@@ -18,6 +18,7 @@ import {
   UpdateFeatureFlagDto,
 } from './dto';
 import { FeatureFlagManager } from './feature-flag.manager';
+import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
 import { FeatureFlagPermissionsGuard } from './guards';
 
 interface AuthenticatedRequest {
@@ -28,8 +29,9 @@ interface AuthenticatedRequest {
   };
 }
 
+/** Mutations validated via DTOs with class-validator and the global ValidationPipe. */
 @Controller('feature-flags')
-@UseGuards(FeatureFlagPermissionsGuard)
+@UseGuards(JwtAuthGuard, FeatureFlagPermissionsGuard)
 export class FeatureFlagController {
   constructor(private readonly manager: FeatureFlagManager) {}
 

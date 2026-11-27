@@ -15,6 +15,7 @@ export interface ConformancePriorityResponse {
   priority: ConformancePriorityLevelName;
 }
 
+/** Read-only harness probes; query DTOs use class-validator where applicable. */
 @UseGuards(ConformanceHarnessAuthGuard)
 @Controller('conformance/priority')
 export class ConformancePriorityController {

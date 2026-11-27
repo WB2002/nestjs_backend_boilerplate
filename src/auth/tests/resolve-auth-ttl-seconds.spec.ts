@@ -53,6 +53,44 @@ describe('resolveAuthTtlSeconds', () => {
     expect(decoded.exp - decoded.iat).toBe(900);
   });
 
+  it('uses numeric env values and floors fractional seconds', () => {
+    const config = new ConfigService({
+      ACCESS_TOKEN_TTL: 900.9,
+      SESSION_TTL: 604800,
+    });
+
+    expect(
+      resolveAuthTtlSeconds(
+        config,
+        'ACCESS_TOKEN_TTL',
+        DEFAULT_ACCESS_TOKEN_TTL_SECONDS,
+      ),
+    ).toBe(900);
+    expect(
+      resolveAuthTtlSeconds(config, 'SESSION_TTL', DEFAULT_SESSION_TTL_SECONDS),
+    ).toBe(604800);
+  });
+
+  it('falls back to the default when the env value is empty', () => {
+    const emptyStringConfig = new ConfigService({ ACCESS_TOKEN_TTL: '' });
+    const nullishConfig = new ConfigService({ ACCESS_TOKEN_TTL: null });
+
+    expect(
+      resolveAuthTtlSeconds(
+        emptyStringConfig,
+        'ACCESS_TOKEN_TTL',
+        DEFAULT_ACCESS_TOKEN_TTL_SECONDS,
+      ),
+    ).toBe(DEFAULT_ACCESS_TOKEN_TTL_SECONDS);
+    expect(
+      resolveAuthTtlSeconds(
+        nullishConfig,
+        'ACCESS_TOKEN_TTL',
+        DEFAULT_ACCESS_TOKEN_TTL_SECONDS,
+      ),
+    ).toBe(DEFAULT_ACCESS_TOKEN_TTL_SECONDS);
+  });
+
   it('falls back to the default when the env value is missing or invalid', () => {
     const emptyConfig = new ConfigService({});
     const invalidConfig = new ConfigService({

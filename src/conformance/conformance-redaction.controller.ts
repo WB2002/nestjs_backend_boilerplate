@@ -72,6 +72,7 @@ export interface ConformanceRedactionResponse {
   redactedSpanAttributes: ReturnType<typeof redactOtelAttributes>;
 }
 
+/** Harness POST bodies validated with class-validator DTOs. */
 @UseGuards(ConformanceHarnessAuthGuard)
 @Controller('conformance/redaction')
 export class ConformanceRedactionController {

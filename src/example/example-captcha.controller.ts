@@ -23,6 +23,7 @@ import { ExampleCaptchaRequestDto } from './dto';
 /**
  * Demo-only endpoint showing how to require CAPTCHA verification.
  * Do not use this as a template for wiring captcha into auth or payments.
+ * Body validated with class-validator and the global ValidationPipe.
  */
 @Public()
 @Controller('example')

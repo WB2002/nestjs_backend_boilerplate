@@ -15,6 +15,7 @@ export interface ConformanceRateLimitResponse {
   identifierKind: ConformanceRateLimitIdentifierKind;
 }
 
+/** Read-only harness probes for rate-limit identifiers. */
 @UseGuards(ConformanceHarnessAuthGuard)
 @Controller('conformance/rate-limit')
 export class ConformanceRateLimitController {
