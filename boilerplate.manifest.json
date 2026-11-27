@@ -24,7 +24,7 @@
       },
       "me": {
         "method": "GET",
-        "path": "/"
+        "path": "/auth/me"
       },
       "refresh": {
         "method": "POST",

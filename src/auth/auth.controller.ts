@@ -22,6 +22,7 @@ import {
 } from '@/common/utils';
 import { ConfigService } from '@nestjs/config';
 import { AuthRequest } from './types/auth.types';
+import { AuthenticatedUser } from './types/authenticated-user.types';
 import { CsrfTokenService } from '@/core/csrf/csrf-token.service';
 import { setCsrfCookie } from '@/core/csrf/helpers/set-csrf-cookie';
 import { ApiPriority, ApiPriorityLevel } from '@/core/overload';
@@ -131,6 +132,14 @@ export class AuthController {
       accessToken,
       sessionId,
       csrfToken,
+    };
+  }
+
+  @Get('me')
+  getMe(@Req() req: FastifyRequest & { user: AuthenticatedUser }) {
+    return {
+      id: req.user.id,
+      email: req.user.email,
     };
   }
 

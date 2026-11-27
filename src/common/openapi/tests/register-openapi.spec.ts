@@ -50,6 +50,9 @@ describe('registerOpenApiEndpoint', () => {
     expect(body.openapi).toMatch(/^3\./);
     expect(body.info?.title).toBe('NestJS Backend Boilerplate API');
     expect(body.paths['/health/live']).toBeDefined();
+    expect(body.paths['/health/live'].get.responses['400']).toBeDefined();
+    expect(body.paths['/health/live'].get.responses['401']).toBeDefined();
+    expect(body.paths['/health/live'].get.responses['429']).toBeDefined();
     expect(body.components?.securitySchemes?.bearer).toBeDefined();
   });
 

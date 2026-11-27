@@ -119,6 +119,9 @@ if [[ -f "${ROOT_DIR}/.env.conformance.example" ]]; then
 fi
 
 export PORT="${PORT:-3000}"
+export ALLOWED_ORIGINS="${ALLOWED_ORIGINS:-http://127.0.0.1:${PORT},http://localhost:${PORT}}"
+export GQL_INTROSPECTION_ENABLED="${GQL_INTROSPECTION_ENABLED:-false}"
+export RATE_LIMIT_GLOBAL_IP_LIMIT="${RATE_LIMIT_GLOBAL_IP_LIMIT:-100000}"
 export MONGO_URI="${MONGO_URI:-mongodb://127.0.0.1:27017/nestjs-conformance}"
 export REDIS_HOST="${REDIS_HOST:-127.0.0.1}"
 export REDIS_PORT="${REDIS_PORT:-6379}"

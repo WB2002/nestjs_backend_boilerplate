@@ -12,9 +12,19 @@ export function resolveDefaultRateLimitMethods(
   configService: ConfigService,
 ): RateLimitMethodConfig[] {
   const nodeEnv = configService.get<string>('NODE_ENV') ?? 'development';
-  const configuredLimit = configService.get<number>(
+  const rawConfiguredLimit = configService.get<number | string>(
     'RATE_LIMIT_GLOBAL_IP_LIMIT',
   );
+  const parsedConfiguredLimit =
+    rawConfiguredLimit === undefined || rawConfiguredLimit === ''
+      ? undefined
+      : Number(rawConfiguredLimit);
+  const configuredLimit =
+    parsedConfiguredLimit !== undefined &&
+    Number.isFinite(parsedConfiguredLimit) &&
+    parsedConfiguredLimit > 0
+      ? Math.floor(parsedConfiguredLimit)
+      : undefined;
   const limit =
     configuredLimit ??
     (nodeEnv === 'production'

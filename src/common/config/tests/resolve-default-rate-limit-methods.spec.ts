@@ -10,4 +10,15 @@ describe('resolveDefaultRateLimitMethods', () => {
     } as never);
     expect(dev[0]?.limit).toBeGreaterThan(prod[0]?.limit ?? 0);
   });
+
+  it('parses numeric string RATE_LIMIT_GLOBAL_IP_LIMIT overrides', () => {
+    const env = new Map<string, string>([
+      ['NODE_ENV', 'test'],
+      ['RATE_LIMIT_GLOBAL_IP_LIMIT', '100000'],
+    ]);
+    const resolved = resolveDefaultRateLimitMethods({
+      get: (key: string) => env.get(key),
+    } as never);
+    expect(resolved[0]?.limit).toBe(100_000);
+  });
 });

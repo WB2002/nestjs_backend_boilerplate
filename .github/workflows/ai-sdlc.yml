@@ -18,11 +18,12 @@ jobs:
         with:
           fetch-depth: 0
       - name: Notice guardrail changes
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           set -euo pipefail
-          base="${{ github.event.pull_request.base.sha }}"
           echo "Guardrail paths in this pull request:"
-          git diff --name-only "$base"...HEAD | grep -E '(^|/)\.cursor/hooks\.json$|(^|/)\.cursor/hooks/|(^|/)\.cursor/BUGBOT\.md$|(^|/)\.cursorignore$|(^|/)scripts/verify[^/]*\.sh$|(^|/)scripts/ratchet\.sh$|(^|/)quality/|(^|/)\.github/|(^|/)CODEOWNERS$' || echo "(none)"
+          git diff --name-only "$BASE_SHA"...HEAD | grep -E '(^|/)\.cursor/hooks\.json$|(^|/)\.cursor/hooks/|(^|/)\.cursor/BUGBOT\.md$|(^|/)\.cursorignore$|(^|/)scripts/verify[^/]*\.sh$|(^|/)scripts/ratchet\.sh$|(^|/)quality/|(^|/)\.github/|(^|/)CODEOWNERS$' || echo "(none)"
 
   verify:
     runs-on: ubuntu-latest

@@ -72,6 +72,7 @@ export const envSchema = {
 
   // Rate limiting / client IP
   TRUST_PROXY: { required: false },
+  RATE_LIMIT_GLOBAL_IP_LIMIT: { required: false },
 
   // Multi-VM coordination (rate limit + cache backends)
   RATE_LIMIT_STORAGE: { required: false },
@@ -117,6 +118,7 @@ export const envSchema = {
   SLACK_WEBHOOK_URL: { required: false },
 
   // GraphQL complexity budgets
+  GQL_INTROSPECTION_ENABLED: { required: false },
   GQL_MAX_COMPLEXITY: { required: false },
   GQL_USER_BUDGET: { required: false },
   GQL_MAX_CONCURRENCY: { required: false },

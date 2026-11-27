@@ -10,8 +10,18 @@ export function parseGraphQlDriverOptions(
 ): GraphQlDriverSecurityOptions {
   const nodeEnv = configService.get<string>('NODE_ENV') ?? 'development';
   const isProduction = nodeEnv === 'production';
+  const rawIntrospection = configService.get<string>(
+    'GQL_INTROSPECTION_ENABLED',
+  );
+  let isIntrospectionEnabled = !isProduction;
+  if (rawIntrospection === 'true') {
+    isIntrospectionEnabled = true;
+  } else if (rawIntrospection === 'false') {
+    isIntrospectionEnabled = false;
+  }
+
   return {
     graphiql: !isProduction,
-    introspection: !isProduction,
+    introspection: isIntrospectionEnabled,
   };
 }

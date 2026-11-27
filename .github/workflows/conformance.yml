@@ -62,7 +62,6 @@ jobs:
           cd .conformance-runner && go build -o "${RUNNER_TEMP}/conformance-audit" ./cmd/conformance-audit
           go clean -cache -modcache
           cd "${GITHUB_WORKSPACE}" && rm -rf .conformance-runner
-          echo "CONFORMANCE_AUDIT_BIN=${RUNNER_TEMP}/conformance-audit" >> "${GITHUB_ENV}"
 
       - name: Setup pnpm
         uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
@@ -79,12 +78,14 @@ jobs:
       - name: Run PR/Push Conformance Gate
         if: github.event_name != 'schedule'
         env:
+          CONFORMANCE_AUDIT_BIN: ${{ runner.temp }}/conformance-audit
           SKIP_APP_BUILD: 'true'
         run: ./scripts/ci/run-conformance-audit.sh --stages sast,graph,pentest,load --profile baseline --output reports
 
       - name: Run Nightly Full Soak & DAST Audit
         if: github.event_name == 'schedule'
         env:
+          CONFORMANCE_AUDIT_BIN: ${{ runner.temp }}/conformance-audit
           SKIP_APP_BUILD: 'true'
         run: ./scripts/ci/run-conformance-audit.sh --stages all --profile soak --output reports
 
