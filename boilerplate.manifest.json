@@ -1,6 +1,7 @@
 {
   "name": "nestjs-backend-boilerplate",
   "language": "typescript",
+  "openapiUrl": "/openapi.json",
   "capabilities": {
     "health": {
       "method": "GET",

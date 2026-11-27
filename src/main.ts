@@ -8,6 +8,7 @@ import { winstonConfig } from './core/logger/logger.config';
 import { registerGracefulShutdown, ShutdownState } from './core/shutdown';
 import { parseTrustProxy } from './common/country-access';
 import { parseHttpServerTimeouts } from './common/config';
+import { registerOpenApiEndpoint } from './common/openapi';
 import {
   assertProductionAllowedOrigins,
   resolveCorsOrigins,
@@ -183,6 +184,8 @@ async function bootstrap() {
     }
     app.useWebSocketAdapter(redisIoAdapter);
   }
+
+  registerOpenApiEndpoint(app);
 
   // Manual SIGTERM/SIGINT handlers (not enableShutdownHooks): mark readiness
   // 503 first, wait for ALB drain, then close so Nest lifecycle runs.

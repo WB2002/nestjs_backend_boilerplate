@@ -34,6 +34,7 @@ export const envSchema = {
   // Application
   PORT: { required: false },
   NODE_ENV: { required: false },
+  ENABLE_OPENAPI: { required: false },
   ALLOWED_ORIGINS: { required: false },
   HTTP_KEEP_ALIVE_TIMEOUT_MS: { required: false },
   HEALTH_CHECK_CACHE_TTL_MS: { required: false },
