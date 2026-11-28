@@ -5,6 +5,7 @@ import {
 } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import {
+  buildOpenApiDocument,
   OPENAPI_JSON_PATH,
   registerOpenApiEndpoint,
 } from '../register-openapi';
@@ -76,6 +77,43 @@ describe('registerOpenApiEndpoint', () => {
     expect(body.paths['/example/jobs/echo'].post.security).toEqual([
       { bearer: [] },
     ]);
+  });
+
+  it('omits example jobs when EXAMPLE_JOBS_API_ENABLED=false in production', async () => {
+    await app.init();
+    const document = buildOpenApiDocument(app, {
+      NODE_ENV: 'production',
+      ENABLE_OPENAPI: 'true',
+      EXAMPLE_JOBS_API_ENABLED: 'false',
+    });
+    expect(document.paths?.['/example/jobs/echo']).toBeUndefined();
+  });
+
+  it('includes job enqueue schema and error responses in generated OpenAPI', async () => {
+    await app.init();
+    const document = buildOpenApiDocument(app, {
+      NODE_ENV: 'test',
+      EXAMPLE_JOBS_API_ENABLED: 'true',
+    });
+    const post = document.paths?.['/example/jobs/echo']?.post;
+    expect(post?.tags).toEqual(['example-jobs']);
+    expect(post?.summary).toBe('Enqueue a demo echo background job');
+    const schema = post?.requestBody?.content?.['application/json']?.schema as {
+      required?: string[];
+      properties?: Record<string, { type?: string }>;
+    };
+    expect(schema?.required).toEqual(['message']);
+    expect(schema?.properties?.message).toEqual({ type: 'string' });
+    expect(schema?.properties?.dedupeKey).toEqual({ type: 'string' });
+    expect(post?.responses?.['200']?.description).toBe('Job enqueue result');
+    expect(post?.responses?.['401']).toBeDefined();
+    expect(post?.responses?.['429']).toBeDefined();
+  });
+
+  it('documents example jobs in development when the explicit flag is unset', async () => {
+    await app.init();
+    const document = buildOpenApiDocument(app, { NODE_ENV: 'development' });
+    expect(document.paths?.['/example/jobs/echo']?.post).toBeDefined();
   });
 
   it('does not register /openapi.json in production by default', async () => {
