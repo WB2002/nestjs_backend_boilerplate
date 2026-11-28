@@ -56,6 +56,28 @@ describe('registerOpenApiEndpoint', () => {
     expect(body.components?.securitySchemes?.bearer).toBeDefined();
   });
 
+  it('documents example jobs echo when EXAMPLE_JOBS_API_ENABLED=true', async () => {
+    const isRegistered = registerOpenApiEndpoint(app, {
+      NODE_ENV: 'test',
+      EXAMPLE_JOBS_API_ENABLED: 'true',
+    });
+    expect(isRegistered).toBe(true);
+    await app.init();
+    await app.getHttpAdapter().getInstance().ready();
+
+    const response = await app.inject({
+      method: 'GET',
+      url: OPENAPI_JSON_PATH,
+    });
+
+    expect(response.statusCode).toBe(200);
+    const body = response.json();
+    expect(body.paths['/example/jobs/echo']?.post).toBeDefined();
+    expect(body.paths['/example/jobs/echo'].post.security).toEqual([
+      { bearer: [] },
+    ]);
+  });
+
   it('does not register /openapi.json in production by default', async () => {
     const isRegistered = registerOpenApiEndpoint(app, {
       NODE_ENV: 'production',

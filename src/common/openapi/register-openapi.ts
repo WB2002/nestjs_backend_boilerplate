@@ -1,6 +1,7 @@
 import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import type { OpenAPIObject } from '@nestjs/swagger';
+import { isExampleJobsApiEnabled } from '@/common/config/is-example-jobs-api-enabled';
 import { isOpenApiEnabled } from '@/common/config/is-openapi-enabled';
 
 export const OPENAPI_JSON_PATH = '/openapi.json';
@@ -51,8 +52,50 @@ function attachStandardErrorResponses(document: OpenAPIObject): OpenAPIObject {
   return document;
 }
 
+function attachExampleJobsOpenApiPath(
+  document: OpenAPIObject,
+  env: NodeJS.ProcessEnv,
+): OpenAPIObject {
+  if (!isExampleJobsApiEnabled(env)) {
+    return document;
+  }
+
+  const paths = document.paths ?? {};
+  document.paths = {
+    ...paths,
+    '/example/jobs/echo': {
+      post: {
+        tags: ['example-jobs'],
+        summary: 'Enqueue a demo echo background job',
+        security: [{ bearer: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['message'],
+                properties: {
+                  message: { type: 'string' },
+                  dedupeKey: { type: 'string' },
+                },
+                additionalProperties: false,
+              },
+            },
+          },
+        },
+        responses: {
+          '200': { description: 'Job enqueue result' },
+        },
+      },
+    },
+  };
+  return document;
+}
+
 export function buildOpenApiDocument(
   app: NestFastifyApplication,
+  env: NodeJS.ProcessEnv = process.env,
 ): OpenAPIObject {
   const config = new DocumentBuilder()
     .setTitle('NestJS Backend Boilerplate API')
@@ -61,9 +104,9 @@ export function buildOpenApiDocument(
     .addBearerAuth()
     .build();
 
-  return attachStandardErrorResponses(
-    SwaggerModule.createDocument(app, config),
-  );
+  const baseDocument = SwaggerModule.createDocument(app, config);
+  const withExampleJobs = attachExampleJobsOpenApiPath(baseDocument, env);
+  return attachStandardErrorResponses(withExampleJobs);
 }
 
 export function registerOpenApiEndpoint(
@@ -74,7 +117,7 @@ export function registerOpenApiEndpoint(
     return false;
   }
 
-  const document = buildOpenApiDocument(app);
+  const document = buildOpenApiDocument(app, env);
   const fastify = app.getHttpAdapter().getInstance();
   fastify.get(OPENAPI_JSON_PATH, (_req, reply) => {
     return reply.type('application/json').send(document);
