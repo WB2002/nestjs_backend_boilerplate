@@ -2,9 +2,9 @@ import Ajv from 'ajv';
 import type { Options } from 'ajv';
 import addFormats from 'ajv-formats';
 
-/** AJV options aligned with Fastify adapter settings in `main.ts`. */
+/** Strict AJV for route/query validation: unknown fields fail when `additionalProperties` is false. */
 const AJV_OPTIONS: Options = {
-  removeAdditional: true,
+  removeAdditional: false,
   coerceTypes: true,
   useDefaults: true,
   allErrors: true,
